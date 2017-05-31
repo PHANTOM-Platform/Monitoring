@@ -1,0 +1,14 @@
+bin
+build
+dist
+ext/queue/data-structures-library
+
+**.so
+**.o
+**.a
+**.tar.gz*
+*.pid
+*.log
+*.swp
+**mf_*_client
+main

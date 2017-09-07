@@ -12,13 +12,18 @@ var elastic = new elasticsearch.Client({
 });
 
 /* monitoring routes */
-var routes = require('./routes/v1/index');
-var workflows = require('./routes/v1/workflows');
+var routes      = require('./routes/v1/index');
+var workflows   = require('./routes/v1/workflows');
+var devices     = require('./routes/v1/devices'); /*2017*/
+var summary     = require('./routes/v1/summary'); /*2017*/
+var deployment = require('./routes/v1/deployment'); /*2017*/
+var deploymentcomm = require('./routes/v1/deploymentcomm'); /*2017*/
+var deploymentcomp = require('./routes/v1/deploymentcomp'); /*2017*/
 var experiments = require('./routes/v1/experiments');
-var metrics = require('./routes/v1/metrics');
-var profiles = require('./routes/v1/profiles');
-var runtime = require('./routes/v1/runtime');
-var statistics = require('./routes/v1/statistics');
+var metrics     = require('./routes/v1/metrics');
+var profiles    = require('./routes/v1/profiles');
+var runtime     = require('./routes/v1/runtime');
+var statistics  = require('./routes/v1/statistics');
 
 /* resource manager routes */
 var configs = require('./routes/v1/configs');
@@ -50,6 +55,13 @@ app.use('/', routes);
 app.use('/v1/phantom_mf', routes);
 app.use('/v1/phantom_mf/workflows', workflows);
 app.use('/v1/phantom_mf/experiments', experiments);
+app.use('/v1/phantom_mf/devices',devices); /*2017*/
+app.use('/v1/phantom_mf/summary',summary); /*2017*/
+app.use('/v1/phantom_mf/deployment',deployment); /*2017*/
+app.use('/v1/phantom_mf/deploymentcomm',deploymentcomm); /*2017*/
+app.use('/v1/phantom_mf/deploymentcomp',deploymentcomp); /*2017*/
+
+
 app.use('/v1/phantom_mf/metrics', metrics);
 app.use('/v1/phantom_mf/profiles', profiles);
 app.use('/v1/phantom_mf/runtime', runtime);

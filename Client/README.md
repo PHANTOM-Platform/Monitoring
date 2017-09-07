@@ -33,24 +33,35 @@ This project requires the following dependencies to be installed:
 |------------------ |-------------------------------------------------  |---------  |
 | PAPI-C            | http://icl.cs.utk.edu/papi/                       | 5.4.0     |
 | CURL              | http://curl.haxx.se/download/                     | 7.37.0    |  
-| Apache APR        | https://apr.apache.org/                           | 1.5.1     |
-| Apache APR Utils  | https://apr.apache.org/                           | 1.5.3     |
-| Nvidia GDK        | https://developer.nvidia.com/gpu-deployment-kit/  | 352.55    |
-| bison             | http://ftp.gnu.org/gnu/bison/                     | 2.3       |
-| flex              | http://prdownloads.sourceforge.net/flex/          | 2.5.33    |
+| Apache APR        | https://apr.apache.org/                           | 1.6.2     |
+| Apache APR Utils  | https://apr.apache.org/                           | 1.6.0     |
+| Nvidia GDK        | https://developer.nvidia.com/gpu-deployment-kit/  |           |
+|   for 64 bits system|                                                   | 352.55    |
+|   for 32 bits system|                                                   | 340.29    |
+| bison             | http://ftp.gnu.org/gnu/bison/                     | 3.0.2       |
+| flex              | http://prdownloads.sourceforge.net/flex/          | 2.6.0     |
 | sensors           | https://fossies.org/linux/misc/                   | 3.4.0     |
 | m4                | https://ftp.gnu.org/gnu/m4                        | 1.4.17    |
 | libiio            | https://github.com/analogdevicesinc/libiio.git    | 1.0       |
 | hwloc             | https://www.open-mpi.org/software/hwloc/v1.11/downloads/      | 1.11.2        |
 | EXCESS queue      | https://github.com/excess-project/data-structures-library.git | release/0.1.0 |
 
+Notice: The version of the packages are the same for 32 and 64 bits systems, except for the version of Nvidia GDK.
+
+
 To ease the process of setting up a development environment, we provide a basic script that downloads all dependencies, installs them locally in the project directory, and then performs some clean-up operations. Thus, compiling the monitoring client can be performed in a sandbox without affecting your current operating system.
 
-Executing the following script
+Executing the next script if your device has a 32 bits Operating System:
 ```bash
-./setup.sh
+./setup-client-32.sh
 ```
-results in a new directory named `bin`, which holds the required dependencies for compiling the project.
+
+OR Executing the next script if your device has a 64 bits Operating System:
+```bash
+./setup-client-64.sh
+```
+
+results (in any of these cases) in a new directory named `bin`, which holds the required dependencies for compiling the project.
 
 
 ## Installation

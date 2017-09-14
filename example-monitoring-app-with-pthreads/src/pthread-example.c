@@ -70,9 +70,10 @@ int main(int argc, char* argv[]) {
 	//pthread_exit(NULL);	
 	/************************ MONITORING END **********************************************/
 	stop_monitoring();
+	int pid=0;
 	for(i=0;i<2;i++)
-		prepare_user_metrics( (char*)currentid, DataPath, all_thread_reports[i] );
-	monitoring_send( server,  appid,  execfile,  regplatformid,  DataPath); 
+		prepare_user_metrics( (char*)currentid, DataPath, &pid, all_thread_reports[i] );
+	monitoring_send( server, appid, execfile, regplatformid); 
 
 for (i=0;i<2;i++){
 printf(" execution label of the workflow: \"%s\"\n", currentid);

@@ -13,7 +13,7 @@ long long unsigned int mycurrenttime (void) ;
 
 long long int start_monitoring(char *server, char *regplatformid);
 
-void prepare_user_metrics(  char *currentid, char *DataPath, struct Thread_report single_thread_report );
+void prepare_user_metrics(  char *currentid, char *DataPath, int *pid, struct Thread_report single_thread_report );
 
 void stop_monitoring();
  

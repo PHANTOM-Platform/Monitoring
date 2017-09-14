@@ -41,17 +41,18 @@ static int api_prepare_loc(char *Data_path){
 	struct stat st = { 0 };
 	if (stat(Data_path, &st) == -1)
 	mkdir(Data_path, 0700);
+printf("\n\npid is %i\n\n",pid);
 	return pid;
 }
 
-int mf_user_metric_loc(char *user_metrics,  char  *DataPath ){
-	int pid=0;
+int mf_user_metric_loc(char *user_metrics, char *DataPath, int *pid ){
 	if(DataPath[0] == '\0') {
-		pid = api_prepare_loc(DataPath);
+		*pid = api_prepare_loc(DataPath);
 	} 
 	/*create and open the file*/
 	char FileName[256] = {'\0'};
-	sprintf(FileName, "%s/%s", DataPath, "user_defined");
+	sprintf(FileName, "%s/%i/%s", DataPath, *pid, "user_defined");
+printf(" filename is %s\n",FileName);
 	FILE *fp = fopen(FileName, "a"); //append data to the end of the file
 	if (fp == NULL) {
 		printf("ERROR: Could not create file: %s\n", FileName);
@@ -66,7 +67,7 @@ int mf_user_metric_loc(char *user_metrics,  char  *DataPath ){
 	fprintf(fp, "%s\n",user_metrics);
 	/*close the file*/
 	fclose(fp);
-	return pid;
+	return *pid;
 }
 
 //returns the current time in us
@@ -100,11 +101,10 @@ long long int start_monitoring(char *server, char *regplatformid){
 }
  
 
-void prepare_user_metrics( char *currentid, char *DataPath, struct Thread_report single_thread_report ){ 
+void prepare_user_metrics( char *currentid, char *DataPath, int *pid, struct Thread_report single_thread_report ){ 
 	long long int total_execution_time = single_thread_report.end_time - single_thread_report.start_time;
 printf(" Start time %llu\n", single_thread_report.start_time);
 printf(" End time %llu\n", single_thread_report.end_time);
-
 	printf(" TOTAL EXECUTION TIME of thread %s :%9Lu s ", single_thread_report.taskid, (total_execution_time)/1000000000LL);
 	long long unsigned int temp_time = (total_execution_time)%1000000000LL;
 	printf(" +  %3Lu ms ", temp_time/1000000);
@@ -132,7 +132,8 @@ printf(" End time %llu\n", single_thread_report.end_time);
 		comp_start, single_thread_report.start_time, 	 // start time of the component
 		comp_end, single_thread_report.end_time);         // end time of the component
 
-	mf_user_metric_loc(user_metrics,  DataPath );
+	mf_user_metric_loc(user_metrics,  DataPath, pid );
+printf("end of mf_usermetric loc\n");fflush(stdout);
 ///* MONITORING I'd like to store here the total nr. of completed loops --> nrLoops */
 //	int nrLoops=5;
 //	sprintf(metric_value, "%d", nrLoops);
@@ -145,9 +146,10 @@ void stop_monitoring(){
 	mf_end();
 }
  
-void monitoring_send(char *server, char *appid, char *execfile, char *regplatformid, char *DataPath){
+void monitoring_send(char *server, char *appid, char *execfile, char *regplatformid){
 	/* MONITORING SEND */
-	//char *experiment_id = 
-		mf_send(server, appid, execfile, regplatformid);
+	char *experiment_id = mf_send(server, appid, execfile, regplatformid);
+	if(experiment_id!=NULL) free(experiment_id);//dinamically allocated by mf_send
 	//printf("\n> component's experiment_id is %s\n", experiment_id);
 }
+

@@ -1,10 +1,10 @@
 
 struct Thread_report {
-   char  taskid[50];
-   long long int start_time;
-   long long int end_time;
-   unsigned int number_of_blocks;
-   int n_ships_found; 
+	char  taskid[50];
+	long long int start_time;
+	long long int end_time;
+	unsigned int number_of_blocks;
+	int n_ships_found; 
 };
  
 //returns the current time in us

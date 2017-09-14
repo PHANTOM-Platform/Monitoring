@@ -43,6 +43,27 @@ static int api_prepare(char *Data_path);
 static void *MonitorStart(void *arg);
 int get_config_parameters(char *server, char *platform_id);
 
+int mf_user_metric_with_timestamp(char *user_defined_time_stamp, char *metric_name, char *value)
+{
+	if(DataPath[0] == '\0') {
+		pid = api_prepare(DataPath);
+	}
+	/*create and open the file*/
+	char FileName[256] = {'\0'};
+	sprintf(FileName, "%s/%s", DataPath, "user_defined");
+	FILE *fp = fopen(FileName, "a"); //append data to the end of the file
+	if (fp == NULL) {
+		printf("ERROR: Could not create file: %s\n", FileName);
+		return 0;
+	}
+
+    fprintf(fp, "\"local_timestamp\":\"%s\", \"%s\":%s\n", user_defined_time_stamp, metric_name, value);
+	/*close the file*/
+	fclose(fp);
+	return 1;
+}
+
+
 int mf_user_metric(char *metric_name, char *value)
 {
 	if(DataPath[0] == '\0') {
@@ -130,13 +151,13 @@ char *mf_send(char *server, char *application_id, char *component_id, char *plat
 	/* create an experiment with regards of given application_id, component_id and so on */
 	char *msg = calloc(256, sizeof(char));
 	char *URL = calloc(256, sizeof(char));
-	char *experiment_id = calloc(64, sizeof(char));
-	
+	char *experiment_id ; //= calloc(64, sizeof(char));
+        *experiment_id='\0'; // We wish the pointer null, if we put in the previous line will be reserved a string with a cero value inside !!	
 	sprintf(msg, "{\"application\":\"%s\", \"task\": \"%s\", \"host\": \"%s\"}",
 		application_id, component_id, platform_id);
 	sprintf(URL, "%s/v1/phantom_mf/experiments/%s", server, application_id);
 
-	create_new_experiment(URL, msg, experiment_id);
+	new_create_new_experiment(URL, msg, experiment_id);
 	if(experiment_id[0] == '\0') {
 		printf("ERROR: Cannot create new experiment for application %s\n", application_id);
 		return NULL;
@@ -253,11 +274,11 @@ static void *MonitorStart(void *arg) {
 int get_config_parameters(char *server, char *platform_id)
 {
 	/* send the query and retrieve the response string */
-	char *URL = calloc(256, sizeof(char));
-	char *response_str = calloc(256, sizeof(char));
-
+	char *URL =calloc(1024, sizeof(char));
+	char *response_str ;// calloc(1024, sizeof(char));
+	*response_str = '\0'; // We wish the pointer null, if we put in the previous line will be reserved a string with a cero value inside !!
 	sprintf(URL, "%s/v1/phantom_rm/configs/%s", server, platform_id);
-	if(query_json(URL, response_str) <= 0) {
+	if(new_query_json(URL, response_str) <= 0) {
 		printf("ERROR: query with %s failed.\n", URL);
 		return 0;
 	}

@@ -1,0 +1,8 @@
+Notice that I updated the mf_api.c and publisher.c.
+
+Then update your monitoring version source code if you still not did it.
+
+Best regards
+
+Jose Miguel Montañana
+hpcjmont@hlrs.de

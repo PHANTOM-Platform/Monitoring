@@ -17,6 +17,8 @@
 #ifndef PUBLISHER_H_
 #define PUBLISHER_H_
 
+int new_query_json(char *URL, char **response);
+
 int query_json(char *URL, char *response);
 
 /**
@@ -27,6 +29,8 @@ int query_json(char *URL, char *response);
 int publish_json(char *URL, char *message);
 
 int publish_file(char *URL, char *static_string, char *filename);
+
+int new_create_new_experiment(char *URL, char *message, char *experiment_id);
 
 int create_new_experiment(char *URL, char *message, char *experiment_id);
 #endif

@@ -15,6 +15,7 @@
 #
 
 #Note: the instalation process will require to use more than 800MB of harddisk space. The required space after the instalation is about 200MB.
+#Note: the instalation needs to be done in a linux system because some libs need to create symbolic links (avoid FAT and NTFS filesystems).
 # ============================================================================ #
 # DEFAULT PATHS                                                                #
 # ============================================================================ #
@@ -77,7 +78,7 @@
 	cd ${PAPI}-${PAPI_VERSION}/src;
 	./configure --prefix=${INSTALL_PATH_PAPI} --with-components="rapl coretemp infiniband"
 	make
-	make install all
+	sudo make install all
 # ============================================================================ #
 # DOWNLOAD AND INSTALL CURL                                                    #
 # ============================================================================ #
@@ -234,7 +235,7 @@
 	mkdir -p ${INSTALL_PATH_LIBIIO};
 	cmake -DCMAKE_INSTALL_PREFIX=${INSTALL_PATH_LIBIIO} ./
 	make all
-	make install
+	sudo make install
 	find ./ -name "libiio.so*" -exec mv {} ${INSTALL_PATH_LIBIIO}/lib/ \;
 # ============================================================================ #
 # DOWNLOAD AND INSTALL EXCESS QUEUE LIBS                                                                                        #

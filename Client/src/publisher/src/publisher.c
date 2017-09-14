@@ -53,21 +53,26 @@ struct url_data {
 size_t write_data(void *ptr, size_t size, size_t nmemb, struct url_data *data) {
     size_t index = data->size;
     size_t n = (size * nmemb);
-    char* tmp;
     data->size += (size * nmemb);
 #ifdef DEBUG
     fprintf(stderr, "data at %p size=%ld nmemb=%ld\n", ptr, size, nmemb);
 #endif
-    tmp = realloc(data->data, data->size + 1); /* +1 for '\0' */
-    if(tmp) {
-        data->data = tmp;
-    } else {
-        if(data->data) {
-            free(data->data);
-        }
-        fprintf(stderr, "Failed to allocate memory.\n");
+
+   char *temp_str;
+   /* Initial memory allocation */
+   temp_str = (char *) malloc(data->size + 1);
+   if(temp_str==NULL) {
+	fprintf(stderr, "Failed to allocate memory.\n");
         return 0;
-    }
+   }
+   int i=0; 
+   while((data->data[i]!='\0') &&(i < index)) {
+	temp_str[i]=data->data[i]; 	
+	i++;
+   }
+   temp_str[i]='\0';
+   if(data->data!=NULL)  free(data->data);
+   data->data=temp_str;
     memcpy((data->data + index), ptr, n);
     data->data[data->size] = '\0';
     return size * nmemb;
@@ -109,11 +114,11 @@ int new_query_json(char *URL, char **response_str)
     }
 
     curl_easy_cleanup(curl);
-
         if( data.data[0]=='\0') {
                 printf("ERROR!! : query with %s failed.\n", URL);
                 return FAILED;
         }
+
     *response_str=data.data;
     if(*response_str == NULL) {
         return FAILED;
@@ -254,18 +259,17 @@ int publish_file(char *URL, char *static_string, char *filename)
     }
     /* clean the curl handle */
     curl_easy_cleanup(curl);
+    if(message!=NULL) free(message);
     return SUCCESS;
 }
-
 
 
 
 /* create new experiment for specific application
    read back the generated experiment_id, after send the msg
    return 1 on success; otherwise return 0 */   
-int new_create_new_experiment(char *URL, char *message, char *experiment_id)
+int new_create_new_experiment(char *URL, char *message, char **experiment_id)
 {
-
     struct url_data data;
     data.size = 0;
     data.data = malloc(4096); /* reasonable size initial buffer */
@@ -274,8 +278,6 @@ int new_create_new_experiment(char *URL, char *message, char *experiment_id)
         return FAILED;
     }
     data.data[0] = '\0';
-    experiment_id[0]='\0';
-
 
     if (!check_URL(URL) || !check_message(message)) {
         return FAILED;

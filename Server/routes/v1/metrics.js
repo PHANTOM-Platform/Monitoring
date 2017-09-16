@@ -86,16 +86,20 @@ router.get('/:workflowID/:taskID/:experimentID', function(req, res, next) {
 
           /* filter keys like local_timestamp, server_timestamp, host, task, and type */
           keys.forEach(function (key) {
-              items = results[key]._source;
-              delete items.local_timestamp;
-              delete items.server_timestamp;
-              delete items.host;
-              delete items.task;
-              delete items.TaskID;
-              delete items.type;
-              for (var item in items) {
+		items = results[key]._source;
+		delete items.local_timestamp;
+		delete items.server_timestamp;
+		delete items.host;
+		delete items.task;
+		delete items.TaskID;
+		delete items.type;
+		delete items.component_name;
+		delete items.component_start;
+		delete items.component_end;
+		delete items.component_duration;
+              	for (var item in items) {
                   metrics[item] = item;
-              }
+              	}
           });
       }
 

@@ -33,8 +33,8 @@ This project requires the following dependencies to be installed:
 |------------------ |-------------------------------------------------  |---------  |
 | PAPI-C            | http://icl.cs.utk.edu/papi/                       | 5.4.0     |
 | CURL              | http://curl.haxx.se/download/                     | 7.37.0    |  
-| Apache APR        | https://apr.apache.org/                           | 1.6.2     |
-| Apache APR Utils  | https://apr.apache.org/                           | 1.6.0     |
+| Apache APR        | https://apr.apache.org/                           | 1.6.3     |
+| Apache APR Utils  | https://apr.apache.org/                           | 1.6.1     |
 | Nvidia GDK        | https://developer.nvidia.com/gpu-deployment-kit/  |           |
 |   for 64 bits system|                                                   | 352.55    |
 |   for 32 bits system|                                                   | 340.29    |

@@ -41,9 +41,9 @@
 	CURL="curl";
 	CURL_VERSION="7.37.0";
 	APR="apr";
-	APR_VERSION="1.6.2";  #before was 1.5.2
+	APR_VERSION="1.6.3";  #before was 1.5.2
 	APR_UTIL="apr-util";
-	APR_UTIL_VERSION="1.6.0";  #before was 1.5.4
+	APR_UTIL_VERSION="1.6.1";  #before was 1.5.4
 	EXCESS_QUEUE_VERSION=release/0.1.0;
 #Notice: to reduce expose to IPv6 connectivity issues, we force all wget commands to connect via IPv4 only, with the pareameter -4  or --inet4-only
 # ============================================================================ #
@@ -236,7 +236,7 @@
 	cmake -DCMAKE_INSTALL_PREFIX=${INSTALL_PATH_LIBIIO} ./
 	make all
 	sudo make install
-	find ./ -name "libiio.so*" -exec mv {} ${INSTALL_PATH_LIBIIO}/lib/ \;
+	find ./ -name "libiio.so*" -exec sudo mv {} ${INSTALL_PATH_LIBIIO}/lib/ \;
 # ============================================================================ #
 # DOWNLOAD AND INSTALL EXCESS QUEUE LIBS                                                                                        #
 # https://github.com/excess-project/data-structures-library.git
@@ -255,7 +255,7 @@
 # ============================================================================ #
 	cd $ROOT
 	# Consider to keep the files in case you need to reinstall without internet access.
-	#if [ "1" == "0" ]; then 
+	if [ "1" == "0" ]; then 
 		rm -rf *.tar.gz *.tgz ;
 		rm -rf nvidia_gdk_download ;
 		rm -rf ${NVIDIA_GDK} ;
@@ -271,6 +271,7 @@
 	rm -rf flex-2.6.0 ;
 	rm -rf lm_sensors-3.4.0 ;
 	rm -rf libiio ;
+fi;
 # ============================================================================ #
 # DONE
 # ============================================================================ #

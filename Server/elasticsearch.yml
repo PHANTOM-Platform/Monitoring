@@ -94,3 +94,23 @@ http.port: 9400
 # Require explicit names when deleting indices:
 #
 # action.destructive_requires_name: true
+
+
+
+# ------------------------------- Script support ----------------------------
+script.engine.groovy.inline.search: on
+script.inline: true
+script.search: true
+script.update: true
+script.engine.groovy.inline.aggs: on
+script.engine.groovy.inline.update: on
+script.painless.regex.enabled: true
+# ----------------------------- WebScokets support --------------------------
+access-control-allow-origin: "*"
+http.cors.enabled: true
+http.cors.allow-origin: "*" 
+#http.cors.allow-headers: "X-Requested-With, Content-Type, Content-Length, X-User"
+#For the websockets 
+changes.port: 9800
+#ATTENTION: The websockets plugin needs be added security permissions, please look at set-websockets.sh
+

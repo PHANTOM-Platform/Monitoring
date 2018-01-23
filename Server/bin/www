@@ -4,7 +4,7 @@
  * Module dependencies.
  */
 
-var app = require('../app_without_repository');
+var app = require('../app');
 var debug = require('debug')('phantom:server');
 var http = require('http');
 

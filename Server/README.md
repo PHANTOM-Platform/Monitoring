@@ -21,32 +21,14 @@ This project requires the following dependencies to be installed:
 
 | Component         | Homepage                                           | Version   |
 |------------------ |--------------------------------------------------  |---------  |
-| Elasticsearch     | https://www.elastic.co/products/elasticsearch      | >= 1.4.4  |
-| Node.js           | https://apr.apache.org/                            | >= 0.9    |
-| npm               | https://www.npmjs.com/                             | => 1.3.6  |
+| Elasticsearch     | https://www.elastic.co/products/elasticsearch      | = 2.4.0  |
+| Node.js           | https://apr.apache.org/                            | >= 4.5    |
+| npm               | https://www.npmjs.com/                             | >= 1.3.6  |
 
 
 #### Installation of Elasticsearch
 Please execute the following commands to install version 2.4.0 of `Elasticsearch`. Alternatively, you can use your operating system's software installer to install a current version of `Elasticsearch`.
 
-```bash
-cd /tmp
-wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-2.4.0.tar.gz
-tar -xf elasticsearch-2.4.0.tar.gz
-sudo mv elasticsearch-2.4.0 /usr/local/elasticsearch
-```
-
-Start `Elasticsearch` on port 9400 (default port is 9200, which can be changed in the file elasticsearch.yml) with root permissions.
-
-
-#### Installation of Node.js
-Please install a current version of Node.js (>= 0.9) as follows:
-
-```bash
-wget http://nodejs.org/dist/v0.12.0/node-v0.12.0-linux-x64.tar.gz
-tar -xf node-v0.12.0-linux-x64.tar.gz
-sudo mv node-v0.12.0-linux-x64 /usr/local/nodejs
-```
 
 
 #### Installation of npm
@@ -56,20 +38,26 @@ When using Ubuntu, for example, please install npm as follows:
 sudo apt-get install npm
 ```
 
-Again, please feel free to use your operating system's software installer, instead.
+Alternativelly, you can install it using your operating system's software installer.
 
 
-## Installation
-This section assumes that you've successfully installed all required dependencies as described in the previous paragraphs. When being in the project's directory, execute the following command:
+## Installation of other components
+This section assumes that you've successfully installed all required dependencies as described in the previous paragraphs.  
+ 
 
+To ease the installation and preparation process, there is one shell script provided, which downloads and installs all the dependencies and packages. Installs Elastic-Search 2.4.0 and Nodejs 9.4.0. Please try the following command depending on your Operating System be 32 or 64 bits:
 ```bash
-npm install
+./setup-server-32.sh
 ```
 
-To ease the installation and preparation process, there is one shell script provided, which downloads and installs all the dependencies and packages. Please try the following command instead of all the commands before:
+or
+
 ```bash
-./setup.sh
+./setup-server-64.sh
 ```
+
+This setup provides the configuration to the elastic-search by placing in the appropiate folder the file elasticsearch.yml (from this repository). That configuration file makes that `Elasticsearch` uses the port 9400 instead of the default port 9200.
+
 
 
 ## Start/Stop the server
@@ -166,10 +154,10 @@ Please [create](https://github.com/hpcfapix/phantom_monitoring_server/issues) an
 | Date        | Version | Comment          |
 | ----------- | ------- | ---------------- |
 | 2017-03-28  | 1.0     | First prototype  |
-
+| 2018-01-23  | 1.01    | Current version  |
 
 ## License
-Copyright (C) 2014-2017 University of Stuttgart
+Copyright (C) 2014-2018 University of Stuttgart
 
 [Apache License v2](LICENSE).
 

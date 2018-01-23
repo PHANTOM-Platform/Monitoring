@@ -142,8 +142,8 @@ Please [create](https://github.com/excess-project/monitoring-agent/website/issue
 
 | Date        | Version | Comment          |
 | ----------- | ------- | ---------------- |
-| 2017-04-04  | 1.0     | First prototype  |
-
+| 04-04-2017  | 1.0     | First prototype  |
+| 23-01-2018  | 1.01     | Current version  |
 
 ## License
 Copyright (C) 2014,2015 University of Stuttgart

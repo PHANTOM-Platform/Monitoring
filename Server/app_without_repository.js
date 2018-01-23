@@ -33,7 +33,7 @@ var app = express();
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 app.set('elastic', elastic);
-app.set('version', '02.02.17');
+app.set('version', '23.01.18');
 var port = '3033',
   hostname = os.hostname();
 // redirect backend hostname to front-end

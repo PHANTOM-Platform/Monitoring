@@ -156,7 +156,7 @@
 #
 	cd $ROOT;
 	if [ ! -f m4-1.4.17.tar.gz ]; then
-		wget -4 https://ftp.gnu.org/gnu/m4/m4-1.4.17.tar.gz;
+		wget --no-check-certificate -4 https://ftp.gnu.org/gnu/m4/m4-1.4.17.tar.gz;
 	fi;
 	if [ ! -f m4-1.4.17.tar.gz]; then
 		echo "[ERROR] File not found: " m4-1.4.17.tar.gz;

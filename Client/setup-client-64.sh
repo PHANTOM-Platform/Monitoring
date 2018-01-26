@@ -173,7 +173,7 @@
 # ============================================================================ #
 	cd $ROOT
 	if [ ! -f bison-3.0.2.tar.gz ]; then
-		wget -4 http://ftp.gnu.org/gnu/bison/bison-3.0.2.tar.gz;
+		wget --no-check-certificate  -4 http://ftp.gnu.org/gnu/bison/bison-3.0.2.tar.gz;
 	fi;
 	if [ ! -f bison-3.0.2.tar.gz ]; then
 		echo "[ERROR] File not found: " bison-3.0.2.tar.gz;

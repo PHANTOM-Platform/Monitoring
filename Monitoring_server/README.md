@@ -69,8 +69,7 @@ This setup provides the configuration to the elastic-search by placing in the ap
 The following shell script adds the Websockets plugin to the ElasticSearch 2.4.0. installed with the previous scripts:
 
 ```bash
-bash 
-setup-websockets.sh
+bash setup-websockets.sh
 ```
 
 ## Start/Stop the server

@@ -42,12 +42,12 @@ mkdir ${DIST_DIR}
 # > git
 # > wget
 #
-echo "Checking for required software:"
+echo "Checking for required software:";
 echo "> git"
 command -v git >/dev/null 2>&1 || { echo " git  : Not installed. Aborting." >&2; exit 1; }
 echo "> wget"
 command -v wget >/dev/null 2>&1 || { echo " wget  : Not installed. Aborting." >&2; exit 1; }
-echo "Done."
+echo "Done.";
 echo
 
 #
@@ -55,35 +55,31 @@ echo
 # > elasticsearch
 # > node.js and npm
 #
-echo "Installing external dependencies:"
-echo "> elasticsearch"
+echo "Installing external dependencies:";
+echo "> elasticsearch";
 cd ${TMP_DIR}
-if [ ! -f "${ELASTICSEARCH}.tar.gz" ]
-then
+if [ ! -f "${ELASTICSEARCH}.tar.gz" ] ; then
     wget https://download.elasticsearch.org/elasticsearch/elasticsearch/${ELASTICSEARCH}.tar.gz
-fi
-if [ ! -d "${DIST_DIR}/${ELASTICSEARCH}" ]
-then
+fi;
+if [ ! -d "${DIST_DIR}/${ELASTICSEARCH}" ] ; then
     tar -xf ${ELASTICSEARCH}.tar.gz
     mv ${ELASTICSEARCH} ${DIST_DIR}/elasticsearch
-fi
+fi;
 
 echo "> node.js"
 cd ${TMP_DIR}
-if [ ! -f "${NODE_JS}.tar.gz" ]
-then
+if [ ! -f "${NODE_JS}.tar.gz" ] ; then
     wget https://nodejs.org/dist/v${NODE_JS_VERSION}/${NODE_JS}.tar.gz
-fi
+fi;
 
-if [ ! -d "${DIST_DIR}/${NODE_JS}" ]
-then
+if [ ! -d "${DIST_DIR}/${NODE_JS}" ] ; then
     tar -xf ${NODE_JS}.tar.gz
     mv ${NODE_JS} ${DIST_DIR}/nodejs
-fi
+fi;
 
 rm -rf ${TMP_DIR}
 
-sleep 10
+sync
 #
 # INSTALL NODE AND NPM and setup the environment
 #
@@ -98,5 +94,5 @@ command -v ${NPM_BIN} >/dev/null 2>&1 || { echo " npm  : Not installed. Aborting
 
 ${NPM_BIN} install
 
-echo "Done."
+echo "Done.";
 echo

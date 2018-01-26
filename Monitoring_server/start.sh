@@ -75,7 +75,7 @@ command -v ${NODE_BIN} >/dev/null 2>&1 || { echo " node  : Not installed. Aborti
 command -v ${NPM_BIN} >/dev/null 2>&1 || { echo " npm  : Not installed. Aborting.\n" >&2; exit 1; }
 
 ${NPM_BIN} install
-nohup ./bin/www >/dev/null 2>&1 &
+nohup nodejs ./bin/www >/dev/null 2>&1 &
 echo $! > ${TMP_DIR}/node.pid
 echo "Done. Server is listening on port ${nodejs_port}.";
 echo

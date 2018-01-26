@@ -58,32 +58,28 @@ echo
 echo "Installing external dependencies:"
 echo "> elasticsearch"
 cd ${TMP_DIR}
-if [ ! -f "${ELASTICSEARCH}.tar.gz" ]
-then
+if [ ! -f "${ELASTICSEARCH}.tar.gz" ] ; then
     wget https://download.elasticsearch.org/elasticsearch/elasticsearch/${ELASTICSEARCH}.tar.gz
 fi
-if [ ! -d "${DIST_DIR}/${ELASTICSEARCH}" ]
-then
+if [ ! -d "${DIST_DIR}/${ELASTICSEARCH}" ] ; then
     tar -xf ${ELASTICSEARCH}.tar.gz
     mv ${ELASTICSEARCH} ${DIST_DIR}/elasticsearch
 fi
 
 echo "> node.js"
 cd ${TMP_DIR}
-if [ ! -f "${NODE_JS}.tar.gz" ]
-then
+if [ ! -f "${NODE_JS}.tar.gz" ] ; then
     wget https://nodejs.org/dist/v${NODE_JS_VERSION}/${NODE_JS}.tar.gz
 fi
 
-if [ ! -d "${DIST_DIR}/${NODE_JS}" ]
-then
+if [ ! -d "${DIST_DIR}/${NODE_JS}" ] ; then
     tar -xf ${NODE_JS}.tar.gz
     mv ${NODE_JS} ${DIST_DIR}/nodejs
 fi
 
 rm -rf ${TMP_DIR}
 
-sleep 10
+sync
 #
 # INSTALL NODE AND NPM and setup the environment
 #

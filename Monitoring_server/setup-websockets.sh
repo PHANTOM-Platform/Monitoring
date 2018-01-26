@@ -26,7 +26,8 @@ read -p "Press enter to continue"
 echo -e "\n";
 
 if [ -d Monitoring-master ]; then cd Monitoring-master; fi; 
-if [ -d Server ]; then cd Server; fi; 
+if [ -d Monitoring_server ]; then cd Monitoring_server; fi; 
+bash ./stop.sh ; # stopping the elasticsearch
 cd dist
 cd elasticsearch
 cd bin

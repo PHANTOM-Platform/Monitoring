@@ -169,6 +169,13 @@ Please [create](https://github.com/hpcfapix/phantom_monitoring_server/issues) an
 
 
 ## Main Contributors
+
+**Montanana, Jose Miguel, HLRS**
++ [github/hpcfapix](https://github.com/jmmontanana)
+
+**Cheptsov, Alexey, HLRS**
++ [github/hpcfapix](https://github.com/alexey-cheptsov)
+
 **Fangli Pi, HLRS**
 + [github/hpcfapix](https://github.com/hpcfapix)
 

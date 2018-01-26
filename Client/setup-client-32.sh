@@ -1,5 +1,5 @@
 #!/bin/bash
-#  Copyright (C) 2015, 2016 University of Stuttgart
+#  Copyright (C) 2015, 2018 University of Stuttgart
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -189,7 +189,7 @@
 # ============================================================================ #
 	cd $ROOT;
 	if [ ! -f flex-2.6.0.tar.gz ]; then
-		wget -4 http://prdownloads.sourceforge.net/flex/flex-2.6.0.tar.gz
+		wget --no-check-certificate -4 http://prdownloads.sourceforge.net/flex/flex-2.6.0.tar.gz
 	fi;
 	if [ ! -f flex-2.6.0.tar.gz ]; then
 		echo "[ERROR] File not found: " flex-2.6.0.tar.gz;
@@ -208,7 +208,7 @@
 # ============================================================================ #
 	cd $ROOT;
 	if [ ! -f lm_sensors-3.4.0.tar.gz ]; then
-		wget -4 https://fossies.org/linux/misc/lm_sensors-3.4.0.tar.gz
+		wget --no-check-certificate -4 https://fossies.org/linux/misc/lm_sensors-3.4.0.tar.gz
 	fi;
 	if [ ! -f lm_sensors-3.4.0.tar.gz ]; then
 		echo "[ERROR] File not found: " lm_sensors-3.4.0.tar.gz;

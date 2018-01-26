@@ -13,6 +13,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
+# This script was tested on a Raspeberri-Pi3 running Raspbian 4.9.28
 
 #
 # GLOBAL VARIABLES
@@ -52,20 +53,27 @@ echo
 
 #
 # DOWNLOADING AND INSTALLING EXTERNAL DEPENDENCIES
-# > elasticsearch
-# > node.js and npm
-#
+###################### Elastic Search ######################
 echo "Installing external dependencies:";
 echo "> elasticsearch";
 cd ${TMP_DIR}
-if [ ! -f "${ELASTICSEARCH}.tar.gz" ] ; then
-    wget https://download.elasticsearch.org/elasticsearch/elasticsearch/${ELASTICSEARCH}.tar.gz
+if [ ! -f "${ELASTICSEARCH}.deb" ]; then
+    wget https://download.elasticsearch.org/elasticsearch/release/org/elasticsearch/distribution/deb/elasticsearch/${ELASTICSEARCH_VERSION}/${ELASTICSEARCH}.deb
 fi;
-if [ ! -d "${DIST_DIR}/${ELASTICSEARCH}" ] ; then
-    tar -xf ${ELASTICSEARCH}.tar.gz
-    mv ${ELASTICSEARCH} ${DIST_DIR}/elasticsearch
+sudo dpkg -i ${ELASTICSEARCH}.deb
+#we need to add writtting permissions, because it ES has to run as user, and need to create some folders on the first run 
+sudo chmod 777 /usr/share/elasticsearch
+
+mkdir ${DIST_DIR}/elasticsearch
+mkdir ${DIST_DIR}/elasticsearch/bin
+ln -s /usr/share/elasticsearch/bin/elasticsearch ${DIST_DIR}/elasticsearch/bin/elasticsearch
+
+if [ ! -e "${DIST_DIR}/elasticsearch/config" ] ; then
+    mkdir ${DIST_DIR}/elasticsearch/config
+    ln -s ${DIST_DIR}/dist/elasticsearch/config /usr/share/elasticsearch/config
 fi;
 
+##################### NODEjs and NPM ##############################
 echo "> node.js"
 cd ${TMP_DIR}
 if [ ! -f "${NODE_JS}.tar.gz" ] ; then

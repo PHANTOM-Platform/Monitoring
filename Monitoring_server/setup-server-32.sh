@@ -25,7 +25,7 @@ DIST_DIR=${BASE_DIR}/dist
 # SOFTWARE
 #
 ELASTICSEARCH_VERSION="2.4.0"
-#NO USE YET ELASTICSEARCH_VERSION="5.5.1" it need modify the code of the services
+#DON'T USE YET ELASTICSEARCH_VERSION="5.5.1" it needs that the code/syntax of the services be modified 
 ELASTICSEARCH="elasticsearch-${ELASTICSEARCH_VERSION}"
 NODE_JS_VERSION="9.4.0"
 NODE_JS="node-v${NODE_JS_VERSION}-linux-x86"

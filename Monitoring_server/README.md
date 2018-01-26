@@ -73,9 +73,11 @@ bash setup-websockets.sh
 ```
 
 ## Start/Stop the server
-Start a Elasticsearch database and then the monitoring web server by executing:
+Start a Elasticsearch database and then the monitoring web server by executing, it is important to not do as root:
+For security reasons, the services will not start if they are requested from root.
+
 ```bash
-./start.sh
+bash start.sh
 ```
 
 You can use the following commands to verify if the database and the server are running

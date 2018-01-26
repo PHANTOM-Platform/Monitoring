@@ -84,7 +84,7 @@
 # ============================================================================ #
 	cd $ROOT;
 	if [ ! -f ${CURL}-${CURL_VERSION}.tar.gz ]; then
-		wget -4 http://curl.haxx.se/download/${CURL}-${CURL_VERSION}.tar.gz;
+		wget --no-check-certificate -4 http://curl.haxx.se/download/${CURL}-${CURL_VERSION}.tar.gz;
 	fi;
 	if [ ! -f ${CURL}-${CURL_VERSION}.tar.gz ]; then
 		echo "[ERROR] File not found: " ${CURL}-${CURL_VERSION}.tar.gz;
@@ -101,7 +101,7 @@
 # ============================================================================ #
 	cd $ROOT;
 	if [ ! -f ${APR}-${APR_VERSION}.tar.gz ]; then
-		wget -4 http://www.eu.apache.org/dist/apr/${APR}-${APR_VERSION}.tar.gz;
+		wget --no-check-certificate -4 http://www.eu.apache.org/dist/apr/${APR}-${APR_VERSION}.tar.gz;
 	fi;
 	if [ ! -f ${APR}-${APR_VERSION}.tar.gz ]; then
 		echo "[ERROR] File not found: " ${APR}-${APR_VERSION}.tar.gz ;

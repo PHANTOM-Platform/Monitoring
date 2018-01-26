@@ -39,21 +39,22 @@ Alternativelly, you can install it using your operating system's software instal
 ## Installation of other components
 This section assumes that you've successfully installed all required dependencies as described in the previous paragraphs.  
 
-To ease the installation and preparation process, there is one shell script provided, which downloads and installs all the dependencies and packages. Installs Elastic-Search 2.4.0 and Nodejs 9.4.0. Please choose the appropiate shell scripts depending on your Operating System be intel-32 or inte-64 bits:
+To ease the installation and preparation process, there is one shell script provided, which downloads and installs all the dependencies and packages. Installs Elastic-Search 2.4.0 and Nodejs 9.4.0. Please choose the appropiate shell scripts depending on your Operating System :
 
 
+Shell script for Intel-x86 32bits (tested on Ubuntu):
 
 ```bash
 bash setup-server-x86-32.sh
 ```
 
-or
+or the Shell script for Intel-x86 64bits (tested on Ubuntu):
 
 ```bash
 bash setup-server-x86-64.sh
 ```
 
-or 
+or the Shell script for Armv7l 64bits (tested on Raspbian):
 
 ```bash
 bash setup-server-armv7-64.sh
@@ -63,6 +64,14 @@ bash setup-server-armv7-64.sh
 This setup provides the configuration to the elastic-search by placing in the appropiate folder the file elasticsearch.yml (from this repository). That configuration file makes that `Elasticsearch` uses the port 9400 instead of the default port 9200.
 
 
+#### Installation of websockets plugin
+
+The following shell script adds the Websockets plugin to the ElasticSearch 2.4.0. installed with the previous scripts:
+
+```bash
+bash 
+setup-websockets.sh
+```
 
 ## Start/Stop the server
 Start a Elasticsearch database and then the monitoring web server by executing:
@@ -72,12 +81,22 @@ Start a Elasticsearch database and then the monitoring web server by executing:
 
 You can use the following commands to verify if the database and the server are running
 
+Test of the Elastic Search running service:
+
 ```bash
 curl localhost:9400
-curl localhost:3033
 ```
 
-After tthe usage, the server can be stopped by:
+
+Test of the Nodejs Front-end running service:
+
+```bash
+curl localhost:9400
+```
+
+
+
+After the usage, the server can be stopped by:
 ```bash
 ./stop.sh
 ```

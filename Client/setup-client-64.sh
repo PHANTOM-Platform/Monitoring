@@ -51,7 +51,7 @@
 # ============================================================================ #
 	cd $ROOT;
 	if [ ! -f hwloc-1.11.2.tar.gz ]; then
-		wget -4 https://www.open-mpi.org/software/hwloc/v1.11/downloads/hwloc-1.11.2.tar.gz;
+		wget --no-check-certificate -4 https://www.open-mpi.org/software/hwloc/v1.11/downloads/hwloc-1.11.2.tar.gz;
 	fi;
 	if [ ! -f hwloc-1.11.2.tar.gz ]; then
 		echo "[ERROR] File not found: " hwloc-1.11.2.tar.gz;

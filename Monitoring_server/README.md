@@ -25,6 +25,7 @@ This project requires the following dependencies to be installed:
 | Node.js           | https://apr.apache.org/                            | >= 4.5    |
 | npm               | https://www.npmjs.com/                             | >= 1.3.6  |
 
+We use the version 2.4.0 of ElasticSearch instead of the last one 2.4.6, because the last version still not supports WebSockets.
 
 #### Installation of npm
 When using Ubuntu, for example, please install npm as follows:

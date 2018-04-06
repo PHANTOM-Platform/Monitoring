@@ -24,7 +24,7 @@ DIST_DIR=${BASE_DIR}/dist
 #
 # SOFTWARE
 #
-ELASTICSEARCH_VERSION="2.4.0"
+ELASTICSEARCH_VERSION="2.4.0"; #we NEED the version 2.4.0 instead of the last 2.4.6 because we want to use WebSockets;
 #DON'T USE YET ELASTICSEARCH_VERSION="5.5.1" it needs that the code/syntax of the services be modified
 ELASTICSEARCH="elasticsearch-${ELASTICSEARCH_VERSION}"
 NODE_JS_VERSION="9.4.0"

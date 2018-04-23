@@ -68,9 +68,6 @@
 	if [ ! -e node_modules ]; then
 		ln -s ~/phantom_servers/node_modules node_modules;
 	fi;
-
-	${NPM_BIN} install;
 	nohup nodejs ./bin/www >/dev/null 2>&1 &
 	echo $! > ${TMP_DIR}/monitoring.pid;
 	echo -e "Done. Server is listening on port ${nodejs_port}.\n";
-

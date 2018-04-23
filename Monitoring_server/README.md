@@ -39,7 +39,7 @@ Alternativelly, you can install it using your operating system's software instal
 ## Installation of other components
 This section assumes that you've successfully installed all required dependencies as described in the previous paragraphs.  
 
-To ease the installation and preparation process, there is one shell script provided, which downloads and installs all the dependencies and packages. Installs Elastic-Search 2.4.0 and Nodejs 9.4.0. Please choose the appropiate shell scripts depending on your Operating System :
+To ease the installation and preparation process, there is one shell script provided, which downloads and installs all the dependencies and packages. Installs Elastic-Search 2.4.6 and Nodejs 9.4.0. Please choose the appropiate shell scripts depending on your Operating System :
 
 
 Shell script for Intel-x86 32bits (tested on Ubuntu):

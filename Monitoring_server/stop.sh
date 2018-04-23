@@ -1,5 +1,5 @@
 #!/bin/bash
-#  Copyright (C) 2016 University of Stuttgart
+#  Copyright (C) 2018 University of Stuttgart
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -12,43 +12,32 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-#
 
-#
 # GLOBAL VARIABLES
-#
-BASE_DIR=.
-TMP_DIR=${BASE_DIR}/tmp
-
-#
-# SETUP
-#
-cd ${TMP_DIR}
-
-#
+	SERVER_DIR=~/phantom_servers/;
+	BASE_DIR=`dirname $0`;
+	TMP_DIR=${SERVER_DIR}/tmp;
+	DIST_DIR=${SERVER_DIR}/dist; 
 # STOPPING SERVICES
-#
-echo "Stopping services ..."
-echo "> elasticsearch"
-if [ -f "elasticsearch.pid" ]
-then
-    PID=$(cat elasticsearch.pid)
-    kill ${PID}
-    rm -f elasticsearch.pid
-else
-    echo "Couldn't find PID associated with elasticsearch process."
-    echo "Please kill the service manually."
-fi
+	echo "Stopping services ...";
+	echo " > elasticsearch";
+	if [ -f "${TMP_DIR}/elasticsearch.pid" ]; then
+	    PID=$(cat ${TMP_DIR}/elasticsearch.pid) ;
+	    kill ${PID};
+	    rm -f ${TMP_DIR}/elasticsearch.pid;
+	else
+	    echo "Couldn't find PID associated with elasticsearch process.";
+	    echo "Please kill the service manually.";
+	fi;
 
-echo "> node"
-if [ -f "node.pid" ]
-then
-    PID=$(cat node.pid)
-    kill ${PID}
-    rm -f node.pid
-else
-    echo "Couldn't find PID associated with node process."
-    echo "Please kill the service manually."
-fi
-echo "Done."
-echo
+	echo " > node";
+	if [ -f "${TMP_DIR}/monitoring.pid" ]; 	then
+	    PID=$(cat ${TMP_DIR}/monitoring.pid);
+	    kill ${PID};
+	    rm -f ${TMP_DIR}/monitoring.pid;
+	else
+	    echo "Couldn't find PID associated with the monitoring node process.";
+	    echo "Please kill the service manually.";
+	fi;
+	echo -e "Done.\n";
+

@@ -65,6 +65,9 @@
 
 	command -v ${NODE_BIN} >/dev/null 2>&1 || { echo " node  : Not installed. Aborting.\n" >&2; exit 1; }
 	command -v ${NPM_BIN} >/dev/null 2>&1 || { echo " npm  : Not installed. Aborting.\n" >&2; exit 1; }
+	if [ ! -e node_modules ]; then
+		ln -s ~/phantom_servers/node_modules node_modules;
+	fi;
 
 	${NPM_BIN} install;
 	nohup nodejs ./bin/www >/dev/null 2>&1 &

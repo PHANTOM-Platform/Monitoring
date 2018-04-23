@@ -4,7 +4,7 @@
 
 
 ## Introduction
-The PHANTOM monitoring server is composed of two components: a web server and a data storage system. The web server provides various functionalities for data query and data analysis via RESTful APIs with documents in JSON format. The server's URL are "localhost:3033" by default.
+The PHANTOM monitoring server is composed of two components: a web server and a data storage system. The web server provides various functionalities for data query and data analysis via RESTful APIs with documents in JSON format. The server's URL are "http://localhost:3033" by default.
 
 
 ## Prerequisites

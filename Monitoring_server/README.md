@@ -21,11 +21,10 @@ This project requires the following dependencies to be installed:
 
 | Component         | Homepage                                           | Version   |
 |------------------ |--------------------------------------------------  |---------  |
-| Elasticsearch     | https://www.elastic.co/products/elasticsearch      | = 2.4.0  |
+| Elasticsearch     | https://www.elastic.co/products/elasticsearch      | = 2.4.6  |
 | Node.js           | https://apr.apache.org/                            | >= 4.5    |
 | npm               | https://www.npmjs.com/                             | >= 1.3.6  |
-
-We use the version 2.4.0 of ElasticSearch instead of the last one 2.4.6, because the last version still not supports WebSockets.
+ 
 
 #### Installation of npm
 When using Ubuntu, for example, please install npm as follows:
@@ -64,14 +63,7 @@ bash setup-server-armv7-64.sh
 
 This setup provides the configuration to the elastic-search by placing in the appropiate folder the file elasticsearch.yml (from this repository). That configuration file makes that `Elasticsearch` uses the port 9400 instead of the default port 9200.
 
-
-#### Installation of websockets plugin
-
-The following shell script adds the Websockets plugin to the ElasticSearch 2.4.0. installed with the previous scripts:
-
-```bash
-bash setup-websockets.sh
-```
+ 
 
 ## Start/Stop the server
 Start a Elasticsearch database and then the monitoring web server by executing, it is important to not do as root:

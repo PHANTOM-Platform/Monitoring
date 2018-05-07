@@ -15,7 +15,7 @@
 
 #GLOBAL VARIABLES
 	app=`basename $0`;
-	SERVER_DIR=~/phantom_servers/;
+	SERVER_DIR=~/phantom_servers;
 	BASE_DIR=`dirname $0`;
 	cd ${BASE_DIR};
 	BASE_DIR=`pwd`;
@@ -24,7 +24,7 @@
 	monitoring_port=3033;
 	cd server_code;
 # IF THE SERVER WAS RUNNING, WE STOP IT BEFORE START A NEW INSTANCE
-	bash ../stop-monitoring.sh 
+	bash stop-monitoring-server.sh 
 # CHECK INSTALLATION 
 	echo "Checking ... > elasticsearch";
 	ES_HOME=${DIST_DIR}/elasticsearch;

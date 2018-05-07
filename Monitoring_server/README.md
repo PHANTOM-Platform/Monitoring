@@ -70,7 +70,7 @@ Start a Elasticsearch database and then the monitoring web server by executing, 
 For security reasons, the services will not start if they are requested from root.
 
 ```bash
-bash start.sh
+bash start-monitoring-server.sh
 ```
 
 You can use the following commands to verify if the database and the server are running
@@ -92,7 +92,7 @@ curl localhost:9400
 
 After the usage, the server can be stopped by:
 ```bash
-./stop.sh
+bash stop-monitoring-server.sh
 ```
 
 

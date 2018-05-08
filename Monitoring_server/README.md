@@ -78,14 +78,14 @@ You can use the following commands to verify if the database and the server are 
 Test of the Elastic Search running service:
 
 ```bash
-curl localhost:9400
+curl http://localhost:9400
 ```
 
 
 Test of the Nodejs Front-end running service:
 
 ```bash
-curl localhost:9400
+curl http://localhost:3033
 ```
 
 

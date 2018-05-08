@@ -35,11 +35,12 @@ sudo apt-get install npm
 
 Alternativelly, you can install it using your operating system's software installer.
 
-
 ## Installation of other components
-This section assumes that you've successfully installed all required dependencies as described in the previous paragraphs.  
+This section assumes that you've successfully installed all required dependencies as described in the previous paragraphs.
 
-To ease the installation and preparation process, there is one shell script provided, which downloads and installs all the dependencies and packages. Installs Elastic-Search 2.4.6 and Nodejs 9.4.0. Please choose the appropiate shell scripts depending on your Operating System :
+#### 1.- To ease the installation and preparation process, there is one shell script provided, which downloads and installs all the dependencies and packages. 
+Installs Nodejs 9.4.0. and Elastic-Search 2.4.6 on the folder {your_local_home_folder}/phantom_server.
+Please choose the appropriate shell scripts depending on your Operating System:
 
 
 Shell script for Intel-x86 32bits (tested on Ubuntu):
@@ -60,10 +61,22 @@ or the Shell script for Armv7l 64bits (tested on Raspbian):
 bash setup-server-armv7-64.sh
 ```
 
+The default port is 3033.
 
 This setup provides the configuration to the elastic-search by placing in the appropiate folder the file elasticsearch.yml (from this repository). That configuration file makes that `Elasticsearch` uses the port 9400 instead of the default port 9200.
 
- 
+#### 2.- The PHANTOM Repository relies on the Elasticsearch running on the SAME server, which should be installed by the previous scripts.
+
+
+Please take a look on the next suggested reference books, if you face difficulties on the setup of ElasticSearch-Database server: 
+
+* [Elasticsearch in Action][Elasticsearch in Action]
+* [Elasticsearch Essentials][Elasticsearch Essentials]
+* [Elasticsearch Server][Elasticsearch Server]
+* [Elasticsearch: The Definitive Guide][Elasticsearch: The Definitive Guide]
+* [Elasticsearch Cookbook][Elasticsearch Cookbook]
+
+
 
 ## Start/Stop the server
 Start a Elasticsearch database and then the monitoring web server by executing, it is important to not do as root:

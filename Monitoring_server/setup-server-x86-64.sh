@@ -3,7 +3,8 @@
 # then the servers (Monitoring, Repository, AppManager) can share them
 
 #instalation of elasticsearch, it will not delete the existing one, because it may contain data
-bash setup-es.sh
+bash setup-es.sh;
 
 #instalation of nodejs
-bash setup-nodejs-64.sh
+bash setup-nodejs-64.sh;
+

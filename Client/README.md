@@ -22,9 +22,8 @@ Please note that the installation and setup steps mentioned below assume that yo
 
 Before you can proceed, please clone the repository:
 ```bash
-git clone https://github.com/PHANTOM-Platform/Monitoring/tree/master/Client
+svn export https://github.com/PHANTOM-Platform/Monitoring.git/trunk/Client Client
 ```
-
 
 ### Dependencies
 This project requires the following dependencies to be installed:

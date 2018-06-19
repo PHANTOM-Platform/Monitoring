@@ -13,8 +13,14 @@ Further details (requisites, installation instructions and example of use) of th
 This project is realized through [EXCESS][excess] and [PHANTOM][phantom]. EXCESS is funded by the EU 7th Framework Programme (FP7/2013-2016) under grant agreement number 611183. The PHANTOM project receives funding under the European Union's Horizon 2020 Research and Innovation Programme under grant agreement number 688146.
 
 
-
 ## Main Contributors
+
+**Montanana, Jose Miguel, HLRS**
++ [github/hpcfapix](https://github.com/jmmontanana)
+
+**Cheptsov, Alexey, HLRS**
++ [github/hpcfapix](https://github.com/alexey-cheptsov)
+
 **Fangli Pi, HLRS**
 + [github/hpcfapix](https://github.com/hpcfapix)
 

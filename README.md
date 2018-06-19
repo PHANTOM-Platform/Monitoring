@@ -4,6 +4,8 @@ This entry is for PHANTOM Monitoring and Resource Management Framework
 Further details (requisites, installation instructions and example of use) of the components of the Monitoring available at each component folder:
 
 [PHANTOM monitoring server][server] 
+
+
 [PHANTOM monitoring client][client] 
 
 

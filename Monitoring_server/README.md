@@ -12,8 +12,9 @@ The monitoring server receives data from the [PHANTOM monitoring client][client]
 Before you can proceed, please clone the repository:
 
 ```bash
-git clone https://github.com/PHANTOM-Platform/Monitoring.git
+svn export https://github.com/PHANTOM-Platform/Monitoring.git/trunk/Monitoring_server Monitoring_server
 ```
+
 
 
 ### Dependencies

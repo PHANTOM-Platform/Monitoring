@@ -197,9 +197,9 @@ Please [create](https://github.com/hpcfapix/phantom_monitoring_server/issues) an
 Copyright (C) 2014-2018 University of Stuttgart
 
 [Apache License v2](LICENSE).
-
-
-[client]: https://github.com/hpcfapix/phantom_monitoring_client
+ 
+[client]: https://github.com/PHANTOM-Platform/Monitoring/tree/master/Monitoring_client
+[server]: https://github.com/PHANTOM-Platform/Monitoring/tree/master/Monitoring_server
 [excess]: http://www.excess-project.eu
 [phantom]: http://www.phantom-project.org
 [api]: https://phantom-monitoring-framework.github.io

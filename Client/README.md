@@ -22,7 +22,7 @@ Please note that the installation and setup steps mentioned below assume that yo
 
 Before you can proceed, please clone the repository:
 ```bash
-git clone https://github.com/hpcfapix/phantom_monitoring_client.git
+git clone https://github.com/PHANTOM-Platform/Monitoring/tree/master/Client
 ```
 
 

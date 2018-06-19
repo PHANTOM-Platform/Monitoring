@@ -132,9 +132,18 @@ Find a bug? Have a feature request?
 Please [create](https://github.com/excess-project/monitoring-agent/website/issues) an issue.
 
 
+
 ## Main Contributors
+
+**Montanana, Jose Miguel, HLRS**
++ [github/hpcfapix](https://github.com/jmmontanana)
+
+**Cheptsov, Alexey, HLRS**
++ [github/hpcfapix](https://github.com/alexey-cheptsov)
+
 **Fangli Pi, HLRS**
 + [github/hpcfapix](https://github.com/hpcfapix)
+ 
 
 
 ## Release History
@@ -149,7 +158,7 @@ Copyright (C) 2014,2015 University of Stuttgart
 
 [Apache License v2](LICENSE).
 
-
-[server]: https://github.com/hpcfapix/phantom_monitoring_server
+[client]: https://github.com/PHANTOM-Platform/Monitoring/tree/master/Monitoring_client
+[server]: https://github.com/PHANTOM-Platform/Monitoring/tree/master/Monitoring_server
 [excess]: http://www.excess-project.eu
 [phantom]: http://www.phantom-project.org

@@ -12,7 +12,7 @@ The monitoring server receives data from the [PHANTOM monitoring client][client]
 Before you can proceed, please clone the repository:
 
 ```bash
-git clone https://github.com/PHANTOM-Platform/Monitoring/tree/master/Monitoring_server.git
+git clone https://github.com/PHANTOM-Platform/Monitoring.git
 ```
 
 

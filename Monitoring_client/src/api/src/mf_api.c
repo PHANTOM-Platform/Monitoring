@@ -142,24 +142,60 @@ void mf_end(void)
 	}
 }
 
+
+//Function for increase dynamically a string concatenating strings at the end
+//It free the memory of the first pointer if not null
+char* concat_and_free(char **s1, const char *s2)
+{
+	int lenght= strlen(s2)+1; //+1 for the null-terminator;
+	if(*s1 != NULL){
+		lenght+= strlen(*s1);
+	} 
+	char *result = malloc(lenght);
+	//in real code you would check for errors in malloc here
+	if(*s1 != NULL){
+		strcpy(result, *s1);
+		free(*s1);
+	}else{
+		result[0]='\0';
+	}    
+	strcat(result, s2);
+	return result;
+}
+
 /*
 Generate the execution_id.
 Send the monitoring data in all the files to mf_server.
 Return the execution_id
 */
-char *mf_send(char *server, char *application_id, char *component_id, char *platform_id)
+char* mf_send(char *server, char *application_id, char *component_id, char *platform_id)
 {
 	/* create an experiment with regards of given application_id, component_id and so on */
-	char *msg = calloc(256, sizeof(char));
-	char *URL = calloc(256, sizeof(char));
-	char *experiment_id ; 
-	sprintf(msg, "{\"application\":\"%s\", \"task\": \"%s\", \"host\": \"%s\"}",
-		application_id, component_id, platform_id);
-	sprintf(URL, "%s/v1/phantom_mf/experiments/%s", server, application_id);
+	char *URL = NULL;
+	char *experiment_id = NULL; 
+	
+	char *msg = NULL;  
+	msg=concat_and_free(&msg, "{\"application\":\"");
+	msg=concat_and_free(&msg, application_id);
+	msg=concat_and_free(&msg, "\", \"task\": \"");
+	msg=concat_and_free(&msg, component_id);
+	msg=concat_and_free(&msg,  "\", \"host\": \"");
+	msg=concat_and_free(&msg, platform_id);
+	msg=concat_and_free(&msg, "\"}");
+// 	sprintf(msg, "{\"application\":\"%s\", \"task\": \"%s\", \"host\": \"%s\"}",
+// 		application_id, component_id, platform_id);
+ 
+	URL=concat_and_free(&URL, server);
+	URL=concat_and_free(&URL, "/v1/phantom_mf/experiments/");
+	URL=concat_and_free(&URL, application_id); 
+// 	sprintf(URL, "%s/v1/phantom_mf/experiments/%s", server, application_id);
 
-	new_create_new_experiment(URL, msg, &experiment_id);
+	new_create_new_experiment(URL, msg, &experiment_id); 
+ 
+	
 	if(msg!=NULL) free(msg);
 	if(URL!=NULL) free(URL);
+	
 	if(experiment_id[0] == '\0') {
 		printf("ERROR: Cannot create new experiment for application %s\n", application_id);
 		return NULL;
@@ -167,11 +203,13 @@ char *mf_send(char *server, char *application_id, char *component_id, char *plat
 	//sleep(5);
 
 	/*malloc variables for send metrics */
-	char *metric_URL = calloc(256, sizeof(char));
-	char *static_string = calloc(256, sizeof(char));
-	char *filename = calloc(256, sizeof(char));
-
-	sprintf(metric_URL, "%s/v1/phantom_mf/metrics", server);
+	char *metric_URL = NULL;  
+	char *static_string = NULL;  
+	char *filename = NULL; 
+  
+	metric_URL=concat_and_free(&metric_URL, server);
+	metric_URL=concat_and_free(&metric_URL, "/v1/phantom_mf/metrics");	
+// 	sprintf(metric_URL, "%s/v1/phantom_mf/metrics", server);
 
 	DIR *dir = opendir(DataPath);
 	if(dir == NULL) {
@@ -182,11 +220,30 @@ char *mf_send(char *server, char *application_id, char *component_id, char *plat
 	struct dirent *drp = readdir(dir);
 
 	while(drp != NULL) {
-
-		sprintf(filename, "%s/%s", DataPath, drp->d_name);
-		sprintf(static_string, "\"WorkflowID\":\"%s\", \"TaskID\":\"%s\", \"ExperimentID\":\"%s\", \"type\":\"%s\", \"host\":\"%s\"",
-			application_id, component_id, experiment_id, drp->d_name, platform_id);
+ 
+		filename=NULL;
+		filename=concat_and_free(&filename, DataPath);
+		filename=concat_and_free(&filename, "/");
+		filename=concat_and_free(&filename, drp->d_name);		
+// 		sprintf(filename, "%s/%s", DataPath, drp->d_name);
 		
+		static_string = NULL;  
+		static_string=concat_and_free(&static_string, "{\"WorkflowID\":\"");
+		static_string=concat_and_free(&static_string, application_id);
+		static_string=concat_and_free(&static_string, "\", \"TaskID\": \"");
+		static_string=concat_and_free(&static_string, component_id);
+		static_string=concat_and_free(&static_string,  "\", \"ExperimentID\": \"");
+		static_string=concat_and_free(&static_string, experiment_id);
+		static_string=concat_and_free(&static_string,  "\", \"type\": \"");
+		static_string=concat_and_free(&static_string, drp->d_name);
+		static_string=concat_and_free(&static_string,  "\", \"host\": \"");
+		static_string=concat_and_free(&static_string, platform_id);		
+		static_string=concat_and_free(&static_string, "\"}");		
+// 		sprintf(static_string, "\"WorkflowID\":\"%s\", \"TaskID\":\"%s\", \"ExperimentID\":\"%s\", \"type\":\"%s\", \"host\":\"%s\"",
+// 			application_id, component_id, experiment_id, drp->d_name, platform_id);
+		printf(" filename is %s\n",filename);
+		printf(" static_string is %s\n",static_string);
+		printf(" metric_URL %s\n",metric_URL);
 		publish_file(metric_URL, static_string, filename);
 
 		/*remove the file if user unset keep_local_data_flag */
@@ -196,8 +253,10 @@ char *mf_send(char *server, char *application_id, char *component_id, char *plat
 
 		/*get the next entry */
 		drp = readdir(dir);
-		memset(static_string, '\0', 256);	
-		memset(filename, '\0', 256);	
+// 		memset(static_string, '\0', 256);	
+// 		memset(filename, '\0', 256);
+		static_string=concat_and_free(&static_string, "\0");
+		filename=concat_and_free(&filename, "\0");
 	}
 
 	free(metric_URL);

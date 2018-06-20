@@ -271,19 +271,23 @@ int publish_file(char *URL, char *static_string, char *filename)
 int new_create_new_experiment(char *URL, char *message, char **experiment_id)
 {
     struct url_data data;
+	*experiment_id=NULL;
     data.size = 0;
-    data.data = malloc(4096); /* reasonable size initial buffer */
+	
+    data.data = (char *) malloc(4096); /* reasonable size initial buffer */
     if(NULL == data.data) {
         fprintf(stderr, "Failed to allocate memory.\n");
         return FAILED;
-    }
+    } 
     data.data[0] = '\0';
 
     if (!check_URL(URL) || !check_message(message)) {
+		free(data.data);
         return FAILED;
     }
     CURL *curl = prepare_publish(URL, message);
     if (curl == NULL) {
+		free(data.data);
         return FAILED;
     }
 
@@ -294,6 +298,7 @@ int new_create_new_experiment(char *URL, char *message, char **experiment_id)
     if (response != CURLE_OK) {
         const char *error_msg = curl_easy_strerror(response);
         log_error("create_new_experiment %s", error_msg);
+		free(data.data);
         return FAILED;
     }
 
@@ -301,10 +306,12 @@ int new_create_new_experiment(char *URL, char *message, char **experiment_id)
 
 	if( data.data[0]=='\0') {
 			printf("ERROR!! : query with %s failed.\n", URL);
+			free(data.data);
 			return FAILED;
 	}
     *experiment_id=data.data;
-    if(*experiment_id == NULL) {
+	
+    if(*experiment_id == NULL) { 
         return FAILED;
     }
     return SUCCESS;

@@ -147,7 +147,7 @@ copy_plugins:
 	cp -f $(PLUGIN_DIR)/CPU_temperature/lib/*.so $(INSTALL_PLUGINS_DIR)/
 	cp -f $(PLUGIN_DIR)/Linux_resources/lib/*.so $(INSTALL_PLUGINS_DIR)/
 	cp -f $(PLUGIN_DIR)/Linux_sys_power/lib/*.so $(INSTALL_PLUGINS_DIR)/
-	cp -f $(PLUGIN_DIR)/NVML/lib/*.so $(INSTALL_PLUGINS_DIR)/ 2>/dev/null || :
+	cp -f $(PLUGIN_DIR)/NVML/lib/*.so $(INSTALL_PLUGINS_DIR)/ 
 
 copy_client:
 	cp -f $(PWD)/main $(INSTALL_BIN_DIR)/mf_client

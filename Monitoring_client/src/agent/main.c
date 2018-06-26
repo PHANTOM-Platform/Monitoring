@@ -234,7 +234,7 @@ int writeTmpPID(void)
 }
 
 /* prepare metrics_publish_URL and platform_id, based on mf_config.ini;
-   send a initialization msg to the server and create a new experiment with unique experiment_id*/
+   send a initialization msg to the server and create a new experiment with unique experiment_id-> response.data*/
 int prepare(void)
 {
 	char server_name[128] = {'\0'};
@@ -257,26 +257,47 @@ int prepare(void)
 	}
 
 	/* create an new experiment by sending msg to mf_server */
-	char *msg = calloc(256, sizeof(char));
-	char *experiments_URL = calloc(256, sizeof(char));
-	
-	sprintf(msg, "{\"application\":\"%s\", \"task\": \"%s\", \"host\": \"%s\"}",
-		application_id, task_id, platform_id);
-	sprintf(experiments_URL, "%s/phantom_mf/experiments/%s", server_name, application_id);
+// 	char *msg = calloc(256, sizeof(char));
+// 	char *experiments_URL = calloc(256, sizeof(char)); 
+// 	sprintf(msg, "{\"application\":\"%s\", \"task\": \"%s\", \"host\": \"%s\"}",
+// 		application_id, task_id, platform_id);
+// 	sprintf(experiments_URL, "%s/phantom_mf/experiments/%s", server_name, application_id);
 
-	create_new_experiment(experiments_URL, msg, experiment_id);
-	if(experiment_id[0] == '\0') {
+
+	char *URL = NULL; 
+	char *msg = NULL;
+	msg=concat_and_free(&msg, "{\"application\":\"");
+	msg=concat_and_free(&msg, application_id);
+	msg=concat_and_free(&msg, "\", \"task\": \"");
+	msg=concat_and_free(&msg, task_id);
+	msg=concat_and_free(&msg, "\", \"host\": \"");
+	msg=concat_and_free(&msg, platform_id);
+	msg=concat_and_free(&msg, "\"}");
+
+	URL=concat_and_free(&URL, server_name);
+	URL=concat_and_free(&URL, "/v1/phantom_mf/experiments/");
+	URL=concat_and_free(&URL, application_id);
+
+	struct url_data response; 
+	response.size=0;
+	response.data=NULL;
+	response.headercode=NULL;
+
+// 	create_new_experiment(experiments_URL, msg, experiment_id); --> new experiment_id is response.data
+	char operation[]="POST";
+	query_message_json(URL, msg, &response, operation); //*****	
+	if(response.data[0] == '\0') {
 		log_error("Cannot create new experiment for application %s\n", application_id);
 		return FAILURE;
 	}
 	/*
 	printf("> application_id : %s\n", application_id);
         printf("> task_id : %s\n", task_id);
-        printf("> experiment_id : %s\n", experiment_id);*/
+        printf("> response.data : %s\n", response.data);*/
 
 	log_info("> application_id : %s\n", application_id);
 	log_info("> task_id : %s\n", task_id);
-	log_info("> experiment_id : %s\n", experiment_id);
+	log_info("> response.data : %s\n", response.data);
 	
 	/* close and reopen logFile */
 	fclose(logFile);

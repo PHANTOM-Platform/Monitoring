@@ -47,7 +47,6 @@ int disk_monitor(int pid, char *DataPath, long sampling_interval)
     		"disk_write", write,
     		"disk_throughput", throughput);
 	}
-
 	/*close the file*/
 	fclose(fp);
 	return 1;

@@ -202,7 +202,7 @@ static int gatherMetric(int num)
 	return SUCCESS;
 }
 
-/* parse mf_cconfig.ini to get all timing information */
+/* parse mf_config.ini to get all timing information */
 static void init_timings(void)
 {
 	char *ptr;

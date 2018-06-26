@@ -7,7 +7,7 @@
 
 typedef struct metrics_t {
 	long sampling_interval[MAX_NUM_METRICS];	//in milliseconds
-	char metrics_names[MAX_NUM_METRICS][NAME_LENGTH];		//user defined metrics
+	char metrics_names[MAX_NUM_METRICS][NAME_LENGTH];	//user defined metrics
 	int num_metrics;
 	int local_data_storage;
 } metrics;
@@ -16,6 +16,8 @@ extern int running;
 extern int keep_local_data_flag;
 extern char parameters_name[9][32];
 extern float parameters_value[9];
+
+
 
 int mf_user_metric(char *metric_name, char *value);
 /* 
@@ -30,6 +32,19 @@ Stop threads.
 Close all the files for data storage
 */
 void mf_end(void);
+
+
+/*
+Query for a workflow, return 400 if the workflow is not registered yet.
+or 200 in other case.
+*/
+char* mf_query_workflow(char *server, char *application_id );
+/*
+Resgister a new workflow.
+Return the path to query the workflow.
+*/
+char* mf_new_workflow(char *server, char *application_id, char *author_id,
+		char *optimization, char *tasks_desc);
 
 /*
 Generate the execution_id.

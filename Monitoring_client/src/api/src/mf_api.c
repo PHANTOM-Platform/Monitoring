@@ -1,3 +1,18 @@
+/*
+ * Copyright 2018 High Performance Computing Center, Stuttgart
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -42,7 +57,7 @@ FILE *logFile;
 ******************************************************************************/
 static int api_prepare(char *Data_path);
 static void *MonitorStart(void *arg);
-int get_config_parameters(char *server, char *platform_id);
+int get_config_parameters(const char *server, const char *platform_id);
 
 int mf_user_metric_with_timestamp(char *user_defined_time_stamp, char *metric_name, char *value)
 {
@@ -97,7 +112,7 @@ Return the path of data files
 */
 struct each_metric_t **each_m=NULL;
 
-char *mf_start(char *server, char *platform_id, metrics *m)
+char *mf_start(const char *server, const char *platform_id, metrics *m)
 {
 	/* get pid and setup the DataPath according to pid */
 	pid = api_prepare(DataPath);
@@ -105,7 +120,9 @@ char *mf_start(char *server, char *platform_id, metrics *m)
 	if(get_config_parameters(server, platform_id) <= 0) {
 		printf("ERROR : get_config_parameters failed.\n");
 		return NULL;
-	} 
+	}else{
+// 		printf(" get_config_parameters succedd.\n");
+	}
 	num_threads = m->num_metrics;
 	int t;
 	int iret[num_threads];
@@ -116,7 +133,6 @@ char *mf_start(char *server, char *platform_id, metrics *m)
 	
 	running = 1;
 	keep_local_data_flag = m->local_data_storage;
-
 
 	for (t = 0; t < num_threads; t++) {
 		/*prepare the argument for the thread*/
@@ -167,7 +183,7 @@ void mf_end(void)
 Query for a workflow, return 400 if the workflow is not registered yet.
 or 200 in other case.
 */
-char* mf_query_workflow(char *server, char *application_id )
+char* mf_query_workflow(const char *server, const char *application_id )
 {
 	/* create an workflow */
 	char *URL = NULL;
@@ -199,8 +215,8 @@ char* mf_query_workflow(char *server, char *application_id )
 Register a new workflow.
 Return the path to query the workflow.
 */
-char* mf_new_workflow(char *server, char *application_id, char *author_id,
-		char *optimization, char *tasks_desc)
+char* mf_new_workflow(const char *server, const char *application_id, const char *author_id,
+		const char *optimization, const char *tasks_desc)
 {
 	/* create an workflow */
 	char *URL = NULL;
@@ -243,7 +259,7 @@ Generate the execution_id.
 Send the monitoring data in all the files to mf_server.
 Return the execution_id
 */
-char* mf_send(char *server, char *application_id, char *component_id, char *platform_id)
+char* mf_send(const char *server, const char *application_id, const char *component_id, const char *platform_id)
 {
 	/* create an experiment with regards of given application_id, component_id and so on */
 	char *URL = NULL;
@@ -405,7 +421,7 @@ static void *MonitorStart(void *arg) {
 /**
  * Returns 1 if succedd otherwise returns 0
  */
-int get_config_parameters(char *server, char *platform_id)
+int get_config_parameters(const char *server, const char *platform_id)
 {
 	/* send the query and retrieve the response string */
 	char *URL =(char *) malloc(1024);

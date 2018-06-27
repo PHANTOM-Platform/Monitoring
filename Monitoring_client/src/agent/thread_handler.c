@@ -1,5 +1,5 @@
 /*
- * Copyright 2014, 2015 High Performance Computing Center, Stuttgart
+ * Copyright 2018 High Performance Computing Center, Stuttgart
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,7 +80,7 @@ int startThreads(void) {
 	mfp_get_value("generic", "bulk_size", tmp_string);
 	bulk_size = atoi(tmp_string);
 
-	int num_threads = pluginCount + 1;
+	int num_threads = pluginCount ;// why + 1;
 	int iret[num_threads];
 	int nums[num_threads];
 
@@ -89,9 +89,11 @@ int startThreads(void) {
 		hooks[t] = PluginManager_get_hook(pm);
 	}
 
+	printf(" num_threads is %i\n",num_threads);
 	/* create threads for monitoring and updating configurations */
 	for (t = 0; t < num_threads; t++) {
 		nums[t] = t;
+		printf("starting thread %i..........\n", t); 
 		iret[t] = pthread_create(&threads[t], NULL, entryThreads, &nums[t]);
 		if (iret[t]) {
 			log_error("pthread_create() failed for %s.\n", strerror(iret[t]));
@@ -133,8 +135,7 @@ static void* entryThreads(void *arg)
 	int *typeT = (int*) arg;
 	if(*typeT < pluginCount) {
 		gatherMetric(*typeT);
-	}
-	else {
+	} else {
 		checkConf();
 	}
 	return NULL;

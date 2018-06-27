@@ -1,5 +1,5 @@
 /*
- * Copyright 2014, 2015 High Performance Computing Center, Stuttgart
+ * Copyright 2018 High Performance Computing Center, Stuttgart
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,8 @@ void PluginManager_register_hook(PluginManager *pm, const char *name, PluginHook
 	hookType->hook = hook;
 	hookType->name = name;
 
+	log_info("register hookType->name %s\n", hookType->name);	
+	
 	EXCESS_concurrent_queue_handle_t hook_queue_handle;
 	hook_queue_handle = ECQ_get_handle(pm->hook_queue);
 	ECQ_enqueue(hook_queue_handle, (void *)hookType);
@@ -59,6 +61,7 @@ PluginHook PluginManager_get_hook(PluginManager *pm) {
 		typePtr = (struct PluginHookType_t *) retPtr;
 		funcPtr = *(typePtr->hook);
 		log_info("Using plugin %s\n", typePtr->name);	
+		printf("Using plugin %s\n", typePtr->name);	
 	}
 
 	ECQ_free_handle(hook_queue_handle);

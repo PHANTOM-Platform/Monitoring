@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2014-2015 University of Stuttgart
+* Copyright (C) 2018 University of Stuttgart
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -301,6 +301,17 @@ int publish_json(char *URL, char *message)
 		return FAILED;
 	}
 	rescode.data[0] = '\0';
+	
+	 
+
+	rescode.headercode = (char *) malloc(5120); /* reasonable size initial buffer */
+	if(NULL == rescode.headercode) {
+		fprintf(stderr, "Failed to allocate memory.\n");
+		return FAILED;
+	} 
+	rescode.headercode[0] = '\0';	
+	
+	
 	
 	if (!check_URL(URL) || !check_message(message)) {
 		return FAILED;

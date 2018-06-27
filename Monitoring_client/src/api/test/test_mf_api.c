@@ -10,6 +10,9 @@
 //#include "power_monitor.h"
 #include "mf_api.h"
 
+const char server[] = "localhost:3033";
+const char platform_id[] = "laptop";
+
 /* some dummy application */
 void dummy(void)
 {
@@ -32,7 +35,6 @@ void dummy(void)
 		}
 		fprintf(fp, "* * %s\n", tmp);
 	}
-
 	fclose(fp);
 }
 
@@ -94,8 +96,7 @@ void Test_resources_stat_all_and_calculate(void)
 		cpu_stats.swap_usage_rate);
 	//wait for check
 	scanf("%c", &c);	
-}
-*/
+}*/
 
 /* test resources_monitor */
 void Test_resources_monitor(void)
@@ -107,9 +108,6 @@ void Test_resources_monitor(void)
 	m_resources.sampling_interval[0] = 1000; // 1s
 	strcpy(m_resources.metrics_names[0], "resources_usage");
 
-	char server[] = "localhost:3040";
-	char platform_id[] = "fangli_laptop";
-
 	char *datapath = mf_start(server, platform_id, &m_resources);
 	printf("datapath is :%s\n", datapath);
 	sleep(5);
@@ -119,7 +117,6 @@ void Test_resources_monitor(void)
 		dummy();
 		sleep(2);
 	}
-
 	mf_end();
 }
 
@@ -144,7 +141,6 @@ void Test_resources_monitor(void)
 		disk_info.write_bytes_before);
 	//wait for check
 	scanf("%c", &c);
-
 	dummy();
 
 	disk_stats_read(pid, &disk_info);
@@ -166,10 +162,6 @@ void Test_disk_monitor(void)
 	m_resources.local_data_storage = 1;
 	m_resources.sampling_interval[0] = 1000; // 1s
 	strcpy(m_resources.metrics_names[0], "disk_io");
-	
-	char server[] = "localhost:3040";
-	char platform_id[] = "fangli_laptop";
-
 	char *datapath = mf_start(server, platform_id, &m_resources);
 	printf("datapath is :%s\n", datapath);
 	sleep(5);
@@ -179,7 +171,6 @@ void Test_disk_monitor(void)
 		dummy();
 		sleep(2);
 	}
-
 	mf_end();
 }
 /*******************************************************************************
@@ -190,7 +181,6 @@ void Test_CPU_power_read(void)
 {
 	char c;
 	int pid = getpid();
-
 	pid_stats_info before, after;
 	
 	memset(&before, 0, sizeof(pid_stats_info));
@@ -204,7 +194,6 @@ void Test_CPU_power_read(void)
 
 	if(cpu_freq_stat(&before) <= 0)
 		printf("ERROR: cpu_freq_stat failed!\n");
-
 	dummy();
 
 	if(read_pid_time(pid, &after) <= 0)
@@ -220,8 +209,7 @@ void Test_CPU_power_read(void)
 	printf("system total time: %llu\n", (after.sys_itv - before.sys_itv));
 	printf("system runtime:    %llu\n", (after.sys_runtime - before.sys_runtime));
 	printf("process runtime:   %llu\n", (after.pid_runtime - before.pid_runtime));
-	printf("system cpu energy: %f\n", (after.sys_cpu_energy - before.sys_cpu_energy));
-	
+	printf("system cpu energy: %f\n", (after.sys_cpu_energy - before.sys_cpu_energy));	
 	//wait for check
 	scanf("%c", &c);
 }
@@ -230,16 +218,13 @@ void Test_mem_power_read(void)
 {
 	char c;
 	int pid = getpid();
-
 	int fd = create_perf_stat_counter(pid);
 	unsigned long long before = read_perf_counter(fd);
-
 	dummy();
 
 	unsigned long long after = read_perf_counter(fd);
 	printf("values read for process %d are:\n", pid);
 	printf("L2 cache misses: %llu\n", (after - before));
-
 	scanf("%c", &c);
 }
 
@@ -247,7 +232,6 @@ void Test_disk_power_read(void)
 {
 	char c;
 	int pid = getpid();
-
 	pid_stats_info before, after;
 
 	memset(&before, 0, sizeof(pid_stats_info));
@@ -255,7 +239,6 @@ void Test_disk_power_read(void)
 
 	if(read_pid_io(pid, &before) <= 0)
 		printf("ERROR: read_pid_io failed!\n");
-
 	dummy();
 
 	if(read_pid_io(pid, &after) <= 0)
@@ -265,10 +248,8 @@ void Test_disk_power_read(void)
 	printf("process read bytes:       %llu\n", (after.pid_read_bytes - before.pid_read_bytes));
 	printf("process write bytes:      %llu\n", (after.pid_write_bytes - before.pid_write_bytes));
 	printf("process cancelled writes: %llu\n", (after.pid_cancelled_writes - before.pid_cancelled_writes));
-
 	scanf("%c", &c);
-}
-*/
+}*/
 void Test_power_monitor(void)
 {
 	int i;
@@ -278,20 +259,14 @@ void Test_power_monitor(void)
 	m_resources.sampling_interval[0] = 2000; // 2s
 	strcpy(m_resources.metrics_names[0], "power");
 
-	char server[] = "localhost:3040";
-	char platform_id[] = "fangli_laptop";
-
 	char *datapath = mf_start(server, platform_id, &m_resources);
 	printf("datapath : %s\n", datapath);
-	
 	/*do dummy things*/
 	for(i = 0; i < 100; i++) {
 		dummy();
 		//sleep(1);
 	}
-
 	mf_end();
-
 }
 
 /*******************************************************************************
@@ -312,8 +287,6 @@ void Test_all(void)
 	m_resources.sampling_interval[2] = 2000; // 1s
 	strcpy(m_resources.metrics_names[2], "power");
 
-	char server[] = "localhost:3040";
-	char platform_id[] = "fangli_laptop";
 	char application_id[] = "dummy";
 	char task_id[] = "t1";
 
@@ -325,7 +298,6 @@ void Test_all(void)
 		dummy();
 		//sleep(1);
 	}
-
 	mf_end();
 
 	/* when "dummy" application already exists in database, check with /v1/phantom_mf/workflows, 
@@ -344,11 +316,8 @@ void Test_all(void)
 /*
 void Test_read_config(void)
 {
-	char server[] = "localhost:3040";
-	char platform_id[] = "fangli_laptop";
 	get_config_parameters(server, platform_id);
-}
-*/
+}*/
 
 int main(void)
 {

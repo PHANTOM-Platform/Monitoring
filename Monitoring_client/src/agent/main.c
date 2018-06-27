@@ -1,5 +1,5 @@
 /*
- * Copyright 2014, 2015 High Performance Computing Center, Stuttgart
+ * Copyright 2018 High Performance Computing Center, Stuttgart
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@ int main(int argc, char* argv[]) {
 	extern char *optarg;
 	int c;
 	int err = 0, help = 0;
-	
+
 	/* init arguments */
 	pwd = calloc(256, sizeof(char));
 	name = calloc(256, sizeof(char)); 				//name of the tmp pid file
@@ -113,7 +113,8 @@ int main(int argc, char* argv[]) {
 	
 	/* set the configuration file */
 	sprintf(confFile, "%s/%s", pwd, "../mf_config.ini");
-	log_info("Configuration taken from: %s.\n", confFile);
+// 	log_info("Configuration taken from: %s.\n", confFile);
+	printf("Configuration taken from: %s.\n", confFile);
 	
 	/* try to parse configuration file */
 	if (mfp_parse(confFile) == FAILURE) {
@@ -178,7 +179,6 @@ void set_pwd(void)
 void createLogFile(void) 
 {
 	int errnum;
-
 	if (!pwd_is_set) {
 		set_pwd();
 	}
@@ -216,7 +216,6 @@ int writeTmpPID(void)
 	if (!pwd_is_set) {
 		set_pwd();
 	}
-
 	strcpy(name, pwd);
 	strcat(name, "/tmp_pid");
 
@@ -229,7 +228,6 @@ int writeTmpPID(void)
 		fprintf(tmpFile, "%d", pid);
 		fclose(tmpFile);
 	}
-
 	return SUCCESS;
 }
 
@@ -250,21 +248,13 @@ int prepare(void)
 
 	/* by default, no application_id and task_id is given, 
 	therefore set application_id to infrastructure; task_id to the platform_id */
-	if(application_id[0] == '\0' || task_id[0] == '\0')
-	{
+	if(application_id[0] == '\0' || task_id[0] == '\0') {
 		strcpy(application_id, "infrastructure");
 		strcpy(task_id, platform_id);
 	}
 
 	/* create an new experiment by sending msg to mf_server */
-// 	char *msg = calloc(256, sizeof(char));
-// 	char *experiments_URL = calloc(256, sizeof(char)); 
-// 	sprintf(msg, "{\"application\":\"%s\", \"task\": \"%s\", \"host\": \"%s\"}",
-// 		application_id, task_id, platform_id);
-// 	sprintf(experiments_URL, "%s/phantom_mf/experiments/%s", server_name, application_id);
-
-
-	char *URL = NULL; 
+	char *URL = NULL;
 	char *msg = NULL;
 	msg=concat_and_free(&msg, "{\"application\":\"");
 	msg=concat_and_free(&msg, application_id);
@@ -278,14 +268,14 @@ int prepare(void)
 	URL=concat_and_free(&URL, "/v1/phantom_mf/experiments/");
 	URL=concat_and_free(&URL, application_id);
 
-	struct url_data response; 
+	struct url_data response;
 	response.size=0;
 	response.data=NULL;
 	response.headercode=NULL;
 
 // 	create_new_experiment(experiments_URL, msg, experiment_id); --> new experiment_id is response.data
 	char operation[]="POST";
-	query_message_json(URL, msg, &response, operation); //*****	
+	query_message_json(URL, msg, &response, operation); //*****
 	if(response.data[0] == '\0') {
 		log_error("Cannot create new experiment for application %s\n", application_id);
 		return FAILURE;
@@ -302,6 +292,5 @@ int prepare(void)
 	/* close and reopen logFile */
 	fclose(logFile);
 	logFile = fopen(logFileName, "a");
-
 	return SUCCESS;
 }

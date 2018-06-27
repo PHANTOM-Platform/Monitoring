@@ -1,5 +1,5 @@
 /*
- * Copyright 2014, 2015 High Performance Computing Center, Stuttgart
+ * Copyright 2018 High Performance Computing Center, Stuttgart
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,6 +109,7 @@ void* discover_plugins(const char *dirname, PluginManager *pm) {
 		free(fullpath);
 	}
 
+	printf(" pluginCount is %i\n",pluginCount);
 	closedir(dir);
 	if (plugins_state->handle_list)
 		return (void*) plugins_state;
@@ -168,6 +169,8 @@ void* load_plugin(char *name, char *fullpath, PluginManager *pm) {
 		return NULL ;
 	}
 
+	printf(" loaded plugin %s %s\n",name,fullpath);
+	
 	free(slashed_path);
 	return libhandle;
 }

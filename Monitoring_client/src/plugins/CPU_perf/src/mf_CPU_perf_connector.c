@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017 University of Stuttgart
+ * Copyright (C) 2018 University of Stuttgart
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,6 +52,7 @@ static int load_papi_library(int *num_cores);
 int mf_CPU_perf_init(Plugin_metrics *data, char **events, size_t num_events, int num_cores)
 {
 	int i, ii, jj;
+	data->num_events = 0;//in case of failure the value must be cero
 	/* if all given events are not valid, return directly */
 	if (events_are_all_not_valid(events, num_events)) {
 		return FAILURE;
@@ -111,7 +112,11 @@ int mf_CPU_perf_init(Plugin_metrics *data, char **events, size_t num_events, int
 				data->events[jj] = malloc(MAX_EVENTS_LEN * sizeof(char));
 				sprintf(data->events[jj], "core%02d:%s", i, CPU_perf_metrics[ii]);
 				jj++;
-			}	
+				if(jj== MAX_EVENTS_NUMBER){
+					printf("error, overflow on number of events\n");
+					exit(1);
+				}
+			}
 		}
 	}
 	data->num_events = jj;
@@ -124,8 +129,7 @@ int mf_CPU_perf_init(Plugin_metrics *data, char **events, size_t num_events, int
 			fprintf(stderr, "PAPI_start failed.\n");
 			return FAILURE;
 		}
-	}
-	
+	}	
 	return SUCCESS;
 }
 
@@ -139,10 +143,15 @@ int mf_CPU_perf_sample(Plugin_metrics *data, int num_cores)
 	long long values[PAPI_EVENTS_NUM];
 	long long duration;
 
+	for(i = 0; i < PAPI_EVENTS_NUM; i++) {
+		values[i]=0;//need inintialize in case the PAPI_read doen't collect data
+	}
+	
 	after_time = PAPI_get_real_nsec();
 	duration = after_time - before_time; /* in nanoseconds */
-
-	for(i = 0, jj = 0; i < num_cores; i++) {
+	
+	jj = 0;
+	for(i = 0; i < num_cores; i++) {
 		ret = PAPI_read(EventSet[i], values);
 		if(ret != PAPI_OK) {
 			char *error = PAPI_strerror(ret);
@@ -152,9 +161,14 @@ int mf_CPU_perf_sample(Plugin_metrics *data, int num_cores)
 		for(ii = 0; ii < PAPI_EVENTS_NUM; ii++) {
 			data->values[jj] = (float) (values[ii] * 1.0e3) / duration; /*units are Mflips, Mflops, and Mips */
 			jj++;
+			if(jj== MAX_EVENTS_NUMBER){
+				printf("error, overflow on number of events\n");
+				exit(1);
+			}
 		}
 		PAPI_reset(EventSet[i]);	
 	}
+	//jj should be equal to data->num_events 
 	before_time = after_time;
 	
 	return SUCCESS;
@@ -185,9 +199,11 @@ void mf_CPU_perf_to_json(Plugin_metrics *data, char **events, size_t num_events,
 	for (i = 0; i < num_events; i++) {
 		for(ii = 0; ii < data->num_events; ii++) {
 			/* if metrics' name matches, append the metrics to the json string */
-			if((strstr(data->events[ii], events[i]) != NULL) && (data->values[ii] > 0.0)) {
-				sprintf(tmp, ",\"%s\":%.3f", data->events[ii], data->values[ii]);
-				strcat(json, tmp);
+			if((strstr(data->events[ii], events[i]) != NULL)  ) {
+				if( (data->values[ii] > 0.0)) { 
+					sprintf(tmp, ",\"%s\":%.3f", data->events[ii], data->values[ii]);
+					strcat(json, tmp);
+				}
 			}
 		}
 	}
@@ -265,8 +281,7 @@ int events_are_all_not_valid(char **events, size_t num_events)
 	if (counter == 0) {
 		fprintf(stderr, "Wrong given metrics.\nPlease given metrics MFLIPS, MFLOPS, or MIPS\n");
 		return 1;
-	}
-	else {
+	} else {
 		return 0;
 	}
 }

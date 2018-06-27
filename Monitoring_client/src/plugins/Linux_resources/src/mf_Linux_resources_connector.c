@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017 University of Stuttgart
+ * Copyright (C) 2018 University of Stuttgart
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -147,11 +147,16 @@ int mf_Linux_resources_sample(Plugin_metrics *data)
 {
 	/* get current timestamp in second */
 	struct timespec timestamp;
+	int i;
+	
+	for (i = 0; i < data->num_events; i++)
+		data->values[i] = 0.0; 
+	
 	clock_gettime(CLOCK_REALTIME, &timestamp);
     after_time = timestamp.tv_sec * 1.0  + (double)(timestamp.tv_nsec / 1.0e9);
 	double time_interval = after_time - before_time;
 
-	int i = 0;
+	i = 0;
 	if(flag & HAS_CPU_STAT) {
 		CPU_stat_read(&cpu_stat_after);
 		if(cpu_stat_after.total_cpu_time > cpu_stat_before.total_cpu_time) {
@@ -182,7 +187,7 @@ int mf_Linux_resources_sample(Plugin_metrics *data)
 		
 			/* update the net_stat_before values by the current values */
 			net_stat_before.rcv_bytes = net_stat_after.rcv_bytes;
-			net_stat_before.send_bytes = net_stat_after.send_bytes;	
+			net_stat_before.send_bytes = net_stat_after.send_bytes;
 		}
 		i++;
 	}
@@ -265,7 +270,7 @@ int flag_init(char **events, size_t num_events)
 int CPU_stat_read(struct cpu_stats *cpu_info) {
 	FILE *fp;
 	char line[1024];
-	unsigned long long cpu_user, cpu_nice, cpu_sys, cpu_idle, cpu_iowait, cpu_irq, cpu_softirq, cpu_steal;
+	unsigned long long cpu_user=0, cpu_nice=0, cpu_sys=0, cpu_idle=0, cpu_iowait=0, cpu_irq=0, cpu_softirq=0, cpu_steal=0;
 
 	fp = fopen(CPU_STAT_FILE, "r");
 	if(fp == NULL) {
@@ -409,7 +414,7 @@ int sys_IO_stat_read(struct io_stats *total_io_stat) {
 
 	/* declare data structure which stores the io stattistics of each process */
 	struct io_stats pid_io_stat;
-
+	
 	/* reset total_io_stat into zeros */
 	total_io_stat->read_bytes = 0;
 	total_io_stat->write_bytes = 0;
@@ -439,15 +444,15 @@ int sys_IO_stat_read(struct io_stats *total_io_stat) {
 int process_IO_stat_read(int pid, struct io_stats *io_info) {
 	FILE *fp;
 	char filename[128], line[256];
-
+	io_info->read_bytes = 0;
+	io_info->write_bytes = 0;
+	
 	/* Gets the filename /proc/[pid]/io and open the file for reading */
 	sprintf(filename, IO_STAT_FILE, pid);
 	if ((fp = fopen(filename, "r")) == NULL) {
 		fprintf(stderr, "Error: Cannot open %s.\n", filename);
 		return FAILURE;
 	}
-	io_info->read_bytes = 0;
-	io_info->write_bytes = 0;
 
 	/* Gets the read and write bytes for the process */
 	while (fgets(line, 256, fp) != NULL) {

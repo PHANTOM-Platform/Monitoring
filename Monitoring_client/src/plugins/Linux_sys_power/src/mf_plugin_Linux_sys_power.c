@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017 University of Stuttgart
+ * Copyright (C) 2018 University of Stuttgart
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@
  * Variable Declarations
  ******************************************************************************/
 mfp_data *conf_data = NULL;
-Plugin_metrics *monitoring_data = NULL;
+Plugin_metrics *monitoring_data_power = NULL;
 int is_initialized = 0;
 
 /*******************************************************************************
@@ -54,12 +54,12 @@ init_mf_plugin_Linux_sys_power(PluginManager *pm)
     /*
      * initialize the monitoring data
      */
-    monitoring_data = malloc(sizeof(Plugin_metrics));
-    int ret = mf_Linux_sys_power_init(monitoring_data, conf_data->keys, conf_data->size);
+    monitoring_data_power = malloc(sizeof(Plugin_metrics));
+    int ret = mf_Linux_sys_power_init(monitoring_data_power, conf_data->keys, conf_data->size);
     if(ret == 0) {
-        char plugin_name[] = "Linux_sys_power";
-        log_error("Plugin %s init function failed.\n", plugin_name);
-        return ret;
+	char plugin_name[] = "Linux_sys_power";
+	log_error("Plugin %s init function failed.\n", plugin_name);
+	return ret;
     }
     /*
      * if init succeed; register the plugin hook to the plugin manager
@@ -74,20 +74,20 @@ char*
 mf_plugin_Linux_sys_power_hook()
 {
     if (is_initialized) {
-        /*
-         * sampling 
-         */
-        mf_Linux_sys_power_sample(monitoring_data);
+	/*
+	 * sampling 
+	 */
+	mf_Linux_sys_power_sample(monitoring_data_power);
 
-        /*
-         * Prepares a json string, including current timestamp, name of the plugin,
-         * and required metrics.
-         */
-        char *json = calloc(JSON_MAX_LEN, sizeof(char));
-        mf_Linux_sys_power_to_json(monitoring_data, json);
+	/*
+	 * Prepares a json string, including current timestamp, name of the plugin,
+	 * and required metrics.
+	 */
+	char *json = calloc(JSON_MAX_LEN, sizeof(char));
+	mf_Linux_sys_power_to_json(monitoring_data_power, json);
 
-        return json;
+	return json;
     } else {
-        return NULL;
+	return NULL;
     }
 }

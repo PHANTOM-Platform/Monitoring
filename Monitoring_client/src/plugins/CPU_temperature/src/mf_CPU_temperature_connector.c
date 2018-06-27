@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017 University of Stuttgart
+ * Copyright (C) 2018 University of Stuttgart
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -143,7 +143,6 @@ int mf_CPU_temperature_init(Plugin_metrics *data, char **events, size_t num_even
     else {
     	features_list->data->num_events = event_i;
     }
-
 	return SUCCESS;
 }
 

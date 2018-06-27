@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017 University of Stuttgart
+ * Copyright (C) 2018 University of Stuttgart
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@
  * Variable Declarations
  ******************************************************************************/
 mfp_data *conf_data = NULL;
-Plugin_metrics *monitoring_data = NULL;
+Plugin_metrics *monitoring_data_perf = NULL;
 int is_initialized = 0;
 int num_cores = 1;
 
@@ -61,8 +61,8 @@ init_mf_plugin_CPU_perf(PluginManager *pm)
     /*
      * initialize the monitoring data
      */
-    monitoring_data = malloc(sizeof(Plugin_metrics));
-    int ret = mf_CPU_perf_init(monitoring_data, conf_data->keys, conf_data->size, num_cores);
+    monitoring_data_perf = malloc(sizeof(Plugin_metrics));
+    int ret = mf_CPU_perf_init(monitoring_data_perf, conf_data->keys, conf_data->size, num_cores);
     if(ret == 0) {
         char plugin_name[] = "CPU_perf";
         log_error("Plugin %s init function failed.\n", plugin_name);
@@ -85,14 +85,14 @@ mf_plugin_CPU_perf_hook()
         /*
          * sampling 
          */
-        mf_CPU_perf_sample(monitoring_data, num_cores);
+        mf_CPU_perf_sample(monitoring_data_perf, num_cores);
 
         /*
          * Prepares a json string, including current timestamp, name of the plugin,
          * and required metrics.
          */
         char *json = calloc(JSON_MAX_LEN, sizeof(char));
-        mf_CPU_perf_to_json(monitoring_data, conf_data->keys, conf_data->size, json);
+        mf_CPU_perf_to_json(monitoring_data_perf, conf_data->keys, conf_data->size, json);
 
         return json;
     } else {

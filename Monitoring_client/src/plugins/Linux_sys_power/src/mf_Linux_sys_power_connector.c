@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2015-2017 University of Stuttgart
+* Copyright (C) 2018 University of Stuttgart
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -226,7 +226,7 @@ int mf_Linux_sys_power_sample(Plugin_metrics *data)
 
 	double time_interval = after_time - before_time; /* get time interval */
 	
-	float ecpu, emem, enet, edisk;
+	float ecpu=0.0, emem=0.0, enet=0.0, edisk=0.0;
 
 	int i = 0;
 	if(flag & HAS_ALL) {
@@ -246,9 +246,13 @@ int mf_Linux_sys_power_sample(Plugin_metrics *data)
 		ecpu = CPU_energy_after - CPU_energy_before;
 		CPU_energy_before = CPU_energy_after;
 
+		//que pacha Conditional jump or move depends on uninitialised value(s)
 		emem = ((io_stat_after.read_bytes + io_stat_after.write_bytes - io_stat_before.read_bytes - io_stat_before.write_bytes) 
-					/ L2CACHE_LINE_SIZE + (memaccess_after - memaccess_before)) *
+ 					/ L2CACHE_LINE_SIZE + (memaccess_after - memaccess_before)) *
 					L2CACHE_MISS_LATENCY * MEMORY_POWER * 1.0e-6;
+
+
+					
 		memaccess_before = memaccess_after;
 
 		enet = sys_net_energy(&net_stat_before, &net_stat_after);
@@ -338,6 +342,7 @@ void mf_Linux_sys_power_to_json(Plugin_metrics *data, char *json)
 		if(strcmp(data->events[i], "estimated_disk_power") == 0 && !(flag & HAS_IO_STAT))
 			continue;
 
+		//que pacha Conditional jump or move depends on uninitialised value(s)
 		/* if metrics' value >= 0.0, append the metrics to the json string */
 		if(data->values[i] >= 0.0) {
 			sprintf(tmp, ",\"%s\":%.3f", data->events[i], data->values[i]);
@@ -516,9 +521,9 @@ char* concat_and_free(char **s1, const char *s2)
 		if(new_lenght> malloc_usable_size(*s1)){
 			result = (char *) malloc(new_lenght);
 			strcpy(result, *s1);
-			free(*s1);  
+			free(*s1);
 		}else{
-			result = *s1; 
+			result = *s1;
 		}
 	}else{
 		result = malloc(new_lenght);
@@ -636,10 +641,10 @@ unsigned long long read_counter(int fd)
 }
 
 /* read and add all memory counters for each CPU */
-unsigned long long memory_counter_read(void) 
+unsigned long long memory_counter_read(void)
 {
 	int i;
-	unsigned long long result;
+	unsigned long long result=0;
 	for (i = 0; i < nr_cpus; i++) {
 		result += read_counter(fd[i]);
 	}

@@ -1,5 +1,5 @@
 ##
-## Copyright (C) 2014-2015 University of Stuttgart
+## Copyright (C) 2018 University of Stuttgart
 ##
 CC = gcc
 COPT_SO = ${CFLAGS} -fpic
@@ -11,19 +11,23 @@ LFLAGS = -lrt -ldl ${NVML_LIB}
 
 DEBUG ?= 1
 ifeq ($(DEBUG), 1)
-    CFLAGS += -DDEBUG -g
+	CFLAGS += -DDEBUG -g
 else
 	CFLAGS += -DNDEBUG
 endif
 
 SRC = ${CURDIR}/src
 LIB = ${CURDIR}/lib
-
 NVML_PATH = ${CURDIR}/../../../bin/nvidia/usr
 NVML_INC = -I${NVML_PATH}/include/nvidia/gdk
 # should use the libnvidia-ml.so, which is installed with the NVIDIA Display Driver.
 # by default the lib path is /usr/lib64 or /usr/lib
+
+#sudo  mkdir /usr/lib64; sudo chmod 777 /usr/lib64/;
+#cp ../../../bin/nvidia/usr/src/gdk/nvml/lib/libnvidia-ml.so /usr/lib64;
 NVML_LIB = -L/usr/lib64 -lnvidia-ml
+#NVML_LIB = -L${CURDIR}/../../../bin/nvidia/usr/src/gdk/nvml/lib -lnvidia-ml
+#bin/nvidia/usr/src/gdk/nvml/lib/libnvidia-ml.so
 
 PARSER_INC = -I${CURDIR}/../../parser/src
 UTILS_INC = -I${CURDIR}/../utils

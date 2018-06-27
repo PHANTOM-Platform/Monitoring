@@ -1,5 +1,5 @@
 ##
-## Copyright (C) 2014-2015 University of Stuttgart
+## Copyright (C) 2018 University of Stuttgart
 ##
 CC = gcc
 COPT_SO = ${CFLAGS} -fpic
@@ -11,7 +11,7 @@ LFLAGS = -lrt -ldl -Wl,-rpath,${HWLOC_PATH}:${PAPI_PATH} ${HWLOC_LIB} ${PAPI_LIB
 
 DEBUG ?= 1
 ifeq ($(DEBUG), 1)
-    CFLAGS += -DDEBUG -g
+	CFLAGS += -DDEBUG -g
 else
 	CFLAGS += -DNDEBUG
 endif

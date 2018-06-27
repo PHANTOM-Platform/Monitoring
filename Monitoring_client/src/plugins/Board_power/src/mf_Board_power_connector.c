@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017 University of Stuttgart
+ * Copyright (C) 2018 University of Stuttgart
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -169,7 +169,7 @@ int mf_acme_is_enabled(char *acme_name)
 	/* create network link with the acme board with given acme board hostname */
 	ctx = iio_create_network_context(acme_name);
 	if (!ctx) {
-		fprintf(stderr, "Unable to create IIO context\n");
+		fprintf(stderr, "Unable to create IIO context (network link with the acme board)\n");
 		return FAILURE;
 	}
 

@@ -136,10 +136,10 @@ Please [create](https://github.com/excess-project/monitoring-agent/website/issue
 ## Main Contributors
 
 **Montanana, Jose Miguel, HLRS**
-+ [github/hpcfapix](https://github.com/jmmontanana)
++ [github/jmmontanana](https://github.com/jmmontanana)
 
 **Cheptsov, Alexey, HLRS**
-+ [github/hpcfapix](https://github.com/alexey-cheptsov)
++ [github/alexey-cheptsov](https://github.com/alexey-cheptsov)
 
 **Fangli Pi, HLRS**
 + [github/hpcfapix](https://github.com/hpcfapix)

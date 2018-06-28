@@ -53,8 +53,9 @@ int main(int argc, char** argv)
     /*
      * initialize the plugin
      */
+	int supported=1;
     Plugin_metrics *monitoring_data = malloc(sizeof(Plugin_metrics));
-    int ret = mf_Linux_sys_power_init(monitoring_data, argv, argc);
+    int ret = mf_Linux_sys_power_init(monitoring_data, argv, argc, &supported);
     if(ret == 0) {
         printf("Error: Plugin init function failed.\n");
         exit(0);
@@ -68,8 +69,8 @@ int main(int argc, char** argv)
 
         /*
          * sampling 
-         */
-        mf_Linux_sys_power_sample(monitoring_data);
+         */ 
+		mf_Linux_sys_power_sample(monitoring_data, &supported); 
 
         /*
          * Prepares a json string, including current timestamp, name of the plugin,

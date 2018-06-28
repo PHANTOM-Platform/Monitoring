@@ -403,7 +403,7 @@ static int api_prepare(char *Data_path)
 }
 
 
-static void *MonitorStart(void *arg) {
+static void *MonitorStart(void *arg) { 
 	each_metric *metric = (each_metric*) arg;
 	if(strcmp(metric->metric_name, METRIC_NAME_1) == 0) {
 		resources_monitor(pid, DataPath, metric->sampling_interval);

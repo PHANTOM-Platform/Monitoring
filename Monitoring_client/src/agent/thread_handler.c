@@ -26,7 +26,7 @@
 #include "publisher.h" 		// function like publish_json()
 #include "mf_debug.h"  		// functions like log_error(), log_info()...
 #include "plugin_manager.h"	// functions like PluginManager_new(), PluginManager_free(), PluginManager_get_hook()
-#include "plugin_discover.h" // variables like pluginCount, plugins_name; 
+#include "plugin_discover.h" // variables like pluginCount, plugins_name;
                              // functions like discover_plugins(), cleanup_plugins()
 #include "thread_handler.h"
 
@@ -89,11 +89,11 @@ int startThreads(void) {
 		hooks[t] = PluginManager_get_hook(pm);
 	}
 
-	printf(" num_threads is %i\n",num_threads);
+// 	printf(" num_threads is %i\n",num_threads);
 	/* create threads for monitoring and updating configurations */
 	for (t = 0; t < num_threads; t++) {
 		nums[t] = t;
-		printf("starting thread %i..........\n", t); 
+// 		printf("starting thread %i..........\n", t); 
 		iret[t] = pthread_create(&threads[t], NULL, entryThreads, &nums[t]);
 		if (iret[t]) {
 			log_error("pthread_create() failed for %s.\n", strerror(iret[t]));
@@ -157,13 +157,17 @@ static int checkConf(void)
 }
 
 /* each plugin gathers its metrics at a specific rate and send the json-formatted metrics to mf_server */
-static int gatherMetric(int num) 
+static int gatherMetric(int num)
 {
 	int i;
 	long timings = sleep_tims[num].tv_sec * 10e8 + sleep_tims[num].tv_nsec;
 
 	log_info("Gather metrics of plugin %s (#%d) with update interval of %ld ns\n", plugins_name[num], num, timings);
 
+	
+	printf("Gather metrics of plugin %s (#%d) with update interval of %ld ns\n", plugins_name[num], num, timings);
+	
+	
 	char *json_array = calloc(JSON_LEN * bulk_size, sizeof(char));
 	json_array[0] = '[';
 	char msg[JSON_LEN] = {'\0'};
@@ -172,11 +176,24 @@ static int gatherMetric(int num)
 	sprintf(static_json, "{\"WorkflowID\":\"%s\",\"ExperimentID\":\"%s\",\"TaskID\":\"%s\",\"host\":\"%s\",", 
 		application_id, experiment_id, task_id, platform_id);
 
+	int supported=1;
 	while (running) {
 
-		for(i=0; i<bulk_size; i++) {
+		for(i=0; i<bulk_size; i++) { 
 			memset(msg, '\0', JSON_LEN * sizeof(char));
-			char *json = hooks[num]();	//malloc of json in hooks[num]()
+// printf("call %i name is: %s\n",num, plugins_name[num] );
+			if(plugins_name[num]==NULL){
+				exit (0);
+			}
+			char *json=NULL;
+			if( strcmp(plugins_name[num],"mf_plugin_Linux_sys_power")== 0){ 
+				if(supported==1){ 
+					json = hooks[num]( &supported);	//malloc of json in hooks[num]()
+// 				}else{ printf("suppressed call of not available metrics");
+				}
+			}else{
+				json = hooks[num]();	//malloc of json in hooks[num]()
+			}
 			if(json != NULL) {
 				sprintf(msg, "%s%s},", static_json, json);
 				strcat(json_array, msg);
@@ -218,6 +235,7 @@ static void init_timings(void)
 		char value[20] = {'\0'};
 		char *ptr;
 		mfp_get_value("timings", plugins_name[i], value);
+// printf(" renaming ... plugins_name %s\n",plugins_name[i]);
 		if (value[0] == '\0') {
 			timings[i] = default_timing;
 		} else {

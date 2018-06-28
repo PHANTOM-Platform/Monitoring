@@ -1,18 +1,18 @@
 /*
- * Copyright 2018 High Performance Computing Center, Stuttgart
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+* Copyright 2018 High Performance Computing Center, Stuttgart
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -58,7 +58,8 @@ char* concat_and_free(char **s1, const char *s2)
 int power_monitor(int pid, char *DataPath, long sampling_interval)
 {
 	/*create and open the file*/
-	char *FileName=NULL;
+	printf("start power monitor\n");
+	char *FileName=NULL; 
 	FileName=concat_and_free(&FileName, DataPath);
 	FileName=concat_and_free(&FileName, "/");
 	FileName=concat_and_free(&FileName, METRIC_NAME_3);
@@ -66,7 +67,7 @@ int power_monitor(int pid, char *DataPath, long sampling_interval)
 	if (fp == NULL) {
 		printf("ERROR: Could not create file: %s\n", FileName);
 		free(FileName);
-		return(0);
+		return 0;
 	}
 	struct timespec timestamp_before, timestamp_after;
 	double timestamp_ms;
@@ -78,7 +79,8 @@ int power_monitor(int pid, char *DataPath, long sampling_interval)
 		return 0;
 	}
 
-	if(read_and_check(fd, pid, &before) <= 0){
+	int returned_value =read_and_check(fd, pid, &before);
+	if( returned_value != 0){
 		free(FileName);
 		return 0;
 	}
@@ -89,11 +91,12 @@ int power_monitor(int pid, char *DataPath, long sampling_interval)
 		clock_gettime(CLOCK_REALTIME, &timestamp_before);
 
 		usleep(sampling_interval * 1000);
-		
-		if(read_and_check(fd, pid, &after) <= 0){
+	
+		int returned_value =read_and_check(fd, pid, &after);
+		if( returned_value  != 0){
 			free(FileName);
 			return 0;
-		}
+		} 
 	
 		/*get after timestamp in ms*/
 		clock_gettime(CLOCK_REALTIME, &timestamp_after);
@@ -116,7 +119,7 @@ int power_monitor(int pid, char *DataPath, long sampling_interval)
 
 		timestamp_ms = timestamp_after.tv_sec * 1000.0  + (double)(timestamp_after.tv_nsec / 1.0e6);
 			
-		fprintf(fp, "\"local_timestamp\":\"%.1f\", \"%s\":%.3f, \"%s\":%.3f, \"%s\":%.3f, \"%s\":%.3f\n", timestamp_ms, 
+		fprintf(fp, "\"local_timestamp\":\"%.1f\", \"%s\":%.3f, \"%s\":%.3f, \"%s\":%.3f, \"%s\":%.3f\n", timestamp_ms,
 				"total_CPU_power", sys_cpu_power,
 				"process_CPU_power", pid_cpu_power,
 				"process_mem_power", pid_mem_power,
@@ -147,28 +150,35 @@ int create_perf_stat_counter(int pid)
 	return syscall(__NR_perf_event_open, &attr, pid, -1, -1, 0);
 }
 
-/* read from /proc filesystem all statistics;
-get the cpu energy consumption based on cpu freq statistics;
-read from perf counter the hardware cache misses */
-int read_and_check(int fd, int pid, pid_stats_info *info) 
+/** read from /proc filesystem all statistics;
+* get the cpu energy consumption based on cpu freq statistics;
+* read from perf counter the hardware cache misses 
+* returns a set of bits indicating if error on the different functions
+* returns 0 if completed successfully all the functions
+*/
+int read_and_check(int fd, int pid, pid_stats_info *info)
 {
+	printf("**** read_and_check  \n\n");
+	
+	int value_to_return=0;
 	if(read_pid_time(pid, info) <= 0)
-		return 0;
+		value_to_return+=1;
 
 	if(read_pid_io(pid, info) <=0)
-		return 0;
+		value_to_return+=2;
 	
 	if(read_sys_time(info) <= 0)
-		return 0;
+		value_to_return+=4;
 	
 	if(cpu_freq_stat(info) <= 0)
-		return 0;
+		value_to_return+=8;
 	
 	info->pid_l2_cache_misses = read_perf_counter(fd);
 	if(info->pid_l2_cache_misses <= 0)
-		return 0;
+		value_to_return+=16;
 
-	return 1;
+	
+	return value_to_return;
 }
 
 /* check if values are increasing; calculate the differences in the time interval; update the before values with after values */
@@ -200,7 +210,7 @@ int read_pid_time(int pid, pid_stats_info *info)
 	char pid_cpu_file[128] = {'\0'};
 	char tmp_str[32];
 	char tmp_char;
-	unsigned long long tmp, pid_utime, pid_stime;	
+	unsigned long long tmp, pid_utime, pid_stime;
 
 	sprintf(pid_cpu_file, "/proc/%d/stat", pid);
 	fp = fopen(pid_cpu_file, "r");
@@ -211,7 +221,7 @@ int read_pid_time(int pid, pid_stats_info *info)
 	}
 	if(fgets(line, 1024, fp) != NULL) {
 		sscanf(line, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu",
-			(int *)&tmp, tmp_str, &tmp_char, (int *)&tmp, (int *)&tmp, (int *)&tmp, (int *)&tmp, (int *)&tmp, 
+			(int *)&tmp, tmp_str, &tmp_char, (int *)&tmp, (int *)&tmp, (int *)&tmp, (int *)&tmp, (int *)&tmp,
 			(unsigned int *)&tmp, (unsigned long *)&tmp, (unsigned long *)&tmp, (unsigned long *)&tmp, 
 			(unsigned long *)&tmp, (unsigned long *)&pid_utime, (unsigned long *)&pid_stime);
 	}
@@ -336,21 +346,18 @@ int cpu_freq_stat(pid_stats_info *info)
 				break;
 			sscanf(line, "%llu %llu", &tmp, &freqs[i]);
 			/* each line has a pair like "<frequency> <time>", which means this CPU spent <time> usertime at <frequency>.
-			unit of <time> is 10ms
-			*/
+			unit of <time> is 10ms*/
 		}
 		max_i = i - 1;
 		fclose(fp);
-
 		for (i = 0; i <= max_i; i++) {
 			energy_each = (parameters_value[0] - power_range * i / max_i) * freqs[i] * 10.0; // in milliJoule
-			energy_total += energy_each; 
+			energy_total += energy_each;
 		}
 	}
 
 	if(cpu_freq_file!= NULL ) free(cpu_freq_file);
 	closedir(dir);
-
 	info->sys_cpu_energy = energy_total;
 	return 1;
 }

@@ -28,6 +28,7 @@
  * Variable Declarations
  ******************************************************************************/
 mfp_data *conf_data = NULL;
+int supported_sys_power=1;
 Plugin_metrics *monitoring_data_power = NULL;
 int is_initialized = 0;
 
@@ -44,7 +45,7 @@ char* mf_plugin_Linux_sys_power_hook();
    @return 1 on success; 0 otherwise */
 extern int
 init_mf_plugin_Linux_sys_power(PluginManager *pm)
-{
+{  
     /*
      * get the turned on metrics from the configuration file
      */
@@ -55,7 +56,7 @@ init_mf_plugin_Linux_sys_power(PluginManager *pm)
      * initialize the monitoring data
      */
     monitoring_data_power = malloc(sizeof(Plugin_metrics));
-    int ret = mf_Linux_sys_power_init(monitoring_data_power, conf_data->keys, conf_data->size);
+    int ret = mf_Linux_sys_power_init(monitoring_data_power, conf_data->keys, conf_data->size, &supported_sys_power);
     if(ret == 0) {
 	char plugin_name[] = "Linux_sys_power";
 	log_error("Plugin %s init function failed.\n", plugin_name);
@@ -71,23 +72,23 @@ init_mf_plugin_Linux_sys_power(PluginManager *pm)
 
 /* the hook function, sample the metrics and convert to a json-formatted string */
 char*
-mf_plugin_Linux_sys_power_hook()
-{
+mf_plugin_Linux_sys_power_hook(int *supported )
+{ 	
     if (is_initialized) {
-	/*
-	 * sampling 
-	 */
-	mf_Linux_sys_power_sample(monitoring_data_power);
+		/*
+		* sampling 
+		*/
+		mf_Linux_sys_power_sample(monitoring_data_power, supported ); 
+		
+		/*
+		* Prepares a json string, including current timestamp, name of the plugin,
+		* and required metrics.
+		*/
+		char *json = calloc(JSON_MAX_LEN, sizeof(char));
+		mf_Linux_sys_power_to_json(monitoring_data_power, json);
 
-	/*
-	 * Prepares a json string, including current timestamp, name of the plugin,
-	 * and required metrics.
-	 */
-	char *json = calloc(JSON_MAX_LEN, sizeof(char));
-	mf_Linux_sys_power_to_json(monitoring_data_power, json);
-
-	return json;
+		return json;
     } else {
-	return NULL;
+		return NULL;
     }
 }

@@ -111,7 +111,7 @@ int sys_IO_stat_read(struct io_stats *total_io_stat);
 int process_IO_stat_read(int pid, struct io_stats *io_info);
 float sys_net_energy(struct net_stats *stats_before, struct net_stats *stats_after);
 float sys_disk_energy(struct io_stats *stats_before, struct io_stats *stats_after);
-float CPU_energy_read(void);
+float CPU_energy_read(int *supported);
 void create_perf_stat_counter(void);
 unsigned long long read_counter(int fd);
 unsigned long long memory_counter_read(void);
@@ -126,7 +126,7 @@ unsigned long long memory_counter_read(void);
 *
 *  @return 1 on success; 0 otherwise.
 */
-int mf_Linux_sys_power_init(Plugin_metrics *data, char **events, size_t num_events)
+int mf_Linux_sys_power_init(Plugin_metrics *data, char **events, size_t num_events, int *supported)
 {
 	/* failed to initialize flag means that all events are invalid */
 	if(flag_init(events, num_events) == 0) {
@@ -141,8 +141,10 @@ int mf_Linux_sys_power_init(Plugin_metrics *data, char **events, size_t num_even
 		strcpy(data->events[i], "estimated_total_power");
 		i++;
 
+ 
 		/* read the current cpu energy */
-		CPU_energy_before = CPU_energy_read();
+		if(*supported==1)
+		CPU_energy_before = CPU_energy_read( supported);
 
 		/* init perf counter and read the current memory access times */
 		create_perf_stat_counter();
@@ -178,8 +180,10 @@ int mf_Linux_sys_power_init(Plugin_metrics *data, char **events, size_t num_even
 			data->events[i] = malloc(MAX_EVENTS_LEN * sizeof(char));	
 			strcpy(data->events[i], "estimated_CPU_power");
 			i++;
+			 
 			/* read the current cpu energy */
-			CPU_energy_before = CPU_energy_read();
+			if(*supported==1)
+			CPU_energy_before = CPU_energy_read(supported);
 		}
 		if(flag & HAS_NET_STAT) {
 			data->events[i] = malloc(MAX_EVENTS_LEN * sizeof(char));	
@@ -217,8 +221,8 @@ int mf_Linux_sys_power_init(Plugin_metrics *data, char **events, size_t num_even
 *
 *  @return 1 on success; 0 otherwise.
 */
-int mf_Linux_sys_power_sample(Plugin_metrics *data)
-{
+int mf_Linux_sys_power_sample(Plugin_metrics *data , int *supported)  
+{   
 	/* get current timestamp in second */
 	struct timespec timestamp;
 	clock_gettime(CLOCK_REALTIME, &timestamp);
@@ -229,9 +233,10 @@ int mf_Linux_sys_power_sample(Plugin_metrics *data)
 	float ecpu=0.0, emem=0.0, enet=0.0, edisk=0.0;
 
 	int i = 0;
-	if(flag & HAS_ALL) {
+	if(flag & HAS_ALL) { 
 		/* get current CPU energy (unit in milliJoule) */
-		CPU_energy_after = CPU_energy_read();
+		if(*supported==1)
+		CPU_energy_after = CPU_energy_read( supported); 
 		
 		/* get current memory access counter value */
 		memaccess_after = memory_counter_read();
@@ -251,8 +256,6 @@ int mf_Linux_sys_power_sample(Plugin_metrics *data)
  					/ L2CACHE_LINE_SIZE + (memaccess_after - memaccess_before)) *
 					L2CACHE_MISS_LATENCY * MEMORY_POWER * 1.0e-6;
 
-
-					
 		memaccess_before = memaccess_after;
 
 		enet = sys_net_energy(&net_stat_before, &net_stat_after);
@@ -278,8 +281,11 @@ int mf_Linux_sys_power_sample(Plugin_metrics *data)
 			i++;
 		}
 	} else {
-		if(flag & HAS_CPU_STAT) {
-			CPU_energy_after = CPU_energy_read();
+		if(flag & HAS_CPU_STAT) { 
+			/* get current CPU energy (unit in milliJoule) */
+			if(*supported==1)
+			CPU_energy_after = CPU_energy_read( supported); 
+			
 			ecpu = CPU_energy_after - CPU_energy_before;
 			CPU_energy_before = CPU_energy_after;
 			data->values[i] = ecpu / time_interval;
@@ -534,16 +540,18 @@ char* concat_and_free(char **s1, const char *s2)
 	return result;
 }
 
-/* get the cpu freq counting; return the cpu energy since the system's last booting */
-float CPU_energy_read(void) 
-{
+/* get the cpu freq counting; return the cpu energy since the system's last booting 
+ * if supported assigned to 0, means this metric is not supported and not need to call this function again
+ */
+float CPU_energy_read(int *supported)
+{ 
 	/* read the system cpu energy based on given max- and min- cpu energy, and frequencies statistics */
 	FILE *fp;
 	char line[32] = {'\0'};
 	DIR *dir;
 	int i, max_i;
 	struct dirent *dirent;
-	char *cpu_freq_file = NULL; 
+	char *cpu_freq_file = NULL;
 	
 	float energy_each, energy_total;
 	unsigned long long tmp;
@@ -553,6 +561,7 @@ float CPU_energy_read(void)
 	fp = fopen("/sys/devices/system/cpu/cpu0/cpufreq/stats/time_in_state", "r");
 	if(fp == NULL) {
 		printf("ERROR: CPU frequency statistics are not supported.\n");
+		*supported=0; 
 		return 0.0;
 	}
 

@@ -13,6 +13,7 @@ var elastic = new elasticsearch.Client({
 
 
 /* monitoring routes */
+var servername      = require('./routes/v1/servername');
 var routes      = require('./routes/v1/index');
 var workflows   = require('./routes/v1/workflows');
 var devices     = require('./routes/v1/devices'); /*2017*/
@@ -34,7 +35,7 @@ var app = express();
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 app.set('elastic', elastic);
-app.set('version', '23.01.18');
+app.set('version', '23.06.18');
 var port = '3033',
   hostname = os.hostname();
 // redirect backend hostname to front-end
@@ -54,6 +55,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 /* monitoring URL paths */
 app.use('/', routes);
 app.use('/v1/phantom_mf', routes);
+app.use('/servername', servername);
 app.use('/v1/phantom_mf/workflows', workflows);
 app.use('/v1/phantom_mf/experiments', experiments);
 app.use('/v1/phantom_mf/devices',devices); /*2017*/

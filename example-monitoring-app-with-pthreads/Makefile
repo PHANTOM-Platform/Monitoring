@@ -1,7 +1,7 @@
 #Makefile for compiling example_pthreads.cpp
 #If you find any missing library when compiling means that the setup-client.sh miss to install some of the required packages
 #After fix any missing package  compile first the phantom_monitoring_client, then if finish successfully run this makefile again.
-MF_Client_Path := ../phantom_monitoring_client
+MF_Client_Path := /home/jmontana/phantom_mf/Monitoring_client
 
 CC:=gcc
 OPTIONS:=-O0 -g -Wall

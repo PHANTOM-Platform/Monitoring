@@ -4,7 +4,7 @@
 #bash initial.sh
 
 
-common_path="../phantom_monitoring_client"
+common_path="/home/jmontana/phantom_mf/Monitoring_client"
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${common_path}/src/api
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${common_path}/src/parser
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${common_path}/src/publisher

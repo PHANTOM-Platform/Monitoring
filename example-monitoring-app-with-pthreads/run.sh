@@ -1,5 +1,8 @@
 #!/bin/bash
 
+
+#cp /home/jmontana/phantom_mf/Monitoring_client/dist/mf_config.ini .
+
 #if the initial.sh was never run before, then you need to run it:
 #bash initial.sh
 

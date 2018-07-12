@@ -48,7 +48,7 @@ register_workflow()
 
 #server="141.58.5.218"  #instead of localhost can be specified the address of a remote server
 server="localhost"
-regplatformid="phantom_gmv"
+regplatformid="node01"
 appid="demo"
 task="pthread-example"
 port="3033"

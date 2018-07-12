@@ -23,6 +23,8 @@ all: $(appname)
 default: $(appname)
 
 $(appname): $(objects)
+	mkdir -p $(DST_DIR)
+	cp $(MF_Client_Path)/src/api/src/mf_api.h src/
 	$(CC) $(OPTIONS) $(LDLIBS) $(SRC_DIR)/$(appname) $(SRC_DIR)/monitoring_support.c -o $(DST_DIR)/$(basename $(appname)) $(objects) $(MF_API) $(PUBLISH) $(CURL)
 	
 clean:

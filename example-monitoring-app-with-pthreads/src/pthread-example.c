@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
 	/********************MONITORNG START ************************/
     struct Thread_report all_thread_reports[2];
 	char server[]="localhost:3033";
-	char regplatformid[]="laptop_montanana";
+	char regplatformid[]="node01";
 	char appid[]="demo";
 	char execfile[]="pthread-example";
 	start_monitoring(server, regplatformid);

@@ -232,9 +232,11 @@
 	cd $ROOT;
 	if [ ! -f libiio.tgz ]; then
 		git clone https://github.com/analogdevicesinc/libiio.git
+		tar czf libiio.tgz;
 	else
 		tar -xzf libiio.tgz;
 	fi;
+
 	cd libiio;
 	mkdir -p ${INSTALL_PATH_LIBIIO};
 	cmake -DCMAKE_INSTALL_PREFIX=${INSTALL_PATH_LIBIIO} ./

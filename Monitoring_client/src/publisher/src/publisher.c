@@ -66,8 +66,8 @@ size_t write_data(void *ptr, size_t size, size_t nitems, struct url_data *data) 
 		fprintf(stderr, "Failed to allocate memory.\n");
 		return 0;
 	}
-	int i=0;//instead of data->data = (char*) realloc(data->data, data->size + n);
-	while((data->data[i]!='\0') &&(i < index)) {
+	unsigned int i=0;//instead of data->data = (char*) realloc(data->data, data->size + n);
+	while((data->data[i]!='\0') &&(i < (unsigned int) index)) {
 		temp_str[i]=data->data[i];
 		i++;
 	}
@@ -189,7 +189,7 @@ int new_query_json(char *URL, struct url_data *response, char *operation)
 		return FAILED;
 	}
 	rescode.data[0] = '\0';
-	rescode.headercode = malloc(5192); /* reasonable size initial buffer */
+	rescode.headercode = (char *) malloc(5192); /* reasonable size initial buffer */
 	if(NULL == rescode.headercode) {
 		fprintf(stderr, "Failed to allocate memory.\n");
 		return FAILED;
@@ -354,9 +354,10 @@ int publish_file(char *URL, char *static_string, char *filename)
 	}
 	/*open the file, which contains data for publishing */
 	int i = 0;
+	CURLcode response_code;
 	FILE *fp;
 	char line[320];
-	char *message = calloc(10 * 320, sizeof(char));
+	char *message = (char *) calloc(10 * 320, sizeof(char));
 	char operation[]="POST";
 	
 	/* int curl with meaningless message */
@@ -386,7 +387,7 @@ int publish_file(char *URL, char *static_string, char *filename)
 				sprintf(message + strlen(message), ",{%s, %s}]", static_string, line);
 				curl_easy_setopt(curl, CURLOPT_POSTFIELDS, message);
 				curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long ) strlen(message));
-				CURLcode response_code = curl_easy_perform(curl);
+				  response_code = curl_easy_perform(curl);
 
 				if (response_code != CURLE_OK) {
 					const char *error_msg = curl_easy_strerror(response_code);
@@ -403,12 +404,14 @@ int publish_file(char *URL, char *static_string, char *filename)
 				break;
 		}
 	}
+	
+	
 	/* send the final few lines in the file */
 	if(i > 0) {
 		strcat(message, "]");
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, message);
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long ) strlen(message));
-		CURLcode response_code = curl_easy_perform(curl);
+		  response_code = curl_easy_perform(curl);
 
 		if (response_code != CURLE_OK) {
 			const char *error_msg = curl_easy_strerror(response_code);
@@ -416,7 +419,7 @@ int publish_file(char *URL, char *static_string, char *filename)
 			return FAILED;
 		}
 	}
-	
+		
 	/* clean the curl handle */	
 	//curl_slist_free_all(headers);/* free the list again */
 	curl_easy_cleanup(curl);
@@ -477,7 +480,7 @@ int query_message_json(char *URL, char *message, struct url_data *response, char
 		return FAILED;
 	}
 	rescode.data[0] = '\0';
-	rescode.headercode = malloc(5192); /* reasonable size initial buffer */
+	rescode.headercode = (char *) malloc(5192); /* reasonable size initial buffer */
 	if(NULL == rescode.headercode) {
 		fprintf(stderr, "Failed to allocate memory.\n");
 		return FAILED;
@@ -542,7 +545,7 @@ int query_message_json(char *URL, char *message, struct url_data *response, char
 	
  
 	free(data.headercode);
-	free(rescode.data); 
+	free(rescode.data);
 	
 	if(response->data == NULL) {
 		return FAILED;

@@ -39,7 +39,7 @@
 	PAPI="papi";
 	PAPI_VERSION="5.4.0";
 	CURL="curl";
-	CURL_VERSION="7.37.0";
+	CURL_VERSION="7.55.0";
 	APR="apr";
 	APR_VERSION="1.6.3";  #before was 1.5.2
 	APR_UTIL="apr-util";
@@ -147,6 +147,10 @@
 	fi
 	chmod +x ${NVIDIA_GDK};
 	./${NVIDIA_GDK} --silent --installdir=${INSTALL_PATH_NVIDIA}
+	
+	cd $ROOT;
+	sudo  mkdir /usr/lib64; sudo chmod 777 /usr/lib64/;
+	cp bin/nvidia/usr/src/gdk/nvml/lib/libnvidia-ml.so /usr/lib64;
 # ============================================================================ #
 # DOWNLOAD AND INSTALL SENSORS LIB                                             #
 # https://fossies.org/linux/misc/lm_sensors-3.4.0.tar.gz/lm_sensors-3.4.0/lib/libsensors.3

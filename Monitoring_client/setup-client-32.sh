@@ -39,7 +39,7 @@
 	PAPI="papi";
 	PAPI_VERSION="5.4.0";
 	CURL="curl";
-	CURL_VERSION="7.37.0";
+	CURL_VERSION="7.55.0"; # before was the 7.37.0
 	APR="apr";
 	APR_VERSION="1.6.3";  #before was 1.5.2
 	APR_UTIL="apr-util";

@@ -10,6 +10,10 @@ Currently 7 plug-ins are supported, whose implementation and design details are 
 
 For code instrumentation and user-defined metrics collection, we provide a monitoring library and several APIs, which are kept in the directory `src/api`. Descriptions in detail about how to use the monitoring APIs are given also in this directory.
 
+ <p align="center">
+<a href="https://github.com/PHANTOM-Platform/Repository/blob/master/Monitoring_client/d3.2.mf-library.png">
+<img src="https://github.com/PHANTOM-Platform/Repository/blob/master/Monitoring_client/d3.2.mf-library.png" align="middle" width="50%" height="50%" title="Schema" alt="Repository Schema">
+</a> </p>
 
 ## Prerequisites
 The monitoring client requires at first a running server and database. In order to install these requirements, please

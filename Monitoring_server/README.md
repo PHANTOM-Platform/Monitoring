@@ -7,6 +7,12 @@
 The PHANTOM monitoring server is composed of two components: a web server and a data storage system. The web server provides various functionalities for data query and data analysis via RESTful APIs with documents in JSON format. The server's URL are "http://localhost:3033" by default.
 
 
+ <p align="center">
+<a href="https://github.com/PHANTOM-Platform/Monitoring/blob/master/Monitoring_server/d2.2.mf-server_v2.png">
+<img src="https://github.com/PHANTOM-Platform/Monitoring/blob/master/Monitoring_server/d2.2.mf-server_v2.png" align="middle" width="70%" height="70%" title="Schema" alt="MF Server+ Execution Manager Schema">
+</a> </p>
+
+
 ## Prerequisites
 The monitoring server receives data from the [PHANTOM monitoring client][client] via RESTful interfaces. The server is implemented using Node.js, and connects to Elasticsearch to store and access metric data. Before you start installing the required components, please note that the installation and setup steps mentioned below assume that you are running a current Linux as operating system. The installation was tested with Ubuntu 16.04 LTS as well as with Scientific Linux 6 (Carbon).
 Before you can proceed, please clone the repository:

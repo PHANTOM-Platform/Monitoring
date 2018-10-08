@@ -32,11 +32,11 @@
     "cors": "^2.8.4",
     "dateformat": "^3.0.2",
     "debug": "^3.1.0",
-    "elasticsearch": "^14.0.0",
+    "elasticsearch": "^15.1.1",
     "express": "^4.16.3",
     "express-easy-zip": "^1.1.4",
     "express-fileupload": "^0.3.0",
-    "express-ws": "^3.0.0",
+    "express-ws": "^4.0.0",
     "fs": "0.0.1-security",
     "hoek": "^4.2.1",
     "http": "0.0.0",
@@ -46,6 +46,7 @@
     "morgan": "^1.9.0",
     "npm": "^6.0.0",
     "request": "^2.83.0",
-    "serve-favicon": "^2.4.5"
+    "serve-favicon": "^2.4.5",
+    "socks": "^2.1.6"
   }
 }

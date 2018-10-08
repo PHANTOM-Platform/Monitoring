@@ -41,7 +41,7 @@
 	CURL="curl";
 	CURL_VERSION="7.55.0"; # before was the 7.37.0
 	APR="apr";
-	APR_VERSION="1.6.3";  #before was 1.5.2
+	APR_VERSION="1.6.5";  #before was 1.5.2
 	APR_UTIL="apr-util";
 	APR_UTIL_VERSION="1.6.1";  #before was 1.5.4
 	EXCESS_QUEUE_VERSION=release/0.1.0;

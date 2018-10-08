@@ -85,9 +85,8 @@ int startThreads(void) {
 	int nums[num_threads];
 
 	hooks = (PluginHook *)malloc(pluginCount * sizeof(PluginHook));
-	for (t = 0; t < pluginCount; t++) {
+	for (t = 0; t < pluginCount; t++)
 		hooks[t] = PluginManager_get_hook(pm);
-	}
 
 // 	printf(" num_threads is %i\n",num_threads);
 	/* create threads for monitoring and updating configurations */
@@ -105,16 +104,15 @@ int startThreads(void) {
 	sig.sa_handler = catcher; /* signal handler is "catcher" */
 	sig.sa_flags = SA_RESTART;
 	sigemptyset(&sig.sa_mask);
-	sigaction(SIGTERM, &sig, NULL );
-	sigaction(SIGINT, &sig, NULL );
+	sigaction(SIGTERM, &sig, NULL);
+	sigaction(SIGINT, &sig, NULL);
 
 	while (running)
 		sleep(1);
 	
 	/* thread join from plugins threads till all the sending threads */
-	for (t = 0; t < pluginCount; t++) {
+	for (t = 0; t < pluginCount; t++)
 		pthread_join(threads[t], NULL);
-	}
 
 	cleanup_plugins(pdstate);
 	PluginManager_free(pm);
@@ -123,27 +121,23 @@ int startThreads(void) {
 }
 
 /* catch the stop signal */
-static void catcher(int signo) 
-{
+static void catcher(int signo) {
 	running = 0;
 	log_info("Signal %d catched.\n", signo);
 }
 
 /* entry for all threads */
-static void* entryThreads(void *arg) 
-{
+static void* entryThreads(void *arg) {
 	int *typeT = (int*) arg;
-	if(*typeT < pluginCount) {
+	if(*typeT < pluginCount)
 		gatherMetric(*typeT);
-	} else {
+	else
 		checkConf();
-	}
 	return NULL;
 }
 
 /* timings update if mf_config.ini has been modified */
-static int checkConf(void) 
-{
+static int checkConf(void) {
 	while (running) {
 		mfp_parse(confFile);
 		char wait_some_seconds[20] = {'\0'};
@@ -157,34 +151,36 @@ static int checkConf(void)
 }
 
 /* each plugin gathers its metrics at a specific rate and send the json-formatted metrics to mf_server */
-static int gatherMetric(int num)
-{
+static int gatherMetric(int num) {
 	int i;
 	long timings = sleep_tims[num].tv_sec * 10e8 + sleep_tims[num].tv_nsec;
-
 	log_info("Gather metrics of plugin %s (#%d) with update interval of %ld ns\n", plugins_name[num], num, timings);
-
-	
-	printf("Gather metrics of plugin %s (#%d) with update interval of %ld ns\n", plugins_name[num], num, timings);
-	
+	//printf("Gather metrics of plugin %s (#%d) with update interval of %ld ns\n", plugins_name[num], num, timings);
 	
 	char *json_array = calloc(JSON_LEN * bulk_size, sizeof(char));
 	json_array[0] = '[';
 	char msg[JSON_LEN] = {'\0'};
 	char static_json[512] = {'\0'};
 
+	if(experiment_id == NULL){
+		printf("ERROR experiment_id == NULL\n");
+		log_error("ERROR experiment_id == NULL.\n");
+		running= 0;
+	}else if(experiment_id[0] == '\0'){
+		printf("ERROR experiment_id == ''\n");
+		log_error("ERROR experiment_id == ''.\n");
+		running= 0;
+	}
 	sprintf(static_json, "{\"WorkflowID\":\"%s\",\"ExperimentID\":\"%s\",\"TaskID\":\"%s\",\"host\":\"%s\",", 
 		application_id, experiment_id, task_id, platform_id);
 
 	int supported=1;
 	while (running) {
-
 		for(i=0; i<bulk_size; i++) { 
 			memset(msg, '\0', JSON_LEN * sizeof(char));
 // printf("call %i name is: %s\n",num, plugins_name[num] );
-			if(plugins_name[num]==NULL){
+			if(plugins_name[num]==NULL)
 				exit (0);
-			}
 			char *json=NULL;
 			if( strcmp(plugins_name[num],"mf_plugin_Linux_sys_power")== 0){ 
 				if(supported==1){ 
@@ -208,30 +204,26 @@ static int gatherMetric(int num)
 		json_array[strlen(json_array) -1] = ']';
 		json_array[strlen(json_array)] = '\0';
 		debug("JSON sent is :\n%s\n", json_array);
+		printf("JSON sent is :\n%s\n", json_array);
 		publish_json(metrics_publish_URL, json_array);
 		memset(json_array, '\0', JSON_LEN * bulk_size * sizeof(char));
 		json_array[0] = '[';
-		
 	}
-
-	if(json_array != NULL) {
+	if(json_array != NULL)
 		free(json_array);
-	}
 	return SUCCESS;
 }
 
 /* parse mf_config.ini to get all timing information */
-static void init_timings(void)
-{
+static void init_timings(void) {
 	char *ptr;
 	char timing[20] = {'\0'};
 	mfp_get_value("timings", "default", timing);
 	long default_timing = strtol(timing, &ptr, 10);
 
 	for (int i = 0; i < pluginCount; i++) {
-		if (plugins_name[i] == NULL) {
+		if (plugins_name[i] == NULL)
 			continue;
-		}
 		char value[20] = {'\0'};
 		char *ptr;
 		mfp_get_value("timings", plugins_name[i], value);

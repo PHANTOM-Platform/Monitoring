@@ -45,5 +45,7 @@ int publish_file(char *URL, char *static_string, char *filename);
 
 int query_message_json(char *URL, char *message, struct url_data *response, char *operation);
 
+void close_curl(void) ;
+
 // int create_new_experiment(char *URL, char *message, char *experiment_id);
 #endif

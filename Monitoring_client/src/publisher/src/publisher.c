@@ -19,6 +19,20 @@
 #include <curl/curl.h>
 #include "mf_debug.h"
 #include "publisher.h"
+#include <malloc.h>
+
+// From http://curl.haxx.se/libcurl/c/curl_global_init.html, I see 
+// 
+// "This function is not thread safe. You must not call it when any other thread 
+// in the program (i.e. a thread sharing the same memory) is running. This doesn't 
+// just mean no other thread that is using libcurl. Because curl_global_init() 
+// calls functions of other libraries that are similarly thread unsafe, it could 
+// conflict with any other thread that uses these other libraries. " 
+// 
+// 
+// void curl_global_cleanup(void);
+// DESCRIPTION: This function releases resources acquired by curl_global_init.
+
 
 #define SUCCESS 1
 #define FAILED 0
@@ -107,7 +121,7 @@ size_t write_data(void *ptr, size_t size, size_t nitems, struct url_data *data) 
 //     else if (strncmp((char *)ptr, "HTTP/1.1", 8) == 0) { // get http response code
 // //         strtok((char *)ptr, " ");
 // //         data = (strtok(NULL, " \n"));   // http response code		
-//     } 
+//     }
 // 	return size * nitems;
 // }
 
@@ -121,7 +135,6 @@ size_t write_data(void *ptr, size_t size, size_t nitems, struct url_data *data) 
 // 	if(stream == NULL) {
 // 		return 0;
 // 	}
-//
 // 	memcpy(stream, buffer, total);
 // 	stream[total] = '\0';
 // 	return total;
@@ -131,11 +144,9 @@ size_t write_data(void *ptr, size_t size, size_t nitems, struct url_data *data) 
 /**********************************************************
  * FUNCTION DECLARATIONS
  *****************************************************/
-#include <malloc.h>
 //Function for increase dynamically a string concatenating strings at the end
 //It free the memory of the first pointer if not null
-char* concat_and_free(char **s1, const char *s2)
-{
+char* concat_and_free(char **s1, const char *s2) {
 	char *result = NULL;
 	unsigned int new_lenght= strlen(s2)+1; //+1 for the null-terminator;
 	if(*s1 != NULL){
@@ -160,8 +171,7 @@ char* concat_and_free(char **s1, const char *s2)
 
 /* send query to the given URL, read back the response string
 return 1 on success; otherwise return 0 */
-int new_query_json(char *URL, struct url_data *response, char *operation)
-{
+int new_query_json(char *URL, struct url_data *response, char *operation) {
 	response->size=0;
 	response->data = NULL;
 	response->headercode = NULL;
@@ -196,12 +206,8 @@ int new_query_json(char *URL, struct url_data *response, char *operation)
 	}	
 	rescode.headercode[0] = '\0';
 
-	 	
-	 
-
-	if (!check_URL(URL)) {
+	if (!check_URL(URL))
 		return FAILED;
-	}
 
 	CURL *curl = prepare_query(URL, operation);
 	if (curl == NULL) {
@@ -291,8 +297,7 @@ return 1 on success; otherwise return 0 */
 
 /* json-formatted data publish using libcurl
 return 1 on success; otherwise return 0 */
-int publish_json(char *URL, char *message)
-{
+int publish_json(char *URL, char *message) {
 	struct url_data rescode;
 	rescode.size=0;
 	rescode.data = malloc(5192); /* reasonable size initial buffer */
@@ -347,8 +352,7 @@ int publish_json(char *URL, char *message)
 /* publish a file with given filename and URL 
 each line is read and combined with the given static string, formatted into json, and sent via libcurl
 return 1 on success; otherwise return 0 */
-int publish_file(char *URL, char *static_string, char *filename)
-{
+int publish_file(char *URL, char *static_string, char *filename) {
 	if (!check_URL(URL) || !check_message(static_string) || !check_message(filename)) {
 		return FAILED;
 	}
@@ -416,6 +420,7 @@ int publish_file(char *URL, char *static_string, char *filename)
 		if (response_code != CURLE_OK) {
 			const char *error_msg = curl_easy_strerror(response_code);
 			log_error("publish(char *, Message) %s", error_msg);
+			fclose(fp);
 			return FAILED;
 		}
 	}
@@ -424,6 +429,7 @@ int publish_file(char *URL, char *static_string, char *filename)
 	//curl_slist_free_all(headers);/* free the list again */
 	curl_easy_cleanup(curl);
 	if(message!=NULL) free(message);
+	fclose(fp);
 	return SUCCESS;
 }
 
@@ -455,8 +461,7 @@ int publish_file(char *URL, char *static_string, char *filename)
 * curl -H "Content-Type: application/json" -XPOST ${server}:${port}/v1/phantom_mf/experiments/${appid} -d '{
 * "application": "'"${appid}"'", "task": "'"${task}"'", "host": "'"${regplatformid}"'"}'
 */ 
-int query_message_json(char *URL, char *message, struct url_data *response, char *operation)
-{
+int query_message_json(char *URL, char *message, struct url_data *response, char *operation) {
 	struct url_data data; 
 	data.size = 0;
 	data.data = (char *) malloc(5120); /* reasonable size initial buffer */
@@ -545,8 +550,7 @@ int query_message_json(char *URL, char *message, struct url_data *response, char
 	
  
 	free(data.headercode);
-	free(rescode.data);
-	
+	free(rescode.data);	
 	if(response->data == NULL) {
 		return FAILED;
 	}
@@ -583,8 +587,7 @@ return 1 on success; otherwise return 0 */
 
 /* Check if the url is set 
 return 1 on success; otherwise return 0 */
-int check_URL(char *URL)
-{
+int check_URL(char *URL) {
 	if (URL == NULL || *URL == '\0') {
 		const char *error_msg = "URL not set.";
 		log_error("publish(char *, Message) %s", error_msg);
@@ -595,8 +598,7 @@ int check_URL(char *URL)
 
 /* Check if the message is set 
 return 1 on success; otherwise return 0 */
-int check_message(char *message)
-{
+int check_message(char *message) {
 	if (message == NULL || *message == '\0') {
 		const char *error_msg = "message not set.";
 		log_error("publish(char *, Message) %s", error_msg);
@@ -606,11 +608,11 @@ int check_message(char *message)
 }
 
 /* Initialize libcurl; set headers format */
-void init_curl(void)
-{
+void init_curl(void) {
 	if (headers != NULL ) {
 		return;
 	}
+// 	printf(" *****************  INIT CURL ***************\n");
 	curl_global_init(CURL_GLOBAL_ALL);
 // 	headers = curl_slist_append(headers, string("X-Auth-Token: " + token).c_str()); 
 	headers = curl_slist_append(headers, "Accept: application/json");
@@ -618,44 +620,49 @@ void init_curl(void)
 	headers = curl_slist_append(headers, "charsets: utf-8");
 }
 
+
+// DESCRIPTION: This function releases resources acquired by curl_global_init.
+void close_curl(void) {
+// 	printf(" *****************  CLOSE CURL ***************\n");
+	curl_global_cleanup( );
+}
+
+
 /* Prepare for using libcurl with message */
-CURL *prepare_publish(char *URL, char *message, char *operation)
-{
+CURL *prepare_publish(char *URL, char *message, char *operation) {
 	init_curl();
 	CURL *curl = curl_easy_init();
+	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);//not using signals to notify timeouts on requests and seems not to work fine with multi-threading
 	curl_easy_setopt(curl, CURLOPT_URL, URL);
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, message);
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long ) strlen(message));
 	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, operation); /* PUT, POST, ... */
-	 
+
 	#ifdef DEBUG
 	curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 	#endif
-
 	return curl;
 }
 
 /* Prepare for using libcurl without message */
-CURL *prepare_query(char* URL, char *operation)
-{
+CURL *prepare_query(char* URL, char *operation) {
 	init_curl();
 	CURL *curl = curl_easy_init();
+	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);//not using signals to notify timeouts on requests and seems not to work fine with multi-threading
 	curl_easy_setopt(curl, CURLOPT_URL, URL);
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, operation); /* GET, PUT... */
-	
+
 	#ifdef DEBUG
 	curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 	#endif
-
 	return curl;
 }
 
 /* Callback function for writing with libcurl */
 #ifdef NDEBUG
-static size_t write_non_data(void *buffer, size_t size, size_t nmemb, void *userp)
-{
+static size_t write_non_data(void *buffer, size_t size, size_t nmemb, void *userp) {
 	return size * nmemb;
 }
 #endif

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,8 +26,76 @@
 #include "resources_monitor.h"
 #include "disk_monitor.h"
 #include "power_monitor.h"
+#include "nvml_monitor.h"
+#include "dummy_monitor.h"
 #include "mf_api.h"
 #include <malloc.h>
+
+#include<stdio.h>
+#include<math.h>
+#include <nvml.h>
+
+// reverses a string 'str' of length 'len'
+void reverse(char *str, int len) {
+	int i=0, j=len-1, temp;
+	while (i<j) {
+		temp = str[i];
+		str[i] = str[j];
+		str[j] = temp;
+		i++; j--;
+	}
+}
+ 
+ // Converts a given integer x to string str[].  d is the number
+ // of digits required in output. If d is more than the number
+ // of digits in x, then 0s are added at the beginning.
+ // returns: the length of the string
+int intToStr(int x, char str[], int d) {
+	int i = 0;
+	while (x) {
+		str[i++] = (x%10) + '0';
+		x = x/10;
+	}
+	// If number of digits required is more, then
+	// add 0s at the beginning
+	while (i < d)
+		str[i++] = '0';
+	reverse(str, i);
+	str[i] = '\0';
+	return i;
+}
+ 
+/** ftoa(n, res, afterpoint)
+* n          --> Input Number
+* res[]      --> Array where output string to be stored
+* afterpoint --> Number of digits to be considered after point.
+*
+* For example ftoa(1.555, str, 2) should store "1.55" in res and
+* ftoa(1.555, str, 0) should store "1" in res.
+*/
+
+// Converts a floating point number to string.
+void ftoa(float n, char *res, int afterpoint) {
+	// Extract integer part
+	int ipart = (int)n;
+
+	// Extract floating part
+	float fpart = n - (float)ipart;
+
+	// convert integer part to string
+	int i = intToStr(ipart, res, 0);
+
+	// check for display option after point
+	if (afterpoint != 0) {
+		res[i] = '.';  // add dot
+		// Get the value of fraction part upto given no.
+		// of points after dot. The third parameter is needed
+		// to handle cases like 233.007
+		fpart = fpart * pow(10, afterpoint);
+		intToStr((int)fpart, res + i + 1, afterpoint);
+	}
+}
+
 
 /*******************************************************************************
 * Variable Declarations
@@ -39,10 +107,10 @@ typedef struct each_metric_t {
 
 int running;
 int keep_local_data_flag = 1;
-char parameters_name[9][32] = {"MAX_CPU_POWER", "MIN_CPU_POWER", 
-								"MEMORY_POWER", "L2CACHE_MISS_LATENCY", "L2CACHE_LINE_SIZE", 
-								"E_DISK_R_PER_KB", "E_DISK_W_PER_KB", 
-								"E_NET_SND_PER_KB", "E_NET_RCV_PER_KB"};
+char parameters_name[9][32] = {"MAX_CPU_POWER", "MIN_CPU_POWER",
+	"MEMORY_POWER", "L2CACHE_MISS_LATENCY", "L2CACHE_LINE_SIZE",
+	"E_DISK_R_PER_KB", "E_DISK_W_PER_KB",
+	"E_NET_SND_PER_KB", "E_NET_RCV_PER_KB"};
 float parameters_value[9];
 
 char DataPath[256];
@@ -59,11 +127,12 @@ static int api_prepare(char *Data_path);
 static void *MonitorStart(void *arg);
 int get_config_parameters(const char *server, const char *platform_id);
 
-int mf_user_metric_with_timestamp(char *user_defined_time_stamp, char *metric_name, char *value)
-{
-	if(DataPath[0] == '\0') {
+/*******************************************************************************
+* Function Definitions
+******************************************************************************/
+int mf_user_metric_with_timestamp(char *user_defined_time_stamp, char *metric_name, char *value) {
+	if(DataPath[0] == '\0')
 		pid = api_prepare(DataPath);
-	}
 	/*create and open the file*/
 	char FileName[256] = {'\0'};
 	sprintf(FileName, "%s/%s", DataPath, "user_defined");
@@ -80,11 +149,9 @@ int mf_user_metric_with_timestamp(char *user_defined_time_stamp, char *metric_na
 }
 
 
-int mf_user_metric(char *metric_name, char *value)
-{
-	if(DataPath[0] == '\0') {
+int mf_user_metric(char *metric_name, char *value) {
+	if(DataPath[0] == '\0')
 		pid = api_prepare(DataPath);
-	}
 	/*create and open the file*/
 	char FileName[256] = {'\0'};
 	sprintf(FileName, "%s/%s", DataPath, "user_defined");
@@ -106,31 +173,36 @@ int mf_user_metric(char *metric_name, char *value)
 }
 
 /*
-Get the pid, and setup the DataPath for data storage 
+Get the pid, and setup the DataPath for data storage
 For each metric, create a thread, open a file for data storage, and start sampling the metrics periodically.
 Return the path of data files
 */
 struct each_metric_t **each_m=NULL;
 
-char *mf_start(const char *server, const char *platform_id, metrics *m)
-{
+char *mf_start(const char *server, const char *platform_id, metrics *m) {
 	/* get pid and setup the DataPath according to pid */
 	pid = api_prepare(DataPath);
 	/* get parameters from server with given platform_id */
 	if(get_config_parameters(server, platform_id) <= 0) {
 		printf("ERROR : get_config_parameters failed.\n");
 		return NULL;
-	}else{
-// 		printf(" get_config_parameters succedd.\n");
+//	}else{
+//		printf(" get_config_parameters succeed.\n");
 	}
+	printf("num_threads %i\n",m->num_metrics);
+	fflush(stdout);
 	num_threads = m->num_metrics;
 	int t;
 	int iret[num_threads];
-	
+
 	each_m=(struct each_metric_t **) malloc(num_threads*sizeof(struct each_metric_t *));
+			if(each_m==NULL) {
+				printf("Failed to allocate memory.\n");
+				exit(1);
+			}	
 	for(t=0;t<num_threads;t++)
 		each_m[t]=(struct each_metric_t *) malloc(1*sizeof(struct each_metric_t));
-	
+
 	running = 1;
 	keep_local_data_flag = m->local_data_storage;
 
@@ -144,7 +216,7 @@ char *mf_start(const char *server, const char *platform_id, metrics *m)
 			printf("ERROR: pthread_create failed for %s\n", strerror(iret[t]));
 			if(each_m[t]!=NULL)
 				free(each_m[t]);
-			each_m[t]=NULL; 
+			each_m[t]=NULL;
 			return NULL;
 		}
 	} 
@@ -155,13 +227,11 @@ char *mf_start(const char *server, const char *platform_id, metrics *m)
 Stop threads.
 Close all the files for data storage
 */
-void mf_end(void)
-{
+void mf_end(void){
 	int t;
 	running = 0;
-	for (t = 0; t < num_threads; t++) {
+	for (t = 0; t < num_threads; t++)
 		pthread_join(threads[t], NULL);
-	}
 	int totalfree=0;
 	if(each_m!=NULL){
 		for (t = 0; t < num_threads; t++){
@@ -174,6 +244,7 @@ void mf_end(void)
 			free(each_m); 
 		each_m=NULL;
 	}
+	close_curl();
 	printf("finished mf_end\n");
 }
 
@@ -183,8 +254,7 @@ void mf_end(void)
 Query for a workflow, return 400 if the workflow is not registered yet.
 or 200 in other case.
 */
-char* mf_query_workflow(const char *server, const char *application_id )
-{
+char* mf_query_workflow(const char *server, const char *application_id ){
 	/* create an workflow */
 	char *URL = NULL;
 	struct url_data response;
@@ -200,7 +270,6 @@ char* mf_query_workflow(const char *server, const char *application_id )
 	char operation[]="GET";
 	new_query_json(URL, &response, operation); //*****
 	if(URL!=NULL) free(URL);
-	
 	if(response.data[0] == '\0') {
 		printf("ERROR: Cannot register workflow for application %s\n", application_id);
 		return NULL;
@@ -216,8 +285,7 @@ Register a new workflow.
 Return the path to query the workflow.
 */
 char* mf_new_workflow(const char *server, const char *application_id, const char *author_id,
-		const char *optimization, const char *tasks_desc)
-{
+		const char *optimization, const char *tasks_desc){
 	/* create an workflow */
 	char *URL = NULL;
 	struct url_data response;
@@ -259,8 +327,7 @@ Generate the execution_id.
 Send the monitoring data in all the files to mf_server.
 Return the execution_id
 */
-char* mf_send(const char *server, const char *application_id, const char *component_id, const char *platform_id)
-{
+char* mf_send(const char *server, const char *application_id, const char *component_id, const char *platform_id){
 	/* create an experiment with regards of given application_id, component_id and so on */
 	char *URL = NULL;
 	struct url_data response;
@@ -280,9 +347,7 @@ char* mf_send(const char *server, const char *application_id, const char *compon
 	URL=concat_and_free(&URL, server);
 	URL=concat_and_free(&URL, "/v1/phantom_mf/experiments/");
 	URL=concat_and_free(&URL, application_id);
-	
-	
-	
+
 // 	printf("******* new_create_new_experiment ******\n"); 
 	char operation[]="POST";
 	query_message_json(URL, msg, &response, operation); //***** 
@@ -299,6 +364,10 @@ char* mf_send(const char *server, const char *application_id, const char *compon
 	char *metric_URL = (char *) malloc(200);
 	char *static_string = (char *) malloc(200);
 	char *filename = (char *) malloc(200);
+			if(filename==NULL) {
+				printf("Failed to allocate memory.\n");
+				exit(1);
+			}	
 	metric_URL[0]='\0';
 	metric_URL=concat_and_free(&metric_URL, server);
 	metric_URL=concat_and_free(&metric_URL, "/v1/phantom_mf/metrics");
@@ -310,7 +379,7 @@ char* mf_send(const char *server, const char *application_id, const char *compon
 	}
 
 	struct dirent *drp = readdir(dir);
-	while(drp != NULL) { 
+	while(drp != NULL) {
 		static_string[0]='\0';//in the next loop the string will be empty
 		//memset(static_string, '\0', malloc_usable_size(static_string));//this is too much, not need that effort
 		filename[0]='\0';//in the next loop the string will be empty
@@ -333,19 +402,16 @@ char* mf_send(const char *server, const char *application_id, const char *compon
 			static_string=concat_and_free(&static_string, platform_id);
 			static_string=concat_and_free(&static_string, "\"");
 			//static_string=concat_and_free(&static_string, "}");
-			
 			publish_file(metric_URL, static_string, filename);
 			/*remove the file if user unset keep_local_data_flag */
 			if(keep_local_data_flag == 0) {
 				unlink(filename);
 			}
 		}
-			
 		/*get the next entry */
 		drp = readdir(dir);
 	}
 
-	
 	if(metric_URL!= NULL)
 		free(metric_URL);
 	if(static_string!= NULL)
@@ -363,17 +429,15 @@ char* mf_send(const char *server, const char *application_id, const char *compon
 }
 
 /*
-Get the pid, and setup the DataPath for data storage 
+Get the pid, and setup the DataPath for data storage
 */
-static int api_prepare(char *Data_path)
-{
+static int api_prepare(char *Data_path){
 	/*reset Data_path*/
 	size_t size = strlen(Data_path);
 	memset(Data_path, '\0', size);
 
 	/*get the pid*/
 	int pid = getpid();
-	
 	/*get the pwd*/
 	char buf_1[256] = {'\0'};
 	char buf_2[256] = {'\0'};
@@ -406,7 +470,7 @@ static int api_prepare(char *Data_path)
 }
 
 
-static void *MonitorStart(void *arg) { 
+static void *MonitorStart(void *arg) {
 	each_metric *metric = (each_metric*) arg;
 	if(strcmp(metric->metric_name, METRIC_NAME_1) == 0) {
 		resources_monitor(pid, DataPath, metric->sampling_interval);
@@ -414,20 +478,29 @@ static void *MonitorStart(void *arg) {
 		disk_monitor(pid, DataPath, metric->sampling_interval);
 	} else if(strcmp(metric->metric_name, METRIC_NAME_3) == 0) {
 		power_monitor(pid, DataPath, metric->sampling_interval);
+	} else if(strcmp(metric->metric_name, METRIC_NAME_4) == 0) {
+		nvml_monitor(pid, DataPath, metric->sampling_interval);
+	} else if(strcmp(metric->metric_name, METRIC_NAME_5) == 0) {
+		dummy_monitor(pid, DataPath, metric->sampling_interval);
 	} else {
-		printf("ERROR: it is not possible to monitor %s\n", metric->metric_name); 
-	} 
+		printf("ERROR: it is not possible to monitor %s\n", metric->metric_name);
+		printf(" available metric plugins:\n");
+		printf(" \"%s\", \"%s\", \"%s\", \"%s\", \"%s\"\n", METRIC_NAME_1,METRIC_NAME_2,METRIC_NAME_3,METRIC_NAME_4,METRIC_NAME_5);
+	}
 	return NULL;
 }
 
 
 /**
- * Returns 1 if succedd otherwise returns 0
+ * Returns 1 if succeed otherwise returns 0
  */
-int get_config_parameters(const char *server, const char *platform_id)
-{
+int get_config_parameters(const char *server, const char *platform_id){
 	/* send the query and retrieve the response string */
 	char *URL =(char *) malloc(1024);
+	if(URL==NULL) {
+		printf("Failed to allocate memory.\n");
+		exit(1);
+	}
 	struct url_data response ; //it is reserved by new_query_json
 	char operation[]="GET";
 	sprintf(URL, "%s/v1/phantom_rm/configs/%s", server, platform_id);
@@ -439,14 +512,16 @@ int get_config_parameters(const char *server, const char *platform_id)
 		if(response.headercode!=NULL) free(response.headercode);
 		return 0;
 	}
-	if(URL!=NULL) free(URL);
+
 	if(strstr(response.data, "parameters") == NULL) {
 		printf("ERROR: response does not include parameters.\n");
+		printf("GET URL: %s.\n",URL);
+		if(URL!=NULL) free(URL);
 		if(response.data!=NULL) free(response.data);
 		if(response.headercode!=NULL) free(response.headercode);
 		return 0;
 	}
-
+	if(URL!=NULL) free(URL);
 	/* parse the send back string to get required parameters */
 	char *ptr_begin, *ptr_end;
 	char value[16] = {'\0'};
@@ -485,11 +560,10 @@ int get_config_parameters(const char *server, const char *platform_id)
 
 // #include <unistd.h>
 // #include <sys/stat.h>
-// #include <string.h> 
+// #include <string.h>
 // #include <stdio.h>
 // #include <stdlib.h>
 // #include <time.h>
-
 // #include <malloc.h>
 #include "mf_api.h"
 // #include <sys/time.h>
@@ -497,11 +571,9 @@ int get_config_parameters(const char *server, const char *platform_id)
 // int pid;
 // char DataPath[256];
 
-
 //Function for increase dynamically a string concatenating strings at the end
 //It free the memory of the first pointer if not null
-char* myconcat(char **s1, const char *a1, const char *a2, const char *a3, const char *a4, const char *a5)
-{
+char* myconcat(char **s1, const char *a1, const char *a2, const char *a3, const char *a4, const char *a5){
 	char *result = NULL;
 	unsigned int new_lenght= strlen(a1)+strlen(a2)+strlen(a3)+strlen(a4)+strlen(a5)+1; //+1 for the null-terminator;
 	if(*s1 != NULL){
@@ -524,7 +596,8 @@ char* myconcat(char **s1, const char *a1, const char *a2, const char *a3, const 
 			return 0;
 		}
 		result[0]='\0';
-	} 
+	}
+	*s1 = result;
 	strcat(result, a1);
 	strcat(result, a2);
 	strcat(result, a3);
@@ -533,9 +606,9 @@ char* myconcat(char **s1, const char *a1, const char *a2, const char *a3, const 
 	return result;
 }
 
-
 // //Function for increase dynamically a string concatenating strings at the end
 // //It free the memory of the first pointer if not null
+// returns: s1 <-- s1 + s2
 // char* concat_and_free(char **s1, const char *s2){
 // 	char *result = NULL;
 // 	unsigned int new_lenght= strlen(s2)+1; //+1 for the null-terminator;
@@ -543,16 +616,24 @@ char* myconcat(char **s1, const char *a1, const char *a2, const char *a3, const 
 // 		new_lenght+= strlen(*s1);//current lenght
 // 		if(new_lenght> malloc_usable_size(*s1)){
 // 			result = (char *) malloc(new_lenght);
+// 			if(result==NULL) {
+// 				printf("Failed to allocate memory.\n");
+// 				exit(1);
+// 			}
 // 			strcpy(result, *s1);
 // 			free(*s1);
 // 		}else{
 // 			result = *s1;
-// 		} 
+// 		}
 // 	}else{
 // 		result = (char *) malloc(new_lenght);
+// 		if(result==NULL) {
+// 			printf("Failed to allocate memory.\n");
+// 			exit(1);
+// 		}
 // 		result[0]='\0';
 // 	}
-// 	//in real code you would check for errors in malloc here 
+//	*s1 = result;
 // 	strcat(result, s2);
 // 	return result;
 // }
@@ -601,7 +682,7 @@ char* llitoa(const long long int i, char b[]){
 }
 
 
-metric_query *new_metric(const char* label){	
+metric_query *new_metric(const char* label){
 	metric_query *user_query;
 	user_query = (metric_query *) malloc(sizeof(struct metric_query_t));
 	user_query->query=NULL;
@@ -719,7 +800,7 @@ static int api_prepare_loc(char *Data_path){
 int mf_user_metric_loc(char *user_metrics){
 	if(DataPath[0] == '\0') {
 		pid = api_prepare_loc(DataPath);
-	} 
+	}
 	/*create and open the file*/
 	char FileName[256] = {'\0'};
 	sprintf(FileName, "%s/%s", DataPath, "user_defined");
@@ -752,9 +833,9 @@ long long int mycurrenttime (void) {
 // printf("CLOCK_MONOTONIC: represents the absolute elapsed wall-clock time since some arbitrary, fixed point in the past.\n");
 // printf(" It isn't affected by changes in the system time-of-day clock.\n");
 // printf(" If you want to compute the elapsed time between two events observed on the one machine without an intervening reboot, this is the best option.\n");
-	//struct timeval t0 ;	 
+	//struct timeval t0 ;
 	//gettimeofday(&t0, NULL); //https://blog.habets.se/2010/09/gettimeofday-should-never-be-used-to-measure-time.html
-	//long long int timeus = (long int) (t0.tv_sec *1000000LL + t0.tv_usec); 
+	//long long int timeus = (long int) (t0.tv_sec *1000000LL + t0.tv_usec);
 	struct timespec ts_start;
 	clock_gettime(CLOCK_MONOTONIC, &ts_start);
 	long long int timeus = (long int) (ts_start.tv_sec*1000000000LL + ts_start.tv_nsec);
@@ -776,13 +857,14 @@ char *mycurrenttime_str (void) {
 #endif
 
 //A base-10 representation of a n-bit binary number takes up to n*log10(2) + 1 digits.
-//10/33 is slightly more than log10(2). +1 
+//10/33 is slightly more than log10(2). +1
 #define INT_DECIMAL_STRING_SIZE(int_type) ((CHAR_BIT*sizeof(int_type)-1)*10/33+3)
 
-char *llint_to_string_alloc(long long int x) {
+char *llint_to_string_alloc(long long int x, char b[]) {
 	long long int i = x;
+	unsigned int buf_size = INT_DECIMAL_STRING_SIZE(long long int);// sizeof buf
 	char buf[INT_DECIMAL_STRING_SIZE(long long int)];
-	char *p = &buf[sizeof buf - 1]; // point to the end
+	char *p = &buf[buf_size - 1]; // point to the end
 	*p = '\0';
 	if (i >= 0)
 		i = -i;
@@ -795,34 +877,27 @@ char *llint_to_string_alloc(long long int x) {
 		p--;
 		*p = '-';
 	}
-	size_t len = (size_t) (&buf[sizeof buf] - p);
-	char *s = (char *) malloc(len);
-	if(s==NULL) {
-		fprintf(stderr, "Failed to allocate memory.\n");
-		return 0;
-	}
-	if (s)
-		memcpy(s, p, len);
-	return s;
+	size_t len = (size_t) (&buf[buf_size] - p);
+	memcpy(b, p, len);
+	return b;
 }
 
 
-void user_metrics_buffer(
-char *currentid, struct Thread_report single_thread_report ){ 
+void user_metrics_buffer(char *currentid, struct Thread_report single_thread_report ){
 	unsigned int j;
-/* MONITORING I'd like to store here the duration of each loop --> duration */  
+/* MONITORING I'd like to store here the duration of each loop --> duration */
 	const char component_name[]="component_name";
-	const char run_id[]="runid"; 
+	const char run_id[]="runid";
 	char *user_metrics= (char *) malloc(510);
 	if(user_metrics==NULL)
 		fprintf(stderr, "Failed to allocate memory.\n");
-for(j=0;j<single_thread_report.total_metrics;j++)	{
+for(j=0;j<single_thread_report.total_metrics;j++){
 	user_metrics[0]='\0';
 		// common id of the different components of one execution of the task/workflow/application
 	user_metrics=myconcat(&user_metrics,",\"", run_id, "\":\"", currentid,"\"");
 	user_metrics=myconcat(&user_metrics,",\"", component_name, "\":\"", single_thread_report.taskid,"\"");
-	user_metrics=myconcat(&user_metrics,",\"", "metric_time", "\":\"", single_thread_report.metric_time[j],"\""); 
-	user_metrics=myconcat(&user_metrics,",\"", single_thread_report.user_label[j], "\":\"",   single_thread_report.user_value[j],"\"");
+	user_metrics=myconcat(&user_metrics,",\"", "metric_time", "\":\"", single_thread_report.metric_time[j],"\"");
+	user_metrics=myconcat(&user_metrics,",\"", single_thread_report.user_label[j], "\": ", single_thread_report.user_value[j],"");
 
 /* MONITORING END */
 	mf_user_metric_loc(user_metrics);
@@ -837,8 +912,7 @@ for(j=0;j<single_thread_report.total_metrics;j++)	{
 }
 
 
-void register_end_component( 
-char *currentid, struct Thread_report single_thread_report ){
+void register_end_component(char *currentid, struct Thread_report single_thread_report ){
 	long long int total_execution_time = single_thread_report.end_time - single_thread_report.start_time;
 // 	printf(" TOTAL EXECUTION TIME:%9Li s ", (total_execution_time)/1000000000LL);
 // 	long long int temp_time = (total_execution_time)%1000000000LL;
@@ -848,18 +922,19 @@ char *currentid, struct Thread_report single_thread_report ){
 // 		temp_time = (total_execution_time)%1000LL;
 // 	printf(" + %3Li ns \n", temp_time);
 /* MONITORING I'd like to store here the duration of each loop --> duration */
-	char *metric_value  ;
-// 	sprintf(metric_value, "%Li", total_execution_time);
-	metric_value=llint_to_string_alloc(total_execution_time);
+	char metric_value[100];
+	// 	sprintf(metric_value, "%Li", total_execution_time);
+	llint_to_string_alloc(total_execution_time,metric_value);
 	const char comp_start[]="component_start";
 	const char comp_end[]="component_end";
-	const char duration_str[]="component_duration"; 
+	const char duration_str[]="component_duration";
+	const char taskid_str[]="component_name";
 // 	const char user_defined_metric[]="user_defined_metric";
 // 	const char run_id[]="runid";
-	
-	const char component_name[]="component_name";
+
+// 	const char component_name[]="component_name";
 	const char run_id[]="runid";
-	
+
 	char *user_metrics= (char *) malloc(510);
 	if(user_metrics==NULL)
 		fprintf(stderr, "Failed to allocate memory.\n");
@@ -867,15 +942,16 @@ char *currentid, struct Thread_report single_thread_report ){
 		// the total execution time of the component
 	user_metrics=myconcat(&user_metrics,",\"", duration_str, "\":\"", metric_value,"\"");
 		// common id of the different components of one execution of the task/workflow/application
+	user_metrics=myconcat(&user_metrics,",\"", taskid_str, "\":\"", single_thread_report.taskid ,"\"");//patch for D2.2
 	user_metrics=myconcat(&user_metrics,",\"", run_id, "\":\"", currentid,"\"");
-	char *strstart_time =llint_to_string_alloc(single_thread_report.start_time);
-	user_metrics=myconcat(&user_metrics,",\"", comp_start, "\":\"", strstart_time ,"\""); 
-	free(strstart_time);
+	char strstart_time[100];
+	llint_to_string_alloc(single_thread_report.start_time,strstart_time);
+	user_metrics=myconcat(&user_metrics,",\"", comp_start, "\":\"", strstart_time ,"\"");
 		// end time of the component
-	char *strend_time =llint_to_string_alloc(single_thread_report.end_time);
+	char strend_time[100];
+	llint_to_string_alloc(single_thread_report.end_time,strend_time);
 	user_metrics=myconcat(&user_metrics,",\"", comp_end, "\":\"", strend_time,"\"");
-	free(strend_time);
-	free(metric_value);
+
 /* MONITORING END */
 	mf_user_metric_loc(user_metrics);
 	free(user_metrics);
@@ -886,7 +962,7 @@ char *currentid, struct Thread_report single_thread_report ){
 //	mf_user_metric_loc(nrLoops_str, metric_value);
 /* MONITORING SEND */
 }
- 
+
 
 void monitoring_send(const char *server, const char *appid,const char *execfile, const char *regplatformid){
 	/* MONITORING SEND */
@@ -900,7 +976,7 @@ void monitoring_send(const char *server, const char *appid,const char *execfile,
 //if the status code is 400 means that it was not registered before
 char *query_workflow(const char *server, const char *appid){
 	char* response=NULL;
-	response=mf_query_workflow( server, appid ); 
+	response=mf_query_workflow( server, appid );
 	return response;
 }
 
@@ -909,14 +985,12 @@ void register_workflow( const char *server, const char *regplatformid, const cha
 	char optimization[]="Time";
 	char tasks_desc[]="[{\"device\":\"demo_desktop\", \"exec\":\"hello_world\", \"cores_nr\": \"2\"}]";
 // 	printf("\nQUERY FOR WORKFLOW ...\n");
-	char* response=query_workflow( server, appid); 
+	char* response=query_workflow( server, appid);
 	int rc = strcmp(response, "400"); //if 400 then the workflow was not registered before
 	if(rc == 0){ //0 stands for equal
 		free(response);
 // 		printf("\nREGISTERING WORKFLOW ...\n");
-		response= mf_new_workflow(server, appid, author, optimization, tasks_desc);	 
+		response= mf_new_workflow(server, appid, author, optimization, tasks_desc);
 	}
 	free(response);
 }
-
-

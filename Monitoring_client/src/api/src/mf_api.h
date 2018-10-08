@@ -1,8 +1,11 @@
 #ifndef _MF_API_H
 #define _MF_API_H
 
-#define MAX_NUM_METRICS      3
+#define MAX_NUM_METRICS     9 
 #define NAME_LENGTH          32
+
+
+void ftoa(float n, char *res, int afterpoint);
 
 typedef struct metrics_t {
 	long sampling_interval[MAX_NUM_METRICS];	//in milliseconds
@@ -75,7 +78,7 @@ typedef struct metric_query_t {
 char* concat_and_free(char **s1, const char *s2);
 
 char* itoa(int i, char b[]);
-char *llint_to_string_alloc(long long int x) ;
+char *llint_to_string_alloc(long long int x, char b[]); 
 
 metric_query *new_metric(const char* label);
 

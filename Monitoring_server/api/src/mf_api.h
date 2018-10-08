@@ -1,8 +1,11 @@
 #ifndef _MF_API_H
 #define _MF_API_H
 
-#define MAX_NUM_METRICS      3
+#define MAX_NUM_METRICS     9 
 #define NAME_LENGTH          32
+
+
+void ftoa(float n, char *res, int afterpoint);
 
 typedef struct metrics_t {
 	long sampling_interval[MAX_NUM_METRICS];	//in milliseconds
@@ -53,17 +56,16 @@ char *mf_send(const char *server, const char *application_id, const char *compon
  *  additonal functions developed during the integration
  */
 
-
-
 struct Thread_report {
-	char  taskid[50];
+	char taskid[50];
 	long long int start_time;
 	long long int end_time;
-// 	unsigned int number_of_blocks;
-// 	int n_ships_found; 
-	char user_label[50];
-	char user_value[50];
+	unsigned int total_metrics;
+	char **user_label;
+	char **user_value;
+	char **metric_time;	
 };
+
 
 typedef struct metric_query_t {
 	char *query ;
@@ -76,6 +78,7 @@ typedef struct metric_query_t {
 char* concat_and_free(char **s1, const char *s2);
 
 char* itoa(int i, char b[]);
+char *llint_to_string_alloc(long long int x, char b[]); 
 
 metric_query *new_metric(const char* label);
 
@@ -92,8 +95,9 @@ long long int mycurrenttime (void);
 char *mycurrenttime_str (void) ;
 void start_monitoring(const char *server, const char *regplatformid);
 
-void prepare_user_metrics(
-// char *user_metric_value, const char *execfile, long long int start_time, long long int end_time,
+void user_metrics_buffer(char *currentid, struct Thread_report single_thread_report );
+
+void register_end_component( 
 char *currentid, struct Thread_report single_thread_report );
 
 void monitoring_send(const char *server,const char *appid, const char *execfile, const char *regplatformid);

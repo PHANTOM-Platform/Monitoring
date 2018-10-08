@@ -75,12 +75,14 @@ int power_monitor(int pid, char *DataPath, long sampling_interval)
 	pid_stats_info before, after, delta;
 	int fd = create_perf_stat_counter(pid);
 	if(fd <= 0){
+		fclose(fp);
 		free(FileName);
 		return 0;
 	}
 
 	int returned_value =read_and_check(fd, pid, &before);
 	if( returned_value != 0){
+		fclose(fp);
 		free(FileName);
 		return 0;
 	}
@@ -94,6 +96,7 @@ int power_monitor(int pid, char *DataPath, long sampling_interval)
 	
 		int returned_value =read_and_check(fd, pid, &after);
 		if( returned_value  != 0){
+			fclose(fp);
 			free(FileName);
 			return 0;
 		} 

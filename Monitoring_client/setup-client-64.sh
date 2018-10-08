@@ -278,6 +278,12 @@
 	rm -rf lm_sensors-3.4.0 ;
 	rm -rf libiio ;
 fi;
+if [ -e nvidia_gdk_download ]; then
+        cd nvidia_gdk_download
+	pwd=`pwd`
+	./gdk_linux_amd64_352_55_release.run --silent --installdir=$pwd
+fi;
+
 # ============================================================================ #
 # DONE
 # ============================================================================ #

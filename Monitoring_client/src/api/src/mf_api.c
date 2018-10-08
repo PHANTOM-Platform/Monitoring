@@ -27,7 +27,6 @@
 #include "disk_monitor.h"
 #include "power_monitor.h"
 #include "nvml_monitor.h"
-#include "dummy_monitor.h"
 #include "mf_api.h"
 #include <malloc.h>
 
@@ -480,12 +479,12 @@ static void *MonitorStart(void *arg) {
 		power_monitor(pid, DataPath, metric->sampling_interval);
 	} else if(strcmp(metric->metric_name, METRIC_NAME_4) == 0) {
 		nvml_monitor(pid, DataPath, metric->sampling_interval);
-	} else if(strcmp(metric->metric_name, METRIC_NAME_5) == 0) {
-		dummy_monitor(pid, DataPath, metric->sampling_interval);
+	//} else if(strcmp(metric->metric_name, METRIC_NAME_5) == 0) {
+//		dummy_monitor(pid, DataPath, metric->sampling_interval);
 	} else {
 		printf("ERROR: it is not possible to monitor %s\n", metric->metric_name);
 		printf(" available metric plugins:\n");
-		printf(" \"%s\", \"%s\", \"%s\", \"%s\", \"%s\"\n", METRIC_NAME_1,METRIC_NAME_2,METRIC_NAME_3,METRIC_NAME_4,METRIC_NAME_5);
+		printf(" \"%s\", \"%s\", \"%s\", \"%s\"\n", METRIC_NAME_1,METRIC_NAME_2,METRIC_NAME_3,METRIC_NAME_4);
 	}
 	return NULL;
 }

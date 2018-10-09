@@ -3,7 +3,7 @@ CC = gcc
 CFLAGS = -std=gnu99 -pedantic -Wall -Wwrite-strings -Wpointer-arith \
 -Wcast-align -O0 -ggdb $(CORE_INC) $(CURL_INC) $(PUBLISH_INC) $(MF_API_INC)
 
-LFLAGS = -lm -lpthread $(PUBLISH) $(CURL) $(MF_API)
+LFLAGS = -lnvidia-ml -lm -lpthread $(PUBLISH) $(CURL) $(MF_API)
 
 COMMON = ${CURDIR}/../..
 

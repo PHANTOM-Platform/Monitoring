@@ -44,28 +44,25 @@ char* mf_plugin_NVML_hook();
 extern int
 init_mf_plugin_NVML(PluginManager *pm)
 {
-    /*
-     * get the turned on metrics from the configuration file
-     */
-    conf_data =  malloc(sizeof(mfp_data));
-    mfp_get_data_filtered_by_value("mf_plugin_NVML", conf_data, "on");
+	/* get the turned on metrics from the configuration file
+	*/
+	conf_data =  malloc(sizeof(mfp_data));
+	mfp_get_data_filtered_by_value("mf_plugin_NVML", conf_data, "on");
 
-    /*
-     * initialize the monitoring data
-     */
-    monitoring_data = malloc(sizeof(Plugin_metrics));
-    int ret = mf_NVML_init(monitoring_data, conf_data->keys, conf_data->size);
-    if(ret == 0) {
-        char plugin_name[] = "NVML";
-        log_error("Plugin %s init function failed.\n", plugin_name);
-        return ret;
-    }
-    /*
-     * if init succeed; register the plugin hook to the plugin manager
-     */
-    PluginManager_register_hook(pm, "mf_plugin_NVML", mf_plugin_NVML_hook);
-    is_initialized = 1;
-    return ret;
+	/* initialize the monitoring data
+	*/
+	monitoring_data = malloc(sizeof(Plugin_metrics));
+	int ret = mf_NVML_init(monitoring_data, conf_data->keys, conf_data->size);
+	if(ret == 0) {
+		char plugin_name[] = "NVML";
+		log_error("Plugin %s init function failed.\n", plugin_name);
+		return ret;
+	}
+	/* if init succeed; register the plugin hook to the plugin manager
+	*/
+	PluginManager_register_hook(pm, "mf_plugin_NVML", mf_plugin_NVML_hook);
+	is_initialized = 1;
+	return ret;
 }
 
 /* the hook function, sample the metrics and convert to a json-formatted string */
@@ -73,18 +70,15 @@ char*
 mf_plugin_NVML_hook()
 {
     if (is_initialized) {
-        /*
-         * sampling 
+        /*sampling 
          */
         mf_NVML_sample(monitoring_data);
 
-        /*
-         * Prepares a json string, including current timestamp, name of the plugin,
+        /* Prepares a json string, including current timestamp, name of the plugin,
          * and required metrics.
          */
         char *json = calloc(JSON_MAX_LEN, sizeof(char));
         mf_NVML_to_json(monitoring_data, conf_data->keys, conf_data->size, json);
-
         return json;
     } else {
         return NULL;

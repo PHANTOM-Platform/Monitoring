@@ -102,6 +102,6 @@ char *currentid, struct Thread_report single_thread_report );
 
 void monitoring_send(const char *server,const char *appid, const char *execfile, const char *regplatformid);
 	
-void register_workflow( const char *server, const char *regplatformid, const char *appid, const char *execfile);
+int register_workflow( const char *server, const char *regplatformid, const char *appid, const char *execfile);
 
 #endif /* _MF_API_H */

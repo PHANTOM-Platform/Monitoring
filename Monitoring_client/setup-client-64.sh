@@ -78,7 +78,7 @@
 	cd ${PAPI}-${PAPI_VERSION}/src;
 	./configure --prefix=${INSTALL_PATH_PAPI} --with-components="rapl coretemp infiniband"
 	make
-	sudo make install all
+	make install all
 # ============================================================================ #
 # DOWNLOAD AND INSTALL CURL                                                    #
 # ============================================================================ #
@@ -149,7 +149,8 @@
 	./${NVIDIA_GDK} --silent --installdir=${INSTALL_PATH_NVIDIA}
 	
 	cd $ROOT;
-	sudo  mkdir /usr/lib64; sudo chmod 777 /usr/lib64/;
+	if [ ! -e /usr/lib64 ]; then sudo  mkdir /usr/lib64; fi;
+	sudo chmod 777 /usr/lib64/;
 	cp bin/nvidia/usr/src/gdk/nvml/lib/libnvidia-ml.so /usr/lib64;
 # ============================================================================ #
 # DOWNLOAD AND INSTALL SENSORS LIB                                             #
@@ -241,14 +242,14 @@
 	mkdir -p ${INSTALL_PATH_LIBIIO};
 	cmake -DCMAKE_INSTALL_PREFIX=${INSTALL_PATH_LIBIIO} ./
 	make all
-	sudo make install
-	find ./ -name "libiio.so*" -exec sudo mv {} ${INSTALL_PATH_LIBIIO}/lib/ \;
+	make install
+	find ./ -name "libiio.so*" -exec mv {} ${INSTALL_PATH_LIBIIO}/lib/ \;
 # ============================================================================ #
 # DOWNLOAD AND INSTALL EXCESS QUEUE LIBS                                                                                        #
 # https://github.com/excess-project/data-structures-library.git
 # ============================================================================ #
 	cd $INSTALL_PATH_EXCESS_QUEUE;
-	rm -rf data-structures-library;
+	#rm -rf data-structures-library;
 	if [ ! -f data-structures-library.tgz ]; then
 		git clone https://github.com/excess-project/data-structures-library.git
 	else

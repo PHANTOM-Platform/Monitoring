@@ -86,7 +86,7 @@ size_t write_data(void *ptr, size_t size, size_t nitems, struct url_data *data) 
 		i++;
 	}
 	temp_str[i]='\0';
-	if(data->data!=NULL) free(data->data);
+	if(data->data!=NULL) free(data->data); data->data=NULL;
 	data->data=temp_str;
 	memcpy((data->data + index), ptr, n);
 	data->data[data->size] = '\0';
@@ -187,6 +187,7 @@ int new_query_json(char *URL, struct url_data *response, char *operation) {
 	data.headercode = malloc(5192); /* reasonable size initial buffer */
 	if(NULL == data.headercode) {
 		fprintf(stderr, "Failed to allocate memory.\n");
+		if(data.data!=NULL) free(data.data); data.data=NULL;
 		return FAILED;
 	}
 	data.headercode[0] = '\0';
@@ -196,12 +197,17 @@ int new_query_json(char *URL, struct url_data *response, char *operation) {
 	rescode.data = malloc(5192); /* reasonable size initial buffer */
 	if(NULL == rescode.data) {
 		fprintf(stderr, "Failed to allocate memory.\n");
+		if(data.data!=NULL) free(data.data); data.data=NULL;
+		if(data.headercode!=NULL) free(data.headercode);  data.headercode=NULL;		
 		return FAILED;
 	}
 	rescode.data[0] = '\0';
 	rescode.headercode = (char *) malloc(5192); /* reasonable size initial buffer */
 	if(NULL == rescode.headercode) {
 		fprintf(stderr, "Failed to allocate memory.\n");
+		if(data.data!=NULL) free(data.data); data.data=NULL;
+		if(data.headercode!=NULL) free(data.headercode);  data.headercode=NULL;		
+		if(rescode.data!=NULL) free(rescode.data); rescode.data=NULL;
 		return FAILED;
 	}	
 	rescode.headercode[0] = '\0';
@@ -211,10 +217,10 @@ int new_query_json(char *URL, struct url_data *response, char *operation) {
 
 	CURL *curl = prepare_query(URL, operation);
 	if (curl == NULL) {
-		free(data.data);
-		free(data.headercode); 
-		free(rescode.data);
-		free(rescode.headercode);
+		if(data.data!=NULL) free(data.data); data.data=NULL;
+		if(data.headercode!=NULL) free(data.headercode);  data.headercode=NULL;
+		if(rescode.data!=NULL) free(rescode.data); rescode.data=NULL;
+		if(rescode.headercode!=NULL) free(rescode.headercode); rescode.headercode=NULL;
 		return FAILED;
 	}
 
@@ -225,19 +231,16 @@ int new_query_json(char *URL, struct url_data *response, char *operation) {
 	curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, write_data);//header_callback);
 	curl_easy_setopt(curl, CURLOPT_HEADERDATA, &rescode); // set userdata in callback function	
 	CURLcode response_code = curl_easy_perform(curl);
-// 	printf("\n RESCODE is %s\n", rescode.headercode);
-// 	printf("\n RESCODE.data is %s\n", rescode.data);	
-	response->headercode=rescode.headercode;
-	free(rescode.data); rescode.data=NULL;
 	
-	
+
 	if (response_code != CURLE_OK) {
 		const char *error_msg = curl_easy_strerror(response_code);
 		log_error("ERROR query %s", error_msg);
 // 		printf("ERROR!! : query with %s failed.\n", error_msg);
-		free(data.data);
-		free(data.headercode); 
-		free(rescode.headercode);
+		if(data.data!=NULL) free(data.data); data.data=NULL;
+		if(data.headercode!=NULL) free(data.headercode);  data.headercode=NULL;
+		if(rescode.data!=NULL) free(rescode.data); rescode.data=NULL;
+		if(rescode.headercode!=NULL) free(rescode.headercode); rescode.headercode=NULL;		
 		return FAILED;
 	}
 
@@ -245,21 +248,23 @@ int new_query_json(char *URL, struct url_data *response, char *operation) {
 	curl_easy_cleanup(curl);
 	if( data.data[0]=='\0') {
 		printf("ERROR!! : query with %s failed.\n", URL);
-		free(data.data);
-		free(data.headercode); 
-		free(rescode.headercode);
+		if(data.data!=NULL) free(data.data); data.data=NULL;
+		if(data.headercode!=NULL) free(data.headercode);  data.headercode=NULL;
+		if(rescode.data!=NULL) free(rescode.data); rescode.data=NULL;
+		if(rescode.headercode!=NULL) free(rescode.headercode); rescode.headercode=NULL;
 		return FAILED;
 	}
 	
 	if(response->data !=NULL) free(response->data);
+	if(response->headercode !=NULL) free(response->headercode);
 	response->data=data.data;
 	response->headercode=rescode.headercode;
  
-	free(data.headercode); 
+	if(rescode.data!=NULL) free(rescode.data); rescode.data=NULL;
+	free(data.headercode); data.headercode=NULL;
 	
-	if(data.data == NULL) {
+	if(data.data == NULL)
 		return FAILED;
-	}
 	return SUCCESS;
 }
 
@@ -268,14 +273,12 @@ int new_query_json(char *URL, struct url_data *response, char *operation) {
 return 1 on success; otherwise return 0 */
 // int query_json(char *URL, char *response_str, char *operation)
 // {
-// 	if (!check_URL(URL)) {
+// 	if (!check_URL(URL))
 // 		return FAILED;
-// 	}
 //
 // 	CURL *curl = prepare_query(URL, operation);
-// 	if (curl == NULL) {
+// 	if (curl == NULL)
 // 		return FAILED;
-// 	}
 //
 // 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, get_stream_data);
 // 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, response_str);
@@ -289,9 +292,8 @@ return 1 on success; otherwise return 0 */
 //	//curl_slist_free_all(headers);/* free the list again */
 // 	curl_easy_cleanup(curl);
 //
-// 	if(response_str == NULL) {
+// 	if(response_str == NULL)
 // 		return FAILED;
-// 	}
 // 	return SUCCESS;
 // }
 
@@ -306,8 +308,6 @@ int publish_json(char *URL, char *message) {
 		return FAILED;
 	}
 	rescode.data[0] = '\0';
-	
-	 
 
 	rescode.headercode = (char *) malloc(5120); /* reasonable size initial buffer */
 	if(NULL == rescode.headercode) {
@@ -316,22 +316,17 @@ int publish_json(char *URL, char *message) {
 	} 
 	rescode.headercode[0] = '\0';	
 	
-	
-	
-	if (!check_URL(URL) || !check_message(message)) {
+	if (!check_URL(URL) || !check_message(message))
 		return FAILED;
-	}
 	char operation[]="POST";
 	CURL *curl = prepare_publish(URL, message, operation);
-	if (curl == NULL) {
+	if (curl == NULL)
 		return FAILED;
-	}
 
 	#ifdef NDEBUG
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_non_data);//
 	#endif
 
- 
 	curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, write_data);//header_callback);
 	curl_easy_setopt(curl, CURLOPT_HEADERDATA, &rescode);  // set userdata in callback function
 	CURLcode response_code = curl_easy_perform(curl);
@@ -366,9 +361,8 @@ int publish_file(char *URL, char *static_string, char *filename) {
 	
 	/* int curl with meaningless message */
 	CURL *curl = prepare_publish(URL, message, operation);
-	if (curl == NULL) {
+	if (curl == NULL)
 		return FAILED;
-	}
 	#ifdef NDEBUG
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_non_data);
 	#endif
@@ -428,7 +422,8 @@ int publish_file(char *URL, char *static_string, char *filename) {
 	/* clean the curl handle */	
 	//curl_slist_free_all(headers);/* free the list again */
 	curl_easy_cleanup(curl);
-	if(message!=NULL) free(message);
+	if(message!=NULL) free(message); 
+	message=NULL;
 	fclose(fp);
 	return SUCCESS;
 }
@@ -462,7 +457,7 @@ int publish_file(char *URL, char *static_string, char *filename) {
 * "application": "'"${appid}"'", "task": "'"${task}"'", "host": "'"${regplatformid}"'"}'
 */ 
 int query_message_json(char *URL, char *message, struct url_data *response, char *operation) {
-	struct url_data data; 
+	struct url_data data;
 	data.size = 0;
 	data.data = (char *) malloc(5120); /* reasonable size initial buffer */
 	if(NULL == data.data) {
@@ -473,6 +468,7 @@ int query_message_json(char *URL, char *message, struct url_data *response, char
 	data.headercode = (char *) malloc(5120); /* reasonable size initial buffer */
 	if(NULL == data.headercode) {
 		fprintf(stderr, "Failed to allocate memory.\n");
+		free(data.data); data.data=NULL;
 		return FAILED;
 	} 
 	data.headercode[0] = '\0';
@@ -482,12 +478,17 @@ int query_message_json(char *URL, char *message, struct url_data *response, char
 	rescode.data = malloc(5192); /* reasonable size initial buffer */
 	if(NULL == rescode.data) {
 		fprintf(stderr, "Failed to allocate memory.\n");
+		free(data.data); data.data=NULL;
+		free(data.headercode); data.headercode=NULL;
 		return FAILED;
 	}
 	rescode.data[0] = '\0';
 	rescode.headercode = (char *) malloc(5192); /* reasonable size initial buffer */
 	if(NULL == rescode.headercode) {
 		fprintf(stderr, "Failed to allocate memory.\n");
+		free(data.data); data.data=NULL;
+		free(data.headercode); data.headercode=NULL;
+		free(rescode.data); rescode.data=NULL;
 		return FAILED;
 	}
 	rescode.headercode[0] = '\0';
@@ -495,19 +496,19 @@ int query_message_json(char *URL, char *message, struct url_data *response, char
 	response->data=NULL;
 	
 	if (!check_URL(URL) || !check_message(message)) {
-		free(data.data);
-		free(data.headercode);
-		free(rescode.data);
-		free(rescode.headercode);
+		free(data.data); data.data=NULL;
+		free(data.headercode); data.headercode=NULL;
+		free(rescode.data); rescode.data=NULL;
+		free(rescode.headercode); rescode.headercode=NULL;
 		return FAILED;
 	}
 	
 	CURL *curl = prepare_publish(URL, message, operation);
 	if (curl == NULL) {
-		free(data.data);
-		free(data.headercode);
-		free(rescode.data);
-		free(rescode.headercode);
+		free(data.data); data.data=NULL;
+		free(data.headercode); data.headercode=NULL;
+		free(rescode.data); rescode.data=NULL;
+		free(rescode.headercode); rescode.headercode=NULL;
 		return FAILED;
 	}
 	
@@ -525,10 +526,10 @@ int query_message_json(char *URL, char *message, struct url_data *response, char
 	if (response_code != CURLE_OK) {
 		const char *error_msg = curl_easy_strerror(response_code);
 		log_error("ERROR query_message_json %s", error_msg);
-		free(data.data);
-		free(data.headercode);
-		free(rescode.data);
-		free(rescode.headercode);
+		free(data.data); data.data=NULL;
+		free(data.headercode); data.headercode=NULL;
+		free(rescode.data); rescode.data=NULL;
+		free(rescode.headercode); rescode.headercode=NULL;		
 		return FAILED;
 	}
 
@@ -537,39 +538,34 @@ int query_message_json(char *URL, char *message, struct url_data *response, char
 
 	if( data.data[0]=='\0') {
 		printf("ERROR!! : query with %s failed.\n", URL);
-		free(data.data);
-		free(data.headercode);
-		free(rescode.data);
-		free(rescode.headercode);
+		free(data.data); data.data=NULL;
+		free(data.headercode); data.headercode=NULL;
+		free(rescode.data); rescode.data=NULL;
+		free(rescode.headercode); rescode.headercode=NULL;
 		return FAILED;
 	}
 	if(response->data !=NULL) free(response->data);
 	if(response->headercode !=NULL) free(response->headercode);
 	response->data=data.data;
 	response->headercode =rescode.headercode;
-	
- 
-	free(data.headercode);
-	free(rescode.data);	
-	if(response->data == NULL) {
+
+	free(data.headercode); data.headercode=NULL;
+	free(rescode.data); rescode.data=NULL;
+	if(response->data == NULL)
 		return FAILED;
-	}
 	return SUCCESS;
 }
 
 /* create new experiment for specific application
 read back the generated experiment_id, after send the msg
 return 1 on success; otherwise return 0 */
-// int create_new_experiment(char *URL, char *message, char *experiment_id)
-// {
+// int create_new_experiment(char *URL, char *message, char *experiment_id) {
 // 	//You should use query_message_json instead of this function create_new_experiment !!
-// 	if (!check_URL(URL) || !check_message(message)) {
+// 	if (!check_URL(URL) || !check_message(message))
 // 		return FAILED;
-// 	}
 // 	CURL *curl = prepare_publish(URL, message, "POST");
-// 	if (curl == NULL) {
+// 	if (curl == NULL)
 // 		return FAILED;
-// 	}
 // 	
 // 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, get_stream_data);
 // 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, experiment_id);
@@ -609,9 +605,8 @@ int check_message(char *message) {
 
 /* Initialize libcurl; set headers format */
 void init_curl(void) {
-	if (headers != NULL ) {
+	if (headers != NULL )
 		return;
-	}
 // 	printf(" *****************  INIT CURL ***************\n");
 	curl_global_init(CURL_GLOBAL_ALL);
 // 	headers = curl_slist_append(headers, string("X-Auth-Token: " + token).c_str()); 

@@ -2,20 +2,11 @@
 ## Copyright (C) 2018 University of Stuttgart
 ##
 CC = gcc
-COPT_SO = ${CFLAGS} -fpic
+CXX = g++
 
-CFLAGS = -std=gnu99 -pedantic -Wall -Wwrite-strings  -Wpointer-arith -Wcast-align -O0 -ggdb \
--I${SRC} ${LIBIIO_INC} ${PARSER_INC} ${UTILS_INC} ${AGENT_INC} ${EXCESS_QUEUE_INC} ${CORE_INC}
-
-LFLAGS = -lrt -ldl -Wl,-rpath,${LIBIIO_PATH} ${LIBIIO_LIB}
-
-DEBUG ?= 1
-ifeq ($(DEBUG), 1)
-	CFLAGS += -DDEBUG -g
-else
-	CFLAGS += -DNDEBUG
-endif
-
+#
+# includes and libs
+#
 SRC = ${CURDIR}/src
 LIB = ${CURDIR}/lib
 
@@ -28,6 +19,24 @@ UTILS_INC = -I${CURDIR}/../utils
 AGENT_INC = -I${CURDIR}/../../agent
 EXCESS_QUEUE_INC = -I${CURDIR}/../../../ext/queue
 CORE_INC = -I${CURDIR}/../../core 
+
+#
+# compile and link flags
+#
+CFLAGS = -std=gnu99 -pedantic -Wall -Wwrite-strings  -Wpointer-arith -Wcast-align -O0 -ggdb \
+-I${SRC} ${LIBIIO_INC} ${PARSER_INC} ${UTILS_INC} ${AGENT_INC} ${EXCESS_QUEUE_INC} ${CORE_INC}
+
+COPT_SO = ${CFLAGS} -fpic
+
+LFLAGS = -lrt -ldl -Wl,-rpath,${LIBIIO_PATH} ${LIBIIO_LIB}
+
+DEBUG ?= 1
+ifeq ($(DEBUG), 1)
+	CFLAGS += -DDEBUG -g
+else
+	CFLAGS += -DNDEBUG
+endif
+
 
 all: clean prepare mf_Board_power_client mf_plugin_Board_power.so
 

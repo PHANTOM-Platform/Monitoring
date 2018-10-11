@@ -26,13 +26,195 @@
 #include "resources_monitor.h"
 #include "disk_monitor.h"
 #include "power_monitor.h"
-#include "nvml_monitor.h"
+
+#ifdef NVML
+#if NVML == yes
+    #include "nvml_monitor.h"
+	#include <nvml.h>
+#endif
+#endif
+
 #include "mf_api.h"
 #include <malloc.h>
+#include <math.h>
+// #include <sys/time.h>
 
-#include<stdio.h>
-#include<math.h>
-#include <nvml.h>
+#define SUCCESS 1
+#define FAILED 0
+
+
+// //Function for increase dynamically a string concatenating strings at the end
+// //It free the memory of the first pointer if not null
+// returns: s1 <-- s1 + s2
+// char* concat_and_free(char **s1, const char *s2){
+// 	char *result = NULL;
+// 	unsigned int new_lenght= strlen(s2)+1; //+1 for the null-terminator;
+// 	if(*s1 != NULL){
+// 		new_lenght+= strlen(*s1);//current lenght
+// 		if(new_lenght> malloc_usable_size(*s1)){
+// 			result = (char *) malloc(new_lenght);
+// 			if(result==NULL) {
+// 				printf("Failed to allocate memory.\n");
+// 				exit(1);
+// 			}
+// 			strcpy(result, *s1);
+// 			free(*s1);
+// 		}else{
+// 			result = *s1;
+// 		}
+// 	}else{
+// 		result = (char *) malloc(new_lenght);
+// 		if(result==NULL) {
+// 			printf("Failed to allocate memory.\n");
+// 			exit(1);
+// 		}
+// 		result[0]='\0';
+// 	}
+//	*s1 = result;
+// 	strcat(result, s2);
+// 	return result;
+// }
+
+char* itoa(int i, char b[]){
+	char const digit[] = "0123456789";
+	char* p = b;
+	if(i<0){
+		*p++ = '-';
+		i *= -1;
+	}
+	int shifter = i;
+	do{ //Move to where representation ends
+		++p;
+		shifter = shifter/10;
+	}while(shifter);
+	*p = '\0';
+	do{ //Move back, inserting digits as u go
+		*--p = digit[i%10];
+		i = i/10;
+	}while(i);
+	return b;
+}
+
+
+
+char* llitoa(const long long int i, char b[]){
+	char const digit[] = "0123456789";
+	char* p = b;
+	long long int input = i;
+	if(input<0){
+		*p++ = '-';
+		input *= -1;
+	}
+	int shifter = input;
+	do{ //Move to where representation ends
+		++p;
+		shifter = shifter/10;
+	}while(shifter);
+	*p = '\0';
+	do{ //Move back, inserting digits as u go
+		*--p = digit[input%10];
+		input = input/10;
+	}while(input);
+	return b;
+}
+
+
+/**
+* returns the current time in us
+* requires: #include <sys/time.h>
+*/
+long long int mycurrenttime (void) {
+// printf("========================================================\n");
+// printf("CLOCK_REALTIME: represents the machine's best-guess as to the current wall-clock, time-of-day time.\n");
+// printf(" It can jump forwards and backwards as the system time-of-day clock is changed, including by NTP.\n\n");
+// printf("========================================================\n");
+// printf("CLOCK_MONOTONIC: represents the absolute elapsed wall-clock time since some arbitrary, fixed point in the past.\n");
+// printf(" It isn't affected by changes in the system time-of-day clock.\n");
+// printf(" If you want to compute the elapsed time between two events observed on the one machine without an intervening reboot, this is the best option.\n");
+	//struct timeval t0 ;
+	//gettimeofday(&t0, NULL); //https://blog.habets.se/2010/09/gettimeofday-should-never-be-used-to-measure-time.html
+	//long long int timeus = (long int) (t0.tv_sec *1000000LL + t0.tv_usec);
+	struct timespec ts_start;
+	clock_gettime(CLOCK_MONOTONIC, &ts_start);
+	long long int timeus = (long int) (ts_start.tv_sec*1000000000LL + ts_start.tv_nsec);
+	return timeus;
+}
+
+char *mycurrenttime_str (void) {
+	long long int mytime = mycurrenttime();
+	char *new_string = (char *) malloc(60);
+	new_string=llitoa(mytime,new_string);
+	return new_string;
+}
+
+
+#if defined CHAR_BIT
+	// All defined OK so do nothing
+#else
+	#define CHAR_BIT 8
+#endif
+
+//A base-10 representation of a n-bit binary number takes up to n*log10(2) + 1 digits.
+//10/33 is slightly more than log10(2). +1
+#define INT_DECIMAL_STRING_SIZE(int_type) ((CHAR_BIT*sizeof(int_type)-1)*10/33+3)
+
+char *llint_to_string_alloc(long long int x, char b[]) {
+	long long int i = x;
+	unsigned int buf_size = INT_DECIMAL_STRING_SIZE(long long int);// sizeof buf
+	char buf[INT_DECIMAL_STRING_SIZE(long long int)];
+	char *p = &buf[buf_size - 1]; // point to the end
+	*p = '\0';
+	if (i >= 0)
+		i = -i;
+	do {
+		p--;
+		*p = (char) ('0' - i % 10);
+		i /= 10;
+	} while (i);
+	if (x < 0) {
+		p--;
+		*p = '-';
+	}
+	size_t len = (size_t) (&buf[buf_size] - p);
+	memcpy(b, p, len);
+	return b;
+}
+
+//Function for increase dynamically a string concatenating strings at the end
+//It free the memory of the first pointer if not null
+char* myconcat(char **s1, const char *a1, const char *a2, const char *a3, const char *a4, const char *a5){
+	char *result = NULL;
+	unsigned int new_lenght= strlen(a1)+strlen(a2)+strlen(a3)+strlen(a4)+strlen(a5)+1; //+1 for the null-terminator;
+	if(*s1 != NULL){
+		new_lenght+= strlen(*s1);//current lenght
+		if(new_lenght> malloc_usable_size(*s1)){
+			result = (char *) malloc(new_lenght);
+			if(result==NULL) {
+				fprintf(stderr, "Failed to allocate memory.\n");
+				return 0;
+			}
+			strcpy(result, *s1);
+			free(*s1);
+		}else{
+			result = *s1;
+		}
+	}else{
+		result = (char *) malloc(new_lenght);
+		if(result==NULL) {
+			fprintf(stderr, "Failed to allocate memory.\n");
+			return 0;
+		}
+		result[0]='\0';
+	}
+	*s1 = result;
+	strcat(result, a1);
+	strcat(result, a2);
+	strcat(result, a3);
+	strcat(result, a4);
+	strcat(result, a5);
+	return result;
+}
+
 
 // reverses a string 'str' of length 'len'
 void reverse(char *str, int len) {
@@ -240,7 +422,7 @@ void mf_end(void){
 			totalfree++;
 		}
 		if(totalfree==num_threads && each_m!=NULL) 
-			free(each_m); 
+			free(each_m);
 		each_m=NULL;
 	}
 	close_curl();
@@ -252,6 +434,7 @@ void mf_end(void){
 /*
 Query for a workflow, return 400 if the workflow is not registered yet.
 or 200 in other case.
+* returns NULL if error
 */
 char* mf_query_workflow(const char *server, const char *application_id ){
 	/* create an workflow */
@@ -268,15 +451,24 @@ char* mf_query_workflow(const char *server, const char *application_id ){
 // 	printf("******* register workflow ******\n");
 	char operation[]="GET";
 	new_query_json(URL, &response, operation); //*****
-	if(URL!=NULL) free(URL);
+	
+	if(new_query_json(URL, &response, operation) <= 0) {
+		printf("ERROR: query with %s failed.\n", URL);
+		if(URL!=NULL) free(URL); URL=NULL;
+		if(response.data!=NULL) { free(response.data); response.data=NULL; }
+		if(response.headercode!=NULL) { free(response.headercode); response.headercode = NULL; }
+		return NULL;
+	}
+	if(URL!=NULL) free(URL); URL=NULL; 
 	if(response.data[0] == '\0') {
 		printf("ERROR: Cannot register workflow for application %s\n", application_id);
+		if(response.data!=NULL) free(response.data); response.data=NULL;
+		if(response.headercode!=NULL) free(response.headercode); response.headercode=NULL;
 		return NULL;
-	} 
-	if(response.data!=NULL) free(response.data);
+	}
+	if(response.data!=NULL) free(response.data); response.data=NULL;
 	return response.headercode;
 }
-
 
 
 /*
@@ -310,9 +502,9 @@ char* mf_new_workflow(const char *server, const char *application_id, const char
 	char operation[]="PUT";
 	query_message_json(URL, msg, &response, operation); //***** 
 	
-	if(msg!=NULL) free(msg);
-	if(URL!=NULL) free(URL);
-	if(response.headercode!=NULL) free(response.headercode);
+	if(msg!=NULL) free(msg); msg=NULL;
+	if(URL!=NULL) free(URL); URL=NULL;
+	if(response.headercode!=NULL) free(response.headercode); response.headercode=NULL; 
 	if(response.data[0] == '\0') {
 		printf("ERROR: Cannot register workflow for application %s\n", application_id);
 		return NULL;
@@ -349,11 +541,22 @@ char* mf_send(const char *server, const char *application_id, const char *compon
 
 // 	printf("******* new_create_new_experiment ******\n"); 
 	char operation[]="POST";
-	query_message_json(URL, msg, &response, operation); //***** 
+	if(query_message_json(URL, msg, &response, operation)==FAILED){
+		printf("ERROR: Cannot create new experiment for application %s\n", application_id);
+		if(msg!=NULL) {free(msg); msg=NULL;}
+		if(URL!=NULL) {free(URL); URL=NULL;}
+		if(response.data!=NULL) {free(response.data); response.data=NULL;}
+		if(response.headercode!=NULL) {free(response.headercode); response.headercode=NULL;}
+		return NULL;
+	}
 	
-	if(msg!=NULL) free(msg);
-	if(URL!=NULL) free(URL);
-	if(response.headercode!=NULL) free(response.headercode);
+	if(msg!=NULL) {free(msg); msg=NULL;}
+	if(URL!=NULL) {free(URL); URL=NULL;}
+	if(response.headercode!=NULL) {free(response.headercode); response.headercode=NULL;}
+	if(response.data==NULL){
+		printf("ERROR: on response.data when creating new experiment for application %s\n", application_id);
+		return NULL;
+	}
 	if(response.data[0] == '\0') {//response->data containes the experiment_id
 		printf("ERROR: Cannot create new experiment for application %s\n", application_id);
 		return NULL;
@@ -403,9 +606,8 @@ char* mf_send(const char *server, const char *application_id, const char *compon
 			//static_string=concat_and_free(&static_string, "}");
 			publish_file(metric_URL, static_string, filename);
 			/*remove the file if user unset keep_local_data_flag */
-			if(keep_local_data_flag == 0) {
+			if(keep_local_data_flag == 0)
 				unlink(filename);
-			}
 		}
 		/*get the next entry */
 		drp = readdir(dir);
@@ -413,17 +615,19 @@ char* mf_send(const char *server, const char *application_id, const char *compon
 
 	if(metric_URL!= NULL)
 		free(metric_URL);
+	metric_URL=NULL;
 	if(static_string!= NULL)
 		free(static_string);
+	static_string=NULL;
 	if(filename!= NULL)
 		free(filename);
+	filename=NULL;
 	closedir(dir);
 	fclose(logFile);
 
 	/*remove the data directory if user unset keep_local_data_flag */
-	if(keep_local_data_flag == 0) {
+	if(keep_local_data_flag == 0)
 		rmdir(DataPath);
-	}
 	return response.data; // it contains the experiment_id;
 }
 
@@ -477,14 +681,23 @@ static void *MonitorStart(void *arg) {
 		disk_monitor(pid, DataPath, metric->sampling_interval);
 	} else if(strcmp(metric->metric_name, METRIC_NAME_3) == 0) {
 		power_monitor(pid, DataPath, metric->sampling_interval);
+#ifdef NVML
+#if NVML == yes
 	} else if(strcmp(metric->metric_name, METRIC_NAME_4) == 0) {
 		nvml_monitor(pid, DataPath, metric->sampling_interval);
-	//} else if(strcmp(metric->metric_name, METRIC_NAME_5) == 0) {
-//		dummy_monitor(pid, DataPath, metric->sampling_interval);
+#endif
+#endif
 	} else {
 		printf("ERROR: it is not possible to monitor %s\n", metric->metric_name);
 		printf(" available metric plugins:\n");
-		printf(" \"%s\", \"%s\", \"%s\", \"%s\"\n", METRIC_NAME_1,METRIC_NAME_2,METRIC_NAME_3,METRIC_NAME_4);
+		printf(" \"%s\", \"%s\", \"%s\"", METRIC_NAME_1, METRIC_NAME_2, METRIC_NAME_3);
+#ifdef NVML
+#if NVML == yes
+	printf(", \"%s\"", METRIC_NAME_4);
+#endif
+#endif
+		printf("\n");
+
 	}
 	return NULL;
 }
@@ -501,26 +714,28 @@ int get_config_parameters(const char *server, const char *platform_id){
 		exit(1);
 	}
 	struct url_data response ; //it is reserved by new_query_json
+	response.data=NULL;
+	response.headercode = NULL;
 	char operation[]="GET";
 	sprintf(URL, "%s/v1/phantom_rm/configs/%s", server, platform_id);
 
 	if(new_query_json(URL, &response, operation) <= 0) {
 		printf("ERROR: query with %s failed.\n", URL);
-		if(URL!=NULL) free(URL);
-		if(response.data!=NULL) free(response.data);
-		if(response.headercode!=NULL) free(response.headercode);
+		if(URL!=NULL) free(URL); URL=NULL;
+		if(response.data!=NULL) { free(response.data); response.data=NULL; }
+		if(response.headercode!=NULL) { free(response.headercode); response.headercode = NULL; }
 		return 0;
 	}
 
 	if(strstr(response.data, "parameters") == NULL) {
 		printf("ERROR: response does not include parameters.\n");
 		printf("GET URL: %s.\n",URL);
-		if(URL!=NULL) free(URL);
-		if(response.data!=NULL) free(response.data);
-		if(response.headercode!=NULL) free(response.headercode);
+		if(URL!=NULL) { free(URL); URL=NULL; }
+		if(response.data!=NULL) { free(response.data); response.data=NULL; }
+		if(response.headercode!=NULL) { free(response.headercode); response.headercode = NULL; }
 		return 0;
 	}
-	if(URL!=NULL) free(URL);
+	if(URL!=NULL) { free(URL); URL=NULL; }
 	/* parse the send back string to get required parameters */
 	char *ptr_begin, *ptr_end;
 	char value[16] = {'\0'};
@@ -532,8 +747,8 @@ int get_config_parameters(const char *server, const char *platform_id){
 			if(ptr_end == NULL) {
 				ptr_end = strstr(ptr_begin, "}");
 				if(ptr_end == NULL){
-					if(response.data!=NULL) free(response.data);
-					if(response.headercode!=NULL) free(response.headercode);
+					if(response.data!=NULL) { free(response.data); response.data=NULL; }
+					if(response.headercode!=NULL) { free(response.headercode); response.headercode = NULL; }
 					return 0;
 				}
 			}
@@ -547,139 +762,15 @@ int get_config_parameters(const char *server, const char *platform_id){
 	printf("Parameters of platform \"%s\" are:\n",platform_id);
 	for (i = 0; i <= 8; i++)
 		printf("    %s:%f\n", parameters_name[i], parameters_value[i]);
-	if(response.data!=NULL) free(response.data);
-	if(response.headercode!=NULL) free(response.headercode);
+	if(response.data!=NULL) { free(response.data); response.data=NULL; }
+	if(response.headercode!=NULL) { free(response.headercode); response.headercode = NULL; }
 	return 1;
 }
 
 
 /**
- * NEW FUNCTIONS DEVELOPED DURING THE INTEGRARION
+ * NEW FUNCTIONS DEVELOPED DURING THE INTEGRATION
  */
-
-// #include <unistd.h>
-// #include <sys/stat.h>
-// #include <string.h>
-// #include <stdio.h>
-// #include <stdlib.h>
-// #include <time.h>
-// #include <malloc.h>
-#include "mf_api.h"
-// #include <sys/time.h>
-
-// int pid;
-// char DataPath[256];
-
-//Function for increase dynamically a string concatenating strings at the end
-//It free the memory of the first pointer if not null
-char* myconcat(char **s1, const char *a1, const char *a2, const char *a3, const char *a4, const char *a5){
-	char *result = NULL;
-	unsigned int new_lenght= strlen(a1)+strlen(a2)+strlen(a3)+strlen(a4)+strlen(a5)+1; //+1 for the null-terminator;
-	if(*s1 != NULL){
-		new_lenght+= strlen(*s1);//current lenght
-		if(new_lenght> malloc_usable_size(*s1)){
-			result = (char *) malloc(new_lenght);
-			if(result==NULL) {
-				fprintf(stderr, "Failed to allocate memory.\n");
-				return 0;
-			}
-			strcpy(result, *s1);
-			free(*s1);
-		}else{
-			result = *s1;
-		}
-	}else{
-		result = (char *) malloc(new_lenght);
-		if(result==NULL) {
-			fprintf(stderr, "Failed to allocate memory.\n");
-			return 0;
-		}
-		result[0]='\0';
-	}
-	*s1 = result;
-	strcat(result, a1);
-	strcat(result, a2);
-	strcat(result, a3);
-	strcat(result, a4);
-	strcat(result, a5);
-	return result;
-}
-
-// //Function for increase dynamically a string concatenating strings at the end
-// //It free the memory of the first pointer if not null
-// returns: s1 <-- s1 + s2
-// char* concat_and_free(char **s1, const char *s2){
-// 	char *result = NULL;
-// 	unsigned int new_lenght= strlen(s2)+1; //+1 for the null-terminator;
-// 	if(*s1 != NULL){
-// 		new_lenght+= strlen(*s1);//current lenght
-// 		if(new_lenght> malloc_usable_size(*s1)){
-// 			result = (char *) malloc(new_lenght);
-// 			if(result==NULL) {
-// 				printf("Failed to allocate memory.\n");
-// 				exit(1);
-// 			}
-// 			strcpy(result, *s1);
-// 			free(*s1);
-// 		}else{
-// 			result = *s1;
-// 		}
-// 	}else{
-// 		result = (char *) malloc(new_lenght);
-// 		if(result==NULL) {
-// 			printf("Failed to allocate memory.\n");
-// 			exit(1);
-// 		}
-// 		result[0]='\0';
-// 	}
-//	*s1 = result;
-// 	strcat(result, s2);
-// 	return result;
-// }
-
-char* itoa(int i, char b[]){
-	char const digit[] = "0123456789";
-	char* p = b;
-	if(i<0){
-		*p++ = '-';
-		i *= -1;
-	}
-	int shifter = i;
-	do{ //Move to where representation ends
-		++p;
-		shifter = shifter/10;
-	}while(shifter);
-	*p = '\0';
-	do{ //Move back, inserting digits as u go
-		*--p = digit[i%10];
-		i = i/10;
-	}while(i);
-	return b;
-}
-
-
-
-char* llitoa(const long long int i, char b[]){
-	char const digit[] = "0123456789";
-	char* p = b;
-	long long int input = i;
-	if(input<0){
-		*p++ = '-';
-		input *= -1;
-	}
-	int shifter = input;
-	do{ //Move to where representation ends
-		++p;
-		shifter = shifter/10;
-	}while(shifter);
-	*p = '\0';
-	do{ //Move back, inserting digits as u go
-		*--p = digit[input%10];
-		input = input/10;
-	}while(input);
-	return b;
-}
-
 
 metric_query *new_metric(const char* label){
 	metric_query *user_query;
@@ -754,8 +845,8 @@ void submit_metric(metric_query *user_query){
 	if(user_query->multiple_fields==1)
 		user_query->query=concat_and_free(&user_query->query, "\n}");
 	printf("%s\n\n",user_query->query);
-	free(user_query->query);
-	free(user_query);
+	if(user_query->query!=NULL) free(user_query->query);
+	if(user_query!=NULL) free(user_query);
 	user_query=NULL;
 }
 
@@ -797,9 +888,8 @@ static int api_prepare_loc(char *Data_path){
 }
 
 int mf_user_metric_loc(char *user_metrics){
-	if(DataPath[0] == '\0') {
+	if(DataPath[0] == '\0')
 		pid = api_prepare_loc(DataPath);
-	}
 	/*create and open the file*/
 	char FileName[256] = {'\0'};
 	sprintf(FileName, "%s/%s", DataPath, "user_defined");
@@ -820,66 +910,6 @@ int mf_user_metric_loc(char *user_metrics){
 	return pid;
 }
 
-/**
-* returns the current time in us
-* requires: #include <sys/time.h>
-*/
-long long int mycurrenttime (void) {
-// printf("========================================================\n");
-// printf("CLOCK_REALTIME: represents the machine's best-guess as to the current wall-clock, time-of-day time.\n");
-// printf(" It can jump forwards and backwards as the system time-of-day clock is changed, including by NTP.\n\n");
-// printf("========================================================\n");
-// printf("CLOCK_MONOTONIC: represents the absolute elapsed wall-clock time since some arbitrary, fixed point in the past.\n");
-// printf(" It isn't affected by changes in the system time-of-day clock.\n");
-// printf(" If you want to compute the elapsed time between two events observed on the one machine without an intervening reboot, this is the best option.\n");
-	//struct timeval t0 ;
-	//gettimeofday(&t0, NULL); //https://blog.habets.se/2010/09/gettimeofday-should-never-be-used-to-measure-time.html
-	//long long int timeus = (long int) (t0.tv_sec *1000000LL + t0.tv_usec);
-	struct timespec ts_start;
-	clock_gettime(CLOCK_MONOTONIC, &ts_start);
-	long long int timeus = (long int) (ts_start.tv_sec*1000000000LL + ts_start.tv_nsec);
-	return timeus;
-}
-
-char *mycurrenttime_str (void) {
-	long long int mytime = mycurrenttime();
-	char *new_string = (char *) malloc(60);
-	new_string=llitoa(mytime,new_string);
-	return new_string;
-}
-
-
-#if defined CHAR_BIT
-	// All defined OK so do nothing
-#else
-	#define CHAR_BIT 8
-#endif
-
-//A base-10 representation of a n-bit binary number takes up to n*log10(2) + 1 digits.
-//10/33 is slightly more than log10(2). +1
-#define INT_DECIMAL_STRING_SIZE(int_type) ((CHAR_BIT*sizeof(int_type)-1)*10/33+3)
-
-char *llint_to_string_alloc(long long int x, char b[]) {
-	long long int i = x;
-	unsigned int buf_size = INT_DECIMAL_STRING_SIZE(long long int);// sizeof buf
-	char buf[INT_DECIMAL_STRING_SIZE(long long int)];
-	char *p = &buf[buf_size - 1]; // point to the end
-	*p = '\0';
-	if (i >= 0)
-		i = -i;
-	do {
-		p--;
-		*p = (char) ('0' - i % 10);
-		i /= 10;
-	} while (i);
-	if (x < 0) {
-		p--;
-		*p = '-';
-	}
-	size_t len = (size_t) (&buf[buf_size] - p);
-	memcpy(b, p, len);
-	return b;
-}
 
 
 void user_metrics_buffer(char *currentid, struct Thread_report single_thread_report ){
@@ -901,7 +931,8 @@ for(j=0;j<single_thread_report.total_metrics;j++){
 /* MONITORING END */
 	mf_user_metric_loc(user_metrics);
 }
-	free(user_metrics);
+	if(user_metrics!=NULL) free(user_metrics);
+	user_metrics=NULL;
 ///* MONITORING I'd like to store here the total nr. of completed loops --> nrLoops */
 //	int nrLoops=5;
 //	sprintf(metric_value, "%d", nrLoops);
@@ -953,7 +984,7 @@ void register_end_component(char *currentid, struct Thread_report single_thread_
 
 /* MONITORING END */
 	mf_user_metric_loc(user_metrics);
-	free(user_metrics);
+	if(user_metrics!=NULL) free(user_metrics); user_metrics=NULL;
 ///* MONITORING I'd like to store here the total nr. of completed loops --> nrLoops */
 //	int nrLoops=5;
 //	sprintf(metric_value, "%d", nrLoops);
@@ -968,6 +999,7 @@ void monitoring_send(const char *server, const char *appid,const char *execfile,
 	char *experiment_id = mf_send(server, appid, execfile, regplatformid);
 // 	printf(" experiment_id is %s\n",experiment_id);
 	if(experiment_id!=NULL) free(experiment_id);//dinamically allocated by mf_send 
+	experiment_id=NULL;
 }
 
 
@@ -979,17 +1011,23 @@ char *query_workflow(const char *server, const char *appid){
 	return response;
 }
 
-void register_workflow( const char *server, const char *regplatformid, const char *appid, const char *execfile){
+/** returns 0 if success*/
+int register_workflow( const char *server, const char *regplatformid, const char *appid, const char *execfile){
 	char author[]="new_user";
 	char optimization[]="Time";
 	char tasks_desc[]="[{\"device\":\"demo_desktop\", \"exec\":\"hello_world\", \"cores_nr\": \"2\"}]";
 // 	printf("\nQUERY FOR WORKFLOW ...\n");
 	char* response=query_workflow( server, appid);
+	if (response==NULL) {
+		printf("ERROR registering workflow server: %s\n",server);
+		return 1;
+	}
 	int rc = strcmp(response, "400"); //if 400 then the workflow was not registered before
 	if(rc == 0){ //0 stands for equal
-		free(response);
+		if(response!=NULL) free(response);
 // 		printf("\nREGISTERING WORKFLOW ...\n");
 		response= mf_new_workflow(server, appid, author, optimization, tasks_desc);
 	}
-	free(response);
+	if(response!=NULL) free(response);
+	return 0;
 }

@@ -30,60 +30,53 @@ static void my_exit_handler();
 /* mf_NVML_client main function */
 int main(int argc, char** argv)
 {
-    if (argc <= 1) {
-        printf("Error: No metrics required for monitoring.");
-        exit(0);
-    }
+	if (argc <= 1) {
+		printf("Error: No metrics required for monitoring.");
+		exit(0);
+	}
+	struct sigaction sigIntHandler;
+	sigIntHandler.sa_handler = my_exit_handler;
+	sigemptyset(&sigIntHandler.sa_mask);
+	sigIntHandler.sa_flags = 0;
+	sigaction(SIGINT, &sigIntHandler, NULL);
 
-    struct sigaction sigIntHandler;
-    sigIntHandler.sa_handler = my_exit_handler;
-    sigemptyset(&sigIntHandler.sa_mask);
-    sigIntHandler.sa_flags = 0;
-    sigaction(SIGINT, &sigIntHandler, NULL);
+	/*default sampling interval: 1 second */
+	struct timespec profile_time = { 0, 0 };
+	profile_time.tv_sec = 1;
+	profile_time.tv_nsec = 0;
 
-    /*default sampling interval: 1 second */
-    struct timespec profile_time = { 0, 0 };
-    profile_time.tv_sec = 1;
-    profile_time.tv_nsec = 0;
+	++argv;
+	--argc;
 
-    ++argv;
-    --argc;
+	/*
+	* initialize the plugin
+	*/
+	Plugin_metrics *monitoring_data = malloc(sizeof(Plugin_metrics));
+	int ret = mf_NVML_init(monitoring_data, argv, argc);
+	if(ret == 0) {
+		printf("Error: Plugin init function failed.\n");
+		exit(0);
+	}
+	do {
+		/* sleep for a given time until next sample
+		 */
+		nanosleep(&profile_time, NULL);
 
-    /*
-     * initialize the plugin
-     */
-    Plugin_metrics *monitoring_data = malloc(sizeof(Plugin_metrics));
-    int ret = mf_NVML_init(monitoring_data, argv, argc);
-    if(ret == 0) {
-        printf("Error: Plugin init function failed.\n");
-        exit(0);
-    }
+		/*sampling 
+		 */
+		mf_NVML_sample(monitoring_data);
 
-    do {
-        /*
-         * sleep for a given time until next sample
-         */
-        nanosleep(&profile_time, NULL);
+		/* Prepares a json string, including current timestamp, name of the plugin,
+		 * and required metrics.
+		 */
+		char *json = calloc(JSON_MAX_LEN, sizeof(char));
+		mf_NVML_to_json(monitoring_data, argv, argc, json);
 
-        /*
-         * sampling 
-         */
-        mf_NVML_sample(monitoring_data);
-
-        /*
-         * Prepares a json string, including current timestamp, name of the plugin,
-         * and required metrics.
-         */
-        char *json = calloc(JSON_MAX_LEN, sizeof(char));
-        mf_NVML_to_json(monitoring_data, argv, argc, json);
-        
-        /*
-         * Display and free the json string
-         */
-        puts(json);
-        free(json);
-
-    } while (1);
+		/* Display and free the json string
+		 */
+		puts(json);
+		free(json);
+	} while (1);
 }
 
 /* Exit handler */

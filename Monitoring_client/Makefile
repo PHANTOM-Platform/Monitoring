@@ -87,19 +87,20 @@ ${SRC}/%.o: %.c ${HEADER}
 excess_concurrent_queue.o:
 	$(CXX) -c $(PWD)/ext/queue/excess_concurrent_queue.cpp -o $@ -I. $(EXCESS_QUEUE) $(EXCESS_QUEUE_C) -fpic
 
+# note: the parameter -j 1 is because it shows some race issues when compiling in the many core machine. It has not big impact on time because the compilation is fast.	
 prepare:
-	$(MAKE) -C $(PWD)/src/parser DEBUG=$(DEBUG)
-	$(MAKE) -C $(PWD)/src/publisher DEBUG=$(DEBUG)
+	$(MAKE) -C $(PWD)/src/parser -j 1 DEBUG=$(DEBUG)
+	$(MAKE) -C $(PWD)/src/publisher -j 1 DEBUG=$(DEBUG)
 mf_api:
-	$(MAKE) -C $(PWD)/src/api DEBUG=$(DEBUG)
-	$(MAKE) -C $(PWD)/src/api/test DEBUG=$(DEBUG)
+	$(MAKE) -C $(PWD)/src/api -j 1 DEBUG=$(DEBUG)
+	$(MAKE) -C $(PWD)/src/api/test -j 1 DEBUG=$(DEBUG)
 
 main: excess_concurrent_queue.o $(SRC)/main.o $(SRC)/thread_handler.o $(SRC)/plugin_discover.o $(SRC)/plugin_manager.o
 	$(CXX) -o $@ $^ -lrt -ldl -Wl,--export-dynamic $(CFLAGS) $(LFLAGS)
 
-# note: the parameter -j 1 is because it shows some race issues when compiling in the many core machine. It has not impact on time because the compilation requires only few seconds.
+
 plugins:
-	$(MAKE) -C $(PLUGIN_DIR)/Board_power DEBUG=$(DEBUG)
+	$(MAKE) -C $(PLUGIN_DIR)/Board_power -j 1 DEBUG=$(DEBUG)
 	$(MAKE) -C $(PLUGIN_DIR)/CPU_perf -j 1 DEBUG=$(DEBUG)
 	$(MAKE) -C $(PLUGIN_DIR)/CPU_temperature -j 1 DEBUG=$(DEBUG)
 	$(MAKE) -C $(PLUGIN_DIR)/Linux_resources -j 1 DEBUG=$(DEBUG)

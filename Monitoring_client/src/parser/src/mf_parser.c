@@ -157,11 +157,13 @@ void
 mfp_data_free(mfp_data* data)
 {
     int i;
-    for(i=0; i<data->size; i++) {
-        free(data->keys[i]);
-        free(data->values[i]);
-    }
-    free(data);
+	if(data!=NULL){
+		for(i=0; i<data->size; i++) {
+			if (data->keys[i]!=NULL) free(data->keys[i]); data->keys[i]=NULL;
+			if (data->values[i]!=NULL) free(data->values[i]); data->values[i]=NULL;
+		}
+		free(data); data=NULL;
+	}
 }
 
 /* Clears the memory for apr pool and tears down the apr internal data structures */

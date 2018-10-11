@@ -242,7 +242,7 @@
 # https://github.com/excess-project/data-structures-library.git
 # ============================================================================ #
 	cd $INSTALL_PATH_EXCESS_QUEUE;
-	rm -rf data-structures-library;
+	#rm -rf data-structures-library;
 	if [ ! -f data-structures-library.tgz ]; then
 		git clone https://github.com/excess-project/data-structures-library.git
 	else

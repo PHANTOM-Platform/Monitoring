@@ -32,8 +32,7 @@
 #include <malloc.h>
 //Function for increase dynamically a string concatenating strings at the end
 //It free the memory of the first pointer if not null
-char* concat_and_free(char **s1, const char *s2)
-{
+char* concat_and_free(char **s1, const char *s2) {
 	char *result = NULL;
 	unsigned int new_lenght= strlen(s2)+1; //+1 for the null-terminator;
 	if(*s1 != NULL){
@@ -54,19 +53,17 @@ char* concat_and_free(char **s1, const char *s2)
 	return result;
 }
 
-
-int power_monitor(int pid, char *DataPath, long sampling_interval)
-{
+int power_monitor(int pid, char *DataPath, long sampling_interval) {
 	/*create and open the file*/
 	printf("start power monitor\n");
-	char *FileName=NULL; 
+	char *FileName=NULL;
 	FileName=concat_and_free(&FileName, DataPath);
 	FileName=concat_and_free(&FileName, "/");
 	FileName=concat_and_free(&FileName, METRIC_NAME_3);
 	FILE *fp = fopen(FileName, "a"); //append data to the end of the file
 	if (fp == NULL) {
 		printf("ERROR: Could not create file: %s\n", FileName);
-		free(FileName);
+		if (FileName !=NULL) free(FileName);
 		return 0;
 	}
 	struct timespec timestamp_before, timestamp_after;
@@ -76,14 +73,14 @@ int power_monitor(int pid, char *DataPath, long sampling_interval)
 	int fd = create_perf_stat_counter(pid);
 	if(fd <= 0){
 		fclose(fp);
-		free(FileName);
+		if (FileName !=NULL) free(FileName);
 		return 0;
 	}
 
 	int returned_value =read_and_check(fd, pid, &before);
 	if( returned_value != 0){
 		fclose(fp);
-		free(FileName);
+		if (FileName !=NULL) free(FileName);
 		return 0;
 	}
 
@@ -97,7 +94,7 @@ int power_monitor(int pid, char *DataPath, long sampling_interval)
 		int returned_value =read_and_check(fd, pid, &after);
 		if( returned_value  != 0){
 			fclose(fp);
-			free(FileName);
+			if (FileName !=NULL) free(FileName);
 			return 0;
 		} 
 	
@@ -130,14 +127,13 @@ int power_monitor(int pid, char *DataPath, long sampling_interval)
 	}
 	/*close the file*/
 	fclose(fp);
-	free(FileName);
+	if (FileName !=NULL) free(FileName);
 	return 1;
 }
 
 /* init perf counter for hardware cache misses 
 return the file descriptor for further read operations */
-int create_perf_stat_counter(int pid)
-{
+int create_perf_stat_counter(int pid) {
 	struct perf_event_attr attr; //cache miss
 	memset(&attr, 0, sizeof(struct perf_event_attr));
 	attr.type =	PERF_TYPE_HARDWARE;
@@ -159,34 +155,31 @@ int create_perf_stat_counter(int pid)
 * returns a set of bits indicating if error on the different functions
 * returns 0 if completed successfully all the functions
 */
-int read_and_check(int fd, int pid, pid_stats_info *info)
-{
+int read_and_check(int fd, int pid, pid_stats_info *info) {
 	printf("**** read_and_check  \n\n");
-	
+
 	int value_to_return=0;
 	if(read_pid_time(pid, info) <= 0)
 		value_to_return+=1;
 
 	if(read_pid_io(pid, info) <=0)
 		value_to_return+=2;
-	
+
 	if(read_sys_time(info) <= 0)
 		value_to_return+=4;
 	
 	if(cpu_freq_stat(info) <= 0)
 		value_to_return+=8;
-	
+
 	info->pid_l2_cache_misses = read_perf_counter(fd);
 	if(info->pid_l2_cache_misses <= 0)
 		value_to_return+=16;
 
-	
 	return value_to_return;
 }
 
 /* check if values are increasing; calculate the differences in the time interval; update the before values with after values */
-int calculate_and_update(pid_stats_info *before, pid_stats_info *after, pid_stats_info *delta)
-{
+int calculate_and_update(pid_stats_info *before, pid_stats_info *after, pid_stats_info *delta) {
 	if (after->sys_itv <= before->sys_itv)
 		return 0;
 	if (after->sys_runtime <= before->sys_runtime)
@@ -206,15 +199,18 @@ int calculate_and_update(pid_stats_info *before, pid_stats_info *after, pid_stat
 }
 
 /* read the process runtime from /proc/[pid]/stat */
-int read_pid_time(int pid, pid_stats_info *info)
-{
+int read_pid_time(int pid, pid_stats_info *info) {
 	FILE *fp;
 	char *line= (char *) malloc(1024);
 	char pid_cpu_file[128] = {'\0'};
 	char tmp_str[32];
 	char tmp_char;
 	unsigned long long tmp, pid_utime, pid_stime;
-
+	if(line == NULL) {
+		printf("ERROR: Could not alocate memory\n");
+		return 0;
+	}
+	
 	sprintf(pid_cpu_file, "/proc/%d/stat", pid);
 	fp = fopen(pid_cpu_file, "r");
 
@@ -236,8 +232,7 @@ int read_pid_time(int pid, pid_stats_info *info)
 }
 
 /* read the process read_bytes, write_bytes, and cancelled_writes from /proc/[pid]/io */
-int read_pid_io(int pid, pid_stats_info *info)
-{
+int read_pid_io(int pid, pid_stats_info *info) {
 	FILE *fp;
 	char line[128];
 	char disk_file[128] = {'\0'};
@@ -263,13 +258,15 @@ int read_pid_io(int pid, pid_stats_info *info)
 }
 
 /* read the system itv and runtime from /proc/stat*/
-int read_sys_time(pid_stats_info *info)
-{
+int read_sys_time(pid_stats_info *info) {
 	FILE *fp;
 	char *line= (char *) malloc(1024);
 	const char cpu_file[] = "/proc/stat";
 	unsigned long long cpu_user, cpu_nice, cpu_sys, cpu_idle, cpu_iowait, cpu_hardirq, cpu_softirq, cpu_steal;
-
+	if(line == NULL) {
+		printf("ERROR: Could not alocate memory\n");
+		return 0;
+	}
 	fp = fopen(cpu_file, "r");
 
 	if(fp == NULL) {
@@ -295,8 +292,7 @@ int read_sys_time(pid_stats_info *info)
 }
 
 /* get the cpu freq counting and return the cpu energy since the last call of the function */
-int cpu_freq_stat(pid_stats_info *info) 
-{
+int cpu_freq_stat(pid_stats_info *info) {
 	/*
 	read the system cpu energy based on given max- and min- cpu energy, and frequencies statistics
 	*/
@@ -366,8 +362,7 @@ int cpu_freq_stat(pid_stats_info *info)
 }
 
 /* read the perf counter from the file descriptor */
-unsigned long long read_perf_counter(int fd)
-{
+unsigned long long read_perf_counter(int fd) {
 	unsigned long long single_count[3];
 	size_t res;
 

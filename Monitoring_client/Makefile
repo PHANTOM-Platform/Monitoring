@@ -1,40 +1,13 @@
-## Copyright 2014-2017 University of Stuttgart
+## Copyright 2014-2018 University of Stuttgart
+# Updated by J.M. Montañana
 
 CC = gcc
 CXX = g++
 
 #
-# compile and link flags 
+## includes and libs
 #
-COPT_SO = ${CFLAGS} -fpic
-
-CFLAGS = -std=gnu99 -pedantic -Wall -Wwrite-strings -Wpointer-arith \
--Wcast-align -O0 -ggdb -pthread -D_LARGEFILE64_SOURCE \
-$(CURL_INC) \
-$(PAPI_INC) \
-$(APR_INC) \
-$(PARSER_INC) \
-$(PUBLISHER_INC) \
-$(CORE_INC) \
-$(EXCESS_QUEUE) \
-$(EXCESS_QUEUE_C)
-
-LFLAGS =  -lm $(CURL) $(PAPI) $(APR) $(PARSER) $(PUBLISHER)
-
-#
-# DEBUG SWITCH
-#
-DEBUG ?= 0
-ifeq ($(DEBUG), 1)
-	CFLAGS += -DDEBUG -g
-else
-	CFLAGS += -DNDEBUG
-endif
-
-#
-# includes and libs
-#
-PWD = ${CURDIR}
+#PWD = ${CURDIR}
 
 CURL = -L$(PWD)/bin/curl/lib/ -lcurl
 CURL_INC = -I$(PWD)/bin/curl/include
@@ -57,6 +30,35 @@ CORE_INC = -I$(PWD)/src/core
 
 EXCESS_QUEUE = -I$(PWD)/ext/queue/data-structures-library/src/include
 EXCESS_QUEUE_C = -I$(PWD)/ext/queue
+
+#
+# compile and link flags 
+#
+
+CFLAGS = -std=gnu99 -pedantic -Wall -Wwrite-strings -Wpointer-arith \
+-Wcast-align -O0 -ggdb -pthread -D_LARGEFILE64_SOURCE \
+$(CURL_INC) \
+$(PAPI_INC) \
+$(APR_INC) \
+$(PARSER_INC) \
+$(PUBLISHER_INC) \
+$(CORE_INC) \
+$(EXCESS_QUEUE) \
+$(EXCESS_QUEUE_C)
+
+COPT_SO = ${CFLAGS} -fpic
+
+LFLAGS =  -lm $(CURL) $(PAPI) $(APR) $(PARSER) $(PUBLISHER)
+
+#
+# DEBUG SWITCH
+#
+DEBUG ?= 0
+ifeq ($(DEBUG), 1)
+	CFLAGS += -DDEBUG -g
+else
+	CFLAGS += -DNDEBUG
+endif
 
 #
 # main source files
@@ -95,13 +97,14 @@ mf_api:
 main: excess_concurrent_queue.o $(SRC)/main.o $(SRC)/thread_handler.o $(SRC)/plugin_discover.o $(SRC)/plugin_manager.o
 	$(CXX) -o $@ $^ -lrt -ldl -Wl,--export-dynamic $(CFLAGS) $(LFLAGS)
 
+# note: the parameter -j 1 is because it shows some race issues when compiling in the many core machine. It has not impact on time because the compilation requires only few seconds.
 plugins:
 	$(MAKE) -C $(PLUGIN_DIR)/Board_power DEBUG=$(DEBUG)
-	$(MAKE) -C $(PLUGIN_DIR)/CPU_perf DEBUG=$(DEBUG)
-	$(MAKE) -C $(PLUGIN_DIR)/CPU_temperature DEBUG=$(DEBUG)
-	$(MAKE) -C $(PLUGIN_DIR)/Linux_resources DEBUG=$(DEBUG)
-	$(MAKE) -C $(PLUGIN_DIR)/Linux_sys_power DEBUG=$(DEBUG)
-	$(MAKE) -C $(PLUGIN_DIR)/NVML DEBUG=$(DEBUG)
+	$(MAKE) -C $(PLUGIN_DIR)/CPU_perf -j 1 DEBUG=$(DEBUG)
+	$(MAKE) -C $(PLUGIN_DIR)/CPU_temperature -j 1 DEBUG=$(DEBUG)
+	$(MAKE) -C $(PLUGIN_DIR)/Linux_resources -j 1 DEBUG=$(DEBUG)
+	$(MAKE) -C $(PLUGIN_DIR)/Linux_sys_power -j 1 DEBUG=$(DEBUG)
+	$(MAKE) -C $(PLUGIN_DIR)/NVML DEBUG=$(DEBUG) -j 1 
 
 lib:
 

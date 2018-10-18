@@ -1,6 +1,6 @@
 {
-  "name": "phantom_repository-server",
-  "version": "23.01.18",
+  "name": "phantom_monitoring-server",
+  "version": "10.10.18",
   "homepage": "https://github.com/PHANTOM-Platform",
   "repository": {
     "type": "git",

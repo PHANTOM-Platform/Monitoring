@@ -21,7 +21,8 @@
 #include <time.h>
 #include "dummy_monitor.h"
 #include "mf_api.h"
-
+#define SUCCESS 0
+#define FAILED 1
 /*******************************************************************************
  * Implementaion
  ******************************************************************************/
@@ -45,7 +46,7 @@ int dummy_monitor(int pid, char *DataPath, long sampling_interval){
 	double timestamp_ms;
 	float variation,throughput;
 	dummy_stats result;
-	/*initialize the values in result */
+	/*initialize the values in result*/
 	result.data_after = 0;
 	dummy_get_stats(pid, &result);
 	/*in a loop do data sampling and write into the file*/
@@ -60,7 +61,6 @@ int dummy_monitor(int pid, char *DataPath, long sampling_interval){
     	throughput = (variation) * 1000.0 / sampling_interval; //in bytes/s
     	fprintf(fp, "\"local_timestamp\":\"%.1f\", \"%s\":%.3f\n", timestamp_ms, "dummy_throughput", throughput);
 	}
-	/*close the file*/
 	fclose(fp);
 	return 1;
 }

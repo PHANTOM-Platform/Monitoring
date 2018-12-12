@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -22,12 +21,10 @@
 #include <time.h>
 #include "resources_monitor.h"
 #include "mf_api.h"
-
 /*******************************************************************************
  * Implementaion
  ******************************************************************************/
-int resources_monitor(int pid, char *DataPath, long sampling_interval)
-{
+int resources_monitor(int pid, char *DataPath, long sampling_interval) {
 	/*create and open the file*/
 	char FileName[256] = {'\0'};
 	sprintf(FileName, "%s/%s", DataPath, METRIC_NAME_1);
@@ -41,7 +38,6 @@ int resources_monitor(int pid, char *DataPath, long sampling_interval)
 	resources_cpu before, after;
 	resources_stats stats;
 	resources_stat_cpu(pid, &before);
-
 	/*in a loop do data sampling and write into the file*/
 	while(running) {
 		usleep(sampling_interval * 1000);
@@ -55,21 +51,17 @@ int resources_monitor(int pid, char *DataPath, long sampling_interval)
     		"RAM_usage_rate", stats.RAM_usage_rate,
     		"swap_usage_rate", stats.swap_usage_rate);
 	}
-	/*close the file*/
 	fclose(fp);
 	return 1;
 }
 
-int resources_stat_cpu(int pid, resources_cpu *stats_now)
-{
+int resources_stat_cpu(int pid, resources_cpu *stats_now) {
 	FILE *fp;
 	char line[1024];
 	unsigned long long tmp;
-
 	/*read cpu user time and system time from /proc/[pid]/stat */
 	char pid_cpu_file[128] = {'\0'};
 	unsigned long long pid_utime, pid_stime;
-
 	sprintf(pid_cpu_file, "/proc/%d/stat", pid);
 	fp = fopen(pid_cpu_file, "r");
 	if(fp == NULL) {
@@ -86,11 +78,9 @@ int resources_stat_cpu(int pid, resources_cpu *stats_now)
 	}
 	stats_now->process_CPU_time = pid_utime + pid_stime;
 	fclose(fp);
-
 	/*read cpu user time and system time from /proc/stat */
 	char cpu_file[128] = "/proc/stat";
 	unsigned long long cpu_user, cpu_sys;
-
 	fp = fopen(cpu_file, "r");
 	if(fp == NULL) {
 		printf("ERROR: Could not open file %s\n", cpu_file);
@@ -109,7 +99,6 @@ int resources_stat_all_and_calculate(int pid, resources_cpu *before, resources_c
 {
 	FILE *fp;
 	char line[1024] = {'\0'};
-	
 	/*read VmRSS and VmSwap from /proc/[pid]/status */
 	char pid_status_file[128] = {'\0'};
 	unsigned long pid_VmRSS, pid_VmSwap;
@@ -128,7 +117,6 @@ int resources_stat_all_and_calculate(int pid, resources_cpu *before, resources_c
 		}
 	}
 	fclose(fp);
-
 	/*read MemTotal and SwapTotal from /proc/meminfo */
 	char meminfo_file[128] = "/proc/meminfo";
 	unsigned long MemTotal, SwapTotal;
@@ -146,18 +134,15 @@ int resources_stat_all_and_calculate(int pid, resources_cpu *before, resources_c
 		}
 	}
 	fclose(fp);
-
 	/*calculate for the resources_stats */
 	if((after->process_CPU_time <= before->process_CPU_time) || (after->global_CPU_time <= before->global_CPU_time)) {
 		result->CPU_usage_rate = 0.0;
-	}
-	else {
+	} else {
 		result->CPU_usage_rate = (after->process_CPU_time - before->process_CPU_time) * 100.0 / 
 						(after->global_CPU_time - before->global_CPU_time);	
 	}
 	result->RAM_usage_rate = (MemTotal==0) ? 0 : pid_VmRSS * 100.0 /MemTotal;
 	result->swap_usage_rate = (SwapTotal==0) ? 0 : pid_VmSwap * 100.0 /SwapTotal;
-
 	/*replace the cpu time*/
 	before->process_CPU_time = after->process_CPU_time;
 	before->global_CPU_time = after->global_CPU_time;

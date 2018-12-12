@@ -1,18 +1,18 @@
 /*
- * Copyright 2018 High Performance Computing Center, Stuttgart
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+* Copyright 2018 High Performance Computing Center, Stuttgart
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 
 /****************************************************************************
 |* This code uses the NVIDIA Management Library (NVML) which is subject to *|
@@ -41,137 +41,10 @@
 #include <time.h>
 #include "nvml_monitor.h"
 #include "mf_api.h"
+#include "mf_util.h"
 #include <malloc.h>
 #include <nvml.h>
 #include <math.h>
-
-//	const char  BLUE[]="\033[0;34m";
-//	const char    LIGHT_GRAY[]="\033[0;37m";
-// 	const char   LIGHT_GREEN[]="\033[1;32m";
-	const char    LIGHT_BLUE[]="\033[1;34m";
-//	const char    LIGHT_CYAN[]="\033[1;36m";
-//	const char        yellow[]="\033[1;33m";
-//	const char         WHITE[]="\033[1;37m";
-//	const char           RED[]="\033[0;31m";
-//	const char        marron[]="\033[2;33m";
-	const char     NO_COLOUR[]="\033[0m";
-//	const char        white[]="\033[0;0m";
-/*******************************************************************************
-* String functions
-******************************************************************************/
-// reverses a string 'str' of length 'len'
-void mreverse(char *str, int len) {
-    int i=0, j=len-1, temp;
-    while (i<j) {
-        temp = str[i];
-        str[i] = str[j];
-        str[j] = temp;
-        i++; j--;
-    }
-}
-char myBuffer[255];
-char myfBuffer[255];
-// Converts a given integer x to string str[].  d is the number
-// of digits required in output. If d is more than the number
-// of digits in x, then 0s are added at the beginning.
-// returns the string
-const char* mintToStr(const int x, const int d) {
-    int i = 0;
-	int temp=x;
-	if(temp==0) myBuffer[i++] = '0';
-    while (temp) {
-        myBuffer[i++] = (temp%10) + '0';
-        temp = temp/10;
-    }
-    // If number of digits required is more, then
-    // add 0s at the beginning
-    while (i < d)
-        myBuffer[i++] = '0';
-    mreverse(myBuffer, i);
-    myBuffer[i] = '\0';
-    return myBuffer;
-}
-
-const char* llintToStr(const long long int x, const int d) {
-    int i = 0;
-	long long int temp=x;
-	if(temp==0) myBuffer[i++] = '0';
-    while (temp) {
-        myBuffer[i++] = (temp%10) + '0';
-        temp = temp/10;
-    }
-    // If number of digits required is more, then
-    // add 0s at the beginning
-    while (i < d)
-        myBuffer[i++] = '0';
-    mreverse(myBuffer, i);
-    myBuffer[i] = '\0';
-    return myBuffer;
-}
-
-/** mftoa(n, res, afterpoint)
-* n          --> Input Number
-* res[]      --> Array where output string to be stored
-* afterpoint --> Number of digits to be considered after point.
-* 
-* For example mftoa(1.555, str, 2) should store "1.55" in res and
-* mftoa(1.555, str, 0) should store "1" in res.*/
-// Converts a floating point number to string.
-const char *mftoa(const float n, const int afterpoint) {
-    // Extract integer part
-    int ipart = (int)n; 
-	
-    // Extract floating part
-    float fpart = n - (float)ipart;
-    // convert integer part to string
-    strcpy(myfBuffer,mintToStr(ipart, 0));
-	int i=strlen(myfBuffer);
-    // check for display option after point
-    if (afterpoint != 0) {
-        myfBuffer[i] = '.';  // add dot
-        myfBuffer[i+1] = '\0';  // add dot
-        // Get the value of fraction part upto given no.
-        // of points after dot. The third parameter is needed
-        // to handle cases like 233.007
-        fpart = fpart * pow(10, afterpoint);
-        strcat(myfBuffer,mintToStr((int)fpart, afterpoint));
-    }
-	return myfBuffer;
-}
-
-//Function for increase dynamically a string concatenating strings at the end
-//It free the memory of the first pointer if not null
-// returns: s1 <- s1 + s2 + s3 + s4
-char* concat_strings(char **s1, const char *s2, const char *s3, const char *s4){
-	char *result = NULL;
-	unsigned int new_lenght= strlen(s2)+strlen(s3)+strlen(s4)+1; //+1 for the null-terminator;
-	if(*s1 != NULL){
-		new_lenght+= strlen(*s1);//current lenght
-		if(new_lenght> malloc_usable_size(*s1)){
-			result = (char *) malloc(new_lenght);
-			if(result==NULL) {
-				printf("Failed to allocate memory.\n");
-				exit(1);
-			}
-			strcpy(result, *s1);
-			free(*s1);
-		}else{
-			result = *s1;
-		}
-	}else{
-		result = (char *) malloc(new_lenght);
-		if(result==NULL) {
-			printf("Failed to allocate memory.\n");
-			exit(1);
-		}
-		result[0]='\0';
-	}
-	*s1 = result;
-	strcat(result, s2);
-	strcat(result, s3);
-	strcat(result, s4);
-	return result;
-}
 
 /*******************************************************************************
 * Function Definitions
@@ -340,11 +213,11 @@ void get_json_metrics(int i, struct nvml_stats *nvml_info, char **metrics_json){
 	//==========================================  Information of PCIe utilization counters ========
 // 	printf("\n%s------ PCIe utilization (bytes/sec) -------%s\n",LIGHT_BLUE, NO_COLOUR); 
 	if (nvml_info->valid_pcie_tx==0){
-		concat_strings(metrics_json, " \"pci_tx\"：", mftoa(nvml_info->pcie_tx,0),",\n");
+		concat_strings(metrics_json, " \"pci_tx\"：", ftoa(nvml_info->pcie_tx,0),",\n");
 	}else
 		concat_strings(metrics_json, " \"pci_tx_notice\"：\"Failed to get nvmlDeviceGetPcieThroughput info\",\n","","");//,nvml_info->pcie_tx_ErrorString);
 	if (nvml_info->valid_pcie_rx==0)
-		concat_strings(metrics_json, " \"pci_rx\"：", mftoa(nvml_info->pcie_rx,0),",\n");
+		concat_strings(metrics_json, " \"pci_rx\"：", ftoa(nvml_info->pcie_rx,0),",\n");
 	else
 		concat_strings(metrics_json, " \"pci_rx_notice\"：\"Failed to get nvmlDeviceGetPcieThroughput info\",\n","","");//,nvml_info->pcie_rx_ErrorString);
 	//========================================== INFO OF THE RUNNING PROCESSES IN THE GPU ======================================
@@ -594,9 +467,8 @@ int nvml_monitor(int pid, char *DataPath, long sampling_interval){
 		device_count=0;
 		printf("closing nvml_monitoring because there were not NVIDIA devices found\n");
 		return 0;
-	}	
-	
-	
+	}
+
 	nvml_info = (struct nvml_stats**) malloc(1 * sizeof(struct nvml_stats*));
 	//Reservation of memory for one metric
 	for (i = 0; i < device_count; i++) {
@@ -637,7 +509,7 @@ int nvml_monitor(int pid, char *DataPath, long sampling_interval){
 		usleep(sampling_interval * 1000);
 		/*get current timestamp in ms*/
 		clock_gettime(CLOCK_REALTIME, &timestamp);
-    	timestamp_ms = timestamp.tv_sec * 1000.0  + (double)(timestamp.tv_nsec / 1.0e6);
+		timestamp_ms = timestamp.tv_sec * 1000.0  + (double)(timestamp.tv_nsec / 1.0e6);
 		/****** NVML ****/
 			if(nvml_get_stats(device_count, nvml_info)==1) goto End;
 			// ********************* REPORT METRICS ************************  

@@ -17,20 +17,15 @@
 #ifndef PUBLISHER_H_
 #define PUBLISHER_H_
 
-//definitions for new_query_json
+/** definitions for new_query_json */
 struct url_data {
 	size_t size;
 	char* headercode;
 	char* data;
 };
 
-
-//Function for increase dynamically a string concatenating strings at the end
-//It free the memory of the first pointer if not null
-char* concat_and_free(char **s1, const char *s2);
-
-
-int new_query_json(char *URL, struct url_data *response, char *operation);
+/** if the token is NULL or empty string, will procedd as not token provided or required*/
+int new_query_json(char *URL, struct url_data *response, char *operation, const char *token);
 
 // int query_json(char *URL, char *response);
 
@@ -39,13 +34,13 @@ int new_query_json(char *URL, struct url_data *response, char *operation);
  *
  * @return 1 if successful; 0 otherwise
  */
-int publish_json(char *URL, char *message);
+int publish_json(char *URL, char *message, const char *token);
 
-int publish_file(char *URL, char *static_string, char *filename);
+int publish_file(char *URL, char *static_string, char *filename, const char *token);
 
-int query_message_json(char *URL, char *message, struct url_data *response, char *operation);
+int query_message_json(char *URL, char *message, struct url_data *response, char *operation, const char *token);
 
-void close_curl(void) ;
+void close_curl(void);
 
-// int create_new_experiment(char *URL, char *message, char *experiment_id);
+// int create_new_experiment(char *URL, char *message, char *experiment_id, const char *token);
 #endif

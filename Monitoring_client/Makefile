@@ -7,10 +7,9 @@ CXX = g++
 #
 ## includes and libs
 #
-#PWD = ${CURDIR}
+COMMON = ${CURDIR}/src
 
-CURL = -L$(PWD)/bin/curl/lib/ -lcurl
-CURL_INC = -I$(PWD)/bin/curl/include
+PWD = ${CURDIR}
 
 PAPI = -L$(PWD)/bin/papi/lib/ -lpapi
 PAPI_INC = -I$(PWD)/bin/papi/include
@@ -20,13 +19,16 @@ APU_CONFIG = $(PWD)/bin/apr/bin/apu-1-config
 APR = $(shell $(APR_CONFIG) --link-ld) $(shell $(APU_CONFIG) --link-ld)
 APR_INC = $(shell $(APR_CONFIG) --includes) $(shell $(APR_CONFIG) --includes)
 
-PARSER = -L$(PWD)/src/parser/ -lparser
-PARSER_INC = -I$(PWD)/src/parser/src
+PARSER_INC = -I${COMMON}/parser/src
+PUBLISHER_INC = -I${COMMON}/publisher/src
+MFUTIL_INC = -I${COMMON}/util/src
+CORE_INC = -I$(COMMON)/core
+CURL_INC = -I$(COMMON)/../bin/curl/include
 
-PUBLISHER = -L$(PWD)/src/publisher/ -lpublisher
-PUBLISHER_INC = -I$(PWD)/src/publisher/src
-
-CORE_INC = -I$(PWD)/src/core
+PARSER = -L${COMMON}/parser -lparser
+PUBLISHER = -L${COMMON}/publisher -lpublisher
+MFUTIL = -L${COMMON}/util -lmfutil
+CURL = -L$(COMMON)/../bin/curl/lib -lcurl
 
 EXCESS_QUEUE = -I$(PWD)/ext/queue/data-structures-library/src/include
 EXCESS_QUEUE_C = -I$(PWD)/ext/queue
@@ -34,21 +36,19 @@ EXCESS_QUEUE_C = -I$(PWD)/ext/queue
 #
 # compile and link flags 
 #
-
 CFLAGS = -std=gnu99 -pedantic -Wall -Wwrite-strings -Wpointer-arith \
 -Wcast-align -O0 -ggdb -pthread -D_LARGEFILE64_SOURCE \
-$(CURL_INC) \
+$(CORE_INC) $(CURL_INC) $(PUBLISHER_INC) $(PARSER_INC) $(MFUTIL_INC)\
 $(PAPI_INC) \
 $(APR_INC) \
-$(PARSER_INC) \
-$(PUBLISHER_INC) \
-$(CORE_INC) \
 $(EXCESS_QUEUE) \
 $(EXCESS_QUEUE_C)
+	
+LDLIBS := $(PUBLISHER) $(CURL) $(PARSER) $(MFUTIL)
 
 COPT_SO = ${CFLAGS} -fpic
 
-LFLAGS =  -lm $(CURL) $(PAPI) $(APR) $(PARSER) $(PUBLISHER)
+LFLAGS =  -lm $(PAPI) $(APR) $(LDLIBS)
 
 #
 # DEBUG SWITCH
@@ -89,6 +89,7 @@ excess_concurrent_queue.o:
 
 # note: the parameter -j 1 is because it shows some race issues when compiling in the many core machine. It has not big impact on time because the compilation is fast.	
 prepare:
+	$(MAKE) -C $(PWD)/src/util -j 1 DEBUG=$(DEBUG)
 	$(MAKE) -C $(PWD)/src/parser -j 1 DEBUG=$(DEBUG)
 	$(MAKE) -C $(PWD)/src/publisher -j 1 DEBUG=$(DEBUG)
 mf_api:
@@ -98,7 +99,6 @@ mf_api:
 main: excess_concurrent_queue.o $(SRC)/main.o $(SRC)/thread_handler.o $(SRC)/plugin_discover.o $(SRC)/plugin_manager.o
 	$(CXX) -o $@ $^ -lrt -ldl -Wl,--export-dynamic $(CFLAGS) $(LFLAGS)
 
-
 plugins:
 	$(MAKE) -C $(PLUGIN_DIR)/Board_power -j 1 DEBUG=$(DEBUG)
 	$(MAKE) -C $(PLUGIN_DIR)/CPU_perf -j 1 DEBUG=$(DEBUG)
@@ -106,7 +106,8 @@ plugins:
 	$(MAKE) -C $(PLUGIN_DIR)/Linux_resources -j 1 DEBUG=$(DEBUG)
 	$(MAKE) -C $(PLUGIN_DIR)/Linux_sys_power -j 1 DEBUG=$(DEBUG)
 	$(MAKE) -C $(PLUGIN_DIR)/NVML DEBUG=$(DEBUG) -j 1 
-
+	$(MAKE) -C $(PLUGIN_DIR)/xilinx DEBUG=$(DEBUG) -j 1 
+	
 lib:
 
 #
@@ -118,6 +119,7 @@ clean:
 	rm -rf *.o *.a *.so $(SRC)/*.o
 	rm -rf $(PWD)/ext/queue/*.o
 	rm -f $(PWD)/main
+	$(MAKE) -C $(PWD)/src/util clean
 	$(MAKE) -C $(PWD)/src/parser clean
 	$(MAKE) -C $(PWD)/src/publisher clean
 	$(MAKE) -C $(PWD)/src/api clean
@@ -128,7 +130,8 @@ clean:
 	$(MAKE) -C $(PLUGIN_DIR)/Linux_resources clean
 	$(MAKE) -C $(PLUGIN_DIR)/Linux_sys_power clean
 	$(MAKE) -C $(PLUGIN_DIR)/NVML clean
-
+	$(MAKE) -C $(PLUGIN_DIR)/xilinx clean
+	
 clean-install:
 	rm -rf $(INSTALL_DIR)
 
@@ -152,7 +155,8 @@ copy_plugins:
 	cp -f $(PLUGIN_DIR)/Linux_resources/lib/*.so $(INSTALL_PLUGINS_DIR)/
 	cp -f $(PLUGIN_DIR)/Linux_sys_power/lib/*.so $(INSTALL_PLUGINS_DIR)/
 	cp -f $(PLUGIN_DIR)/NVML/lib/*.so $(INSTALL_PLUGINS_DIR)/ 
-
+	cp -f $(PLUGIN_DIR)/xilinx/lib/*.so $(INSTALL_PLUGINS_DIR)/ 
+	
 copy_client:
 	cp -f $(PWD)/main $(INSTALL_BIN_DIR)/mf_client
 

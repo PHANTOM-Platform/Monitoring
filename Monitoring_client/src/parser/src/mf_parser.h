@@ -23,6 +23,7 @@
 * @see http://en.wikipedia.org/wiki/INI_file
 *
 * @author Dennis Hoppe <hoppe@hrls.de>
+* @author J.M.Montanana <montanana@hrls.de>
 */
 #ifndef MF_PARSER_H_
 #define MF_PARSER_H_
@@ -82,4 +83,39 @@ void mfp_data_free(mfp_data* data);
 *
 */
 void mfp_parse_clean();
+
+
+
+
+#define SUCCESS 0
+#define FAILED 1
+
+
+	
+struct json_object{//level 3, not count, keep labels and values
+	char *label_o;
+	char *value_o;
+};
+
+struct json_mf_config_field{//level 2, count and keep only labels
+	int count_o;
+	char *label_f;
+	struct json_object **object;
+};
+
+struct json_mf_config{//level 1, just only count
+	int count_f;
+	struct json_mf_config_field **field;
+};
+
+char *query_for_plugin_parsed_json(const unsigned int loaded_conf, char *plugin_id, struct json_mf_config **mf_config,const unsigned int total_loaded_mf_configs);
+
+int query_for_platform_parsed_json(const char *platform_id, struct json_mf_config **mf_config,const unsigned int total_loaded_mf_configs);
+
+int print_counters_from_json(char *html);
+int print_counters_from_parsed_json(struct json_mf_config **mf_config,const unsigned int total_loaded_mf_configs);
+int print_json(char *html);
+int print_parsed_json(struct json_mf_config **mf_config,const unsigned int total_loaded_mf_configs);
+int parse_mf_config_json(char *html, struct json_mf_config ***in_mf_config,unsigned int *total_loaded_mf_configs);
+char* query_mf_config(const char *server, const char *platform_id, const char *token);
 #endif

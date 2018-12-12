@@ -1,18 +1,18 @@
 /*
- * Copyright 2018 High Performance Computing Center, Stuttgart
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+* Copyright 2018 High Performance Computing Center, Stuttgart
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,16 +27,16 @@
 #include "mf_debug.h"  		// functions like log_error(), log_info()...
 #include "plugin_manager.h"	// functions like PluginManager_new(), PluginManager_free(), PluginManager_get_hook()
 #include "plugin_discover.h" // variables like pluginCount, plugins_name;
-                             // functions like discover_plugins(), cleanup_plugins()
+							// functions like discover_plugins(), cleanup_plugins()
 #include "thread_handler.h"
 
 #define JSON_LEN 1024
-#define SUCCESS 1
-#define FAILURE 0
+#define SUCCESS 0
+#define FAILURE 1
 
 /*******************************************************************************
- * Variable Declarations
- ******************************************************************************/
+* Variable Declarations
+******************************************************************************/
 int running;
 int bulk_size;
 static PluginManager *pm;
@@ -46,22 +46,21 @@ struct timespec sleep_tims[256];
 PluginHook *hooks;
 
 /*******************************************************************************
- * Forward Declarations
- ******************************************************************************/
+* Forward Declarations
+******************************************************************************/
 static void catcher(int signo);
 static void init_timings(void);
-static void *entryThreads(void *arg);  //threads entry for all threads
+static void *entryThreads(void *arg );  //threads entry for all threads
 static int checkConf(void);
-static int gatherMetric(int num);
+static int gatherMetric(struct thread_args *params);
 
 /*******************************************************************************
- * Functions implementation
- ******************************************************************************/
+* Functions implementation
+******************************************************************************/
 /* All threads starts here */
 int startThreads(void) {
 	int t;
 	running = 1;
-
 	/* initialize plugin manager, which is a queue of plugin hooks */
 	pm = PluginManager_new();
 	const char *dirname = { "/plugins" };
@@ -99,21 +98,17 @@ int startThreads(void) {
 			exit(FAILURE);
 		}
 	}
-
 	struct sigaction sig;
 	sig.sa_handler = catcher; /* signal handler is "catcher" */
 	sig.sa_flags = SA_RESTART;
 	sigemptyset(&sig.sa_mask);
 	sigaction(SIGTERM, &sig, NULL);
 	sigaction(SIGINT, &sig, NULL);
-
 	while (running)
 		sleep(1);
-	
 	/* thread join from plugins threads till all the sending threads */
 	for (t = 0; t < pluginCount; t++)
 		pthread_join(threads[t], NULL);
-
 	cleanup_plugins(pdstate);
 	PluginManager_free(pm);
 	free(pluginLocation);
@@ -127,10 +122,11 @@ static void catcher(int signo) {
 }
 
 /* entry for all threads */
-static void* entryThreads(void *arg) {
-	int *typeT = (int*) arg;
-	if(*typeT < pluginCount)
-		gatherMetric(*typeT);
+static void* entryThreads(void *arg ) {
+	struct thread_args *typeT= (struct thread_args*) arg;
+	int num = typeT->num;
+	if(num < pluginCount)
+		gatherMetric(arg );
 	else
 		checkConf();
 	return NULL;
@@ -143,19 +139,19 @@ static int checkConf(void) {
 		char wait_some_seconds[20] = {'\0'};
 		mfp_get_value("timings", "update_configuration", wait_some_seconds);
 		sleep(atoi(wait_some_seconds));
-
 		/* update sleep_tims for all plugins */
 		init_timings();
 	}
 	return SUCCESS;
 }
 
+
 /* each plugin gathers its metrics at a specific rate and send the json-formatted metrics to mf_server */
-static int gatherMetric(int num) {
+static int gatherMetric(struct thread_args *params) {
 	int i;
-	long timings = sleep_tims[num].tv_sec * 10e8 + sleep_tims[num].tv_nsec;
-	log_info("Gather metrics of plugin %s (#%d) with update interval of %ld ns\n", plugins_name[num], num, timings);
-	//printf("Gather metrics of plugin %s (#%d) with update interval of %ld ns\n", plugins_name[num], num, timings);
+	long timings = sleep_tims[params->num].tv_sec * 10e8 + sleep_tims[params->num].tv_nsec;
+	log_info("Gather metrics of plugin %s (#%d) with update interval of %ld ns\n", plugins_name[params->num], params->num, timings);
+	//printf("Gather metrics of plugin %s (#%d) with update interval of %ld ns\n", plugins_name[params->num], params->num, timings);
 	
 	char *json_array = calloc(JSON_LEN * bulk_size, sizeof(char));
 	json_array[0] = '[';
@@ -164,11 +160,11 @@ static int gatherMetric(int num) {
 
 	if(experiment_id == NULL){
 		printf("ERROR experiment_id == NULL\n");
-		log_error("ERROR experiment_id == NULL.\n");
+		log_error("%s","ERROR experiment_id == NULL.\n");
 		running= 0;
 	}else if(experiment_id[0] == '\0'){
 		printf("ERROR experiment_id == ''\n");
-		log_error("ERROR experiment_id == ''.\n");
+		log_error("%s","ERROR experiment_id == ''.\n");
 		running= 0;
 	}
 	sprintf(static_json, "{\"WorkflowID\":\"%s\",\"ExperimentID\":\"%s\",\"TaskID\":\"%s\",\"host\":\"%s\",", 
@@ -178,26 +174,26 @@ static int gatherMetric(int num) {
 	while (running) {
 		for(i=0; i<bulk_size; i++) { 
 			memset(msg, '\0', JSON_LEN * sizeof(char));
-// printf("call %i name is: %s\n",num, plugins_name[num] );
-			if(plugins_name[num]==NULL)
+// printf("call %i name is: %s\n",params->num, plugins_name[params->num] );
+			if(plugins_name[params->num]==NULL)
 				exit (0);
 			char *json=NULL;
-			if( strcmp(plugins_name[num],"mf_plugin_Linux_sys_power")== 0){ 
+			if( strcmp(plugins_name[params->num],"mf_plugin_Linux_sys_power")== 0){ 
 				if(supported==1){ 
-					json = hooks[num]( &supported);	//malloc of json in hooks[num]()
+					json = hooks[params->num]( &supported);	//malloc of json in hooks[params->num]()
 // 				}else{ printf("suppressed call of not available metrics");
 				}
 			}else{
-				json = hooks[num]();	//malloc of json in hooks[num]()
+				json = hooks[params->num]();	//malloc of json in hooks[params->num]()
 			}
 			if(json != NULL) {
 				sprintf(msg, "%s%s},", static_json, json);
 				strcat(json_array, msg);
 				free(json);
 			}
-			if(nanosleep(&sleep_tims[num], NULL) != 0) {
+			if(nanosleep(&sleep_tims[params->num], NULL) != 0) {
 				/*nano sleep failed,  in case that
-				  the call is interrupted by a signal handler or encounters an error */
+				the call is interrupted by a signal handler or encounters an error */
 				break;
 			};
 		}
@@ -205,7 +201,7 @@ static int gatherMetric(int num) {
 		json_array[strlen(json_array)] = '\0';
 		debug("JSON sent is :\n%s\n", json_array);
 		printf("JSON sent is :\n%s\n", json_array);
-		publish_json(metrics_publish_URL, json_array);
+		publish_json(metrics_publish_URL, json_array, params->token);
 		memset(json_array, '\0', JSON_LEN * bulk_size * sizeof(char));
 		json_array[0] = '[';
 	}

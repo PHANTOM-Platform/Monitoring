@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef _LINUX_RESOURCES_CONNECTOR_H
-#define _LINUX_RESOURCES_CONNECTOR_H
+#ifndef _XILINX_CONNECTOR_H
+#define _XILINX_CONNECTOR_H
 
 #include <plugin_utils.h>
 
@@ -23,14 +23,14 @@
  *
  *  @return 1 on success; 0 otherwise.
  */
-int mf_Linux_resources_init(Plugin_metrics *data, char **events, size_t num_events);
+int mf_xilinx_init(Plugin_metrics *data, char **events, size_t num_events);
 
 
 /** @brief Samples all possible events and stores data into the Plugin_metrics
  *
  *  @return 1 on success; 0 otherwise.
  */
-int mf_Linux_resources_sample(Plugin_metrics *data);
+int mf_xilinx_sample(Plugin_metrics *data);
 
 
 /** @brief Formats the sampling data into a json string
@@ -38,6 +38,6 @@ int mf_Linux_resources_sample(Plugin_metrics *data);
  *  json string contains: plugin name, timestamps, metrics_name and metrics_value
  *
  */
-void mf_Linux_resources_to_json(Plugin_metrics *data, char *json);
+void mf_xilinx_to_json(Plugin_metrics *data, char *json);
 
-#endif /* _LINUX_RESOURCES_CONNECTOR_H */
+#endif /* _XILINX_CONNECTOR_H */

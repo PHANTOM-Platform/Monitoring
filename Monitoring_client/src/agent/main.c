@@ -27,9 +27,10 @@
 #include "mf_parser.h" 		//functions like mfp_parse()...
 #include "publisher.h"		//functions like create_new_experiment()...
 #include "main.h"
+#include "mf_util.h"
 
-#define SUCCESS 1
-#define FAILURE 0
+#define SUCCESS 0
+#define FAILURE 1
 
 /*******************************************************************************
  * External Variables Declarations
@@ -41,7 +42,7 @@ char *experiment_id;
 char *task_id;
 char *platform_id;
 char *metrics_publish_URL;
-FILE *logFile;		//declared in mf_debug.h
+FILE *logFile;		//declared as extern in mf_debug.h
 char *logFileName;
 
 /*******************************************************************************
@@ -56,7 +57,7 @@ int pwd_is_set = 0;
 void set_pwd(void);
 void createLogFile(void);
 int writeTmpPID(void);
-int prepare(void);
+int prepare(const char *token);
 
 /*******************************************************************************
  * Functions implementation
@@ -67,6 +68,8 @@ int main(int argc, char* argv[]) {
 	int c;
 	int err = 0, help = 0;
 
+	const char token[]="asdasdasd.asdasda";
+	
 	/* init arguments */
 	pwd = calloc(256, sizeof(char));
 	name = calloc(256, sizeof(char)); 			//name of the tmp pid file
@@ -124,7 +127,7 @@ int main(int argc, char* argv[]) {
 
 	/* prepare metrics_publish_URL and platform_id, based on mf_config.ini;
 	send a initialization msg to the server and create a new experiment with unique experiment_id*/
-	if (prepare() == FAILURE) {
+	if (prepare(token) == FAILURE) {
 		fprintf(logFile, "[ERROR] Stopping service...could not prepare URLs for sending metrics to server.\n");
 		exit(FAILURE);
 	}
@@ -207,9 +210,8 @@ void createLogFile(void) {
 
 /* write PID to a file (named as "tmp_pid") in `pwd` */
 int writeTmpPID(void) {
-	if (!pwd_is_set) {
+	if (!pwd_is_set)
 		set_pwd();
-	}
 	strcpy(name, pwd);
 	strcat(name, "/tmp_pid");
 
@@ -227,7 +229,7 @@ int writeTmpPID(void) {
 
 /* prepare metrics_publish_URL and platform_id, based on mf_config.ini;
    send a initialization msg to the server and create a new experiment with unique experiment_id-> response.data*/
-int prepare(void) {
+int prepare(const char *token) {
 	char server_name[128] = {'\0'};
 	metrics_publish_URL = calloc(256, sizeof(char));
 	platform_id = calloc(128, sizeof(char));
@@ -268,7 +270,7 @@ int prepare(void) {
 
 // 	create_new_experiment(experiments_URL, msg, experiment_id); --> new experiment_id is response.data
 	char operation[]="POST";
-	query_message_json(URL, msg, &response, operation); //*****
+	query_message_json(URL, msg, &response, operation, token); //*****
 	if(response.data[0] == '\0') {
 		log_error("Cannot create new experiment for application %s\n", application_id);
 		return FAILURE;

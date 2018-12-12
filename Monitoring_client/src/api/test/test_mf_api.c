@@ -8,14 +8,15 @@
 //#include "resources_monitor.h"
 //#include "disk_monitor.h"
 //#include "power_monitor.h"
+#include "mf_util.h"
+#include "mf_parser.h"
 #include "mf_api.h"
 
 const char server[] = "localhost:3033";
 const char platform_id[] = "laptop";
 
 /* some dummy application */
-void dummy(void)
-{
+void dummy(void) {
 	int i, j;
 	float x1, x2, result[1024*1024];
 	char *tmp = calloc(1024, sizeof(char));
@@ -42,9 +43,7 @@ void dummy(void)
  * resources_monitor test
  ******************************************************************************/
 /* test resources_stat_cpu */
-/*
-void Test_resources_stat_cpu(void)
-{
+/* void Test_resources_stat_cpu(void) {
 	int pid = getpid();
 	resources_cpu cpu_stats_now;
 	resources_stat_cpu(pid, &cpu_stats_now);
@@ -58,9 +57,7 @@ void Test_resources_stat_cpu(void)
 }*/
 
 /* test resources_stat_all_and_calculate */
-/*
-void Test_resources_stat_all_and_calculate(void)
-{
+/* void Test_resources_stat_all_and_calculate(void) {
 	char c;
 	int pid = getpid();
 	resources_stats cpu_stats;
@@ -99,8 +96,7 @@ void Test_resources_stat_all_and_calculate(void)
 }*/
 
 /* test resources_monitor */
-void Test_resources_monitor(void)
-{
+void Test_resources_monitor(const char* token) {
 	int i;
 	metrics m_resources;
 	m_resources.num_metrics = 1;
@@ -108,7 +104,7 @@ void Test_resources_monitor(void)
 	m_resources.sampling_interval[0] = 1000; // 1s
 	strcpy(m_resources.metrics_names[0], "resources_usage");
 
-	char *datapath = mf_start(server, platform_id, &m_resources);
+	char *datapath = mf_start(server, platform_id, &m_resources, token);
 	printf("datapath is :%s\n", datapath);
 	sleep(5);
 	
@@ -124,8 +120,7 @@ void Test_resources_monitor(void)
  * disk_monitor test
  ******************************************************************************/
 /* test disk_stats_read */
-/*void Test_disk_stats_read(void)
-{
+/*void Test_disk_stats_read(void) {
 	char c;
 	int pid = getpid();
 	disk_stats disk_info;
@@ -135,34 +130,29 @@ void Test_resources_monitor(void)
 
 	disk_stats_read(pid, &disk_info);
 
-	printf("process %d\n\tread_bytes_before ---%llu\n\twrite_bytes_before ---%llu\n", 
-		pid, 
-		disk_info.read_bytes_before,
-		disk_info.write_bytes_before);
+	printf("process %d\n\tread_bytes_before ---%llu\n\twrite_bytes_before ---%llu\n",
+		pid, disk_info.read_bytes_before, disk_info.write_bytes_before);
 	//wait for check
 	scanf("%c", &c);
 	dummy();
 
 	disk_stats_read(pid, &disk_info);
 
-	printf("process %d\n\tread_bytes_after ---%llu\n\twrite_bytes_after ---%llu\n", 
-		pid, 
-		disk_info.read_bytes_after,
-		disk_info.write_bytes_after);
+	printf("process %d\n\tread_bytes_after ---%llu\n\twrite_bytes_after ---%llu\n",
+		pid, disk_info.read_bytes_after, disk_info.write_bytes_after);
 	//wait for check
 	scanf("%c", &c);
 }*/
 
 /* test disk_monitor */
-void Test_disk_monitor(void)
-{
+void Test_disk_monitor(const char* token) {
 	int i;
 	metrics m_resources;
 	m_resources.num_metrics = 1;
 	m_resources.local_data_storage = 1;
 	m_resources.sampling_interval[0] = 1000; // 1s
 	strcpy(m_resources.metrics_names[0], "disk_io");
-	char *datapath = mf_start(server, platform_id, &m_resources);
+	char *datapath = mf_start(server, platform_id, &m_resources, token);
 	printf("datapath is :%s\n", datapath);
 	sleep(5);
 	
@@ -176,9 +166,7 @@ void Test_disk_monitor(void)
 /*******************************************************************************
  * power_monitor test
  ******************************************************************************/
-/*
-void Test_CPU_power_read(void)
-{
+/* void Test_CPU_power_read(void) {
 	char c;
 	int pid = getpid();
 	pid_stats_info before, after;
@@ -214,8 +202,7 @@ void Test_CPU_power_read(void)
 	scanf("%c", &c);
 }
 
-void Test_mem_power_read(void)
-{
+void Test_mem_power_read(void) {
 	char c;
 	int pid = getpid();
 	int fd = create_perf_stat_counter(pid);
@@ -228,8 +215,7 @@ void Test_mem_power_read(void)
 	scanf("%c", &c);
 }
 
-void Test_disk_power_read(void)
-{
+void Test_disk_power_read(void) {
 	char c;
 	int pid = getpid();
 	pid_stats_info before, after;
@@ -250,8 +236,7 @@ void Test_disk_power_read(void)
 	printf("process cancelled writes: %llu\n", (after.pid_cancelled_writes - before.pid_cancelled_writes));
 	scanf("%c", &c);
 }*/
-void Test_power_monitor(void)
-{
+void Test_power_monitor(const char *token) {
 	int i;
 	metrics m_resources;
 	m_resources.num_metrics = 1;
@@ -259,7 +244,7 @@ void Test_power_monitor(void)
 	m_resources.sampling_interval[0] = 2000; // 2s
 	strcpy(m_resources.metrics_names[0], "power");
 
-	char *datapath = mf_start(server, platform_id, &m_resources);
+	char *datapath = mf_start(server, platform_id, &m_resources,token);
 	printf("datapath : %s\n", datapath);
 	/*do dummy things*/
 	for(i = 0; i < 100; i++) {
@@ -270,10 +255,9 @@ void Test_power_monitor(void)
 }
 
 /*******************************************************************************
- * resources and disk monitor test 
+ * resources and disk monitor test
  ******************************************************************************/
-void Test_all(void)
-{
+void Test_all(const char *token) {
 	int i;
 	metrics m_resources;
 	m_resources.num_metrics = 3;
@@ -290,7 +274,7 @@ void Test_all(void)
 	char application_id[] = "dummy";
 	char task_id[] = "t1";
 
-	char *datapath = mf_start(server, platform_id, &m_resources);
+	char *datapath = mf_start(server, platform_id, &m_resources, token);
 	printf("datapath : %s\n", datapath);
 	
 	/*do dummy things*/
@@ -303,7 +287,7 @@ void Test_all(void)
 	/* when "dummy" application already exists in database, check with /v1/phantom_mf/workflows, 
 	it is possible to send collected metrics to the server */
 	
-	char *experiment_id = mf_send(server, application_id, task_id, platform_id);
+	char *experiment_id = mf_send(server, application_id, task_id, platform_id,token);
 	printf("> application_id : %s\n", application_id);
 	printf("> task_id : %s\n", task_id);
 	printf("> experiment_id : %s\n", experiment_id);
@@ -313,31 +297,28 @@ void Test_all(void)
 /*******************************************************************************
  * config read from mf server test 
  ******************************************************************************/
-/*
-void Test_read_config(void)
-{
+/* void Test_read_config(void) {
 	get_config_parameters(server, platform_id);
 }*/
 
-int main(void)
-{
+int main(void) {
 	//Test_read_config();
-
+	char token[]="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJtb250YW5hQGFiYy5jb20iLCJpYXQiOjE1NDQwODg1OTksImV4cCI6MTU0NjY4MDU5OX0.XvDSVyz89S3segsIUrH60e7FcI6i0W_ApPqcW-5bXn8";
 	/* test basic functions */
-	//Test_resources_stat_cpu();
-	//Test_resources_stat_all_and_calculate();
-	//Test_disk_stats_read();
+	//Test_resources_stat_cpu(token);
+	//Test_resources_stat_all_and_calculate(token);
+	//Test_disk_stats_read(token);
 
 	/* test mf interfaces: mf_start, mf_end */
-	//Test_resources_monitor(); 	//only resources monitoring 
-	//Test_disk_monitor();		//only disk monitoring
+	//Test_resources_monitor(token); 	//only resources monitoring 
+	//Test_disk_monitor(token);		//only disk monitoring
 
 	/* test mf interfaces: mf_start, mf_end, mf_send */	
-	Test_all();	//both resources and disk monitoring
-	//Test_power_monitor();
+	Test_all(token);	//both resources and disk monitoring
+	//Test_power_monitor(token);
 
-	//Test_CPU_power_read();
-	//Test_mem_power_read();
-	//Test_disk_power_read();
+	//Test_CPU_power_read(token);
+	//Test_mem_power_read(token);
+	//Test_disk_power_read(token);
 	return 0;
 }

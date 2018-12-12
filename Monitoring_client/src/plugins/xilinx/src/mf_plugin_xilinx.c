@@ -17,72 +17,63 @@
 #include <stdlib.h> /* malloc etc */
 #include <string.h>
 #include <time.h>
-
 #include <plugin_manager.h> /* mf_plugin_xxx_hook */
 #include <mf_parser.h> /* mfp_data */
-#include <plugin_utils.h> /* Plugin_metrics */
 #include <mf_debug.h>
-
-#include "mf_CPU_temperature_connector.h"
+#include <plugin_utils.h> /* Plugin_metrics */
+#include "mf_xilinx_connector.h"
 
 /*******************************************************************************
 * Variable Declarations
 ******************************************************************************/
-
 mfp_data *conf_data = NULL;
 Plugin_metrics *monitoring_data = NULL;
 int is_initialized = 0;
 
 /*******************************************************************************
-* Forward Declarations
-******************************************************************************/
-char* mf_plugin_CPU_temperature_hook();
-
-/*******************************************************************************
 * Functions implementation
 ******************************************************************************/
+/* the hook function, sample the metrics and convert to a json-formatted string */
+char* mf_plugin_xilinx_hook() {
+	if (is_initialized) {
+		/*
+		* sampling
+		*/
+		mf_xilinx_sample(monitoring_data);
+		/*
+		* Prepares a json string, including current timestamp, name of the plugin,
+		* and required metrics.
+		*/
+		char *json = calloc(JSON_MAX_LEN, sizeof(char));
+		mf_xilinx_to_json(monitoring_data, json);
+		return json;
+	} else
+		return NULL;
+}
+
 /* Initialize the plugin; 
 register the plugin hook to the plugin manager 
 @return 1 on success; 0 otherwise */
-extern int init_mf_plugin_CPU_temperature(PluginManager *pm) {
+extern int init_mf_plugin_xilinx(PluginManager *pm) {
 	/*
 	* get the turned on metrics from the configuration file
 	*/
-	conf_data = malloc(sizeof(mfp_data));
-	mfp_get_data_filtered_by_value("mf_plugin_CPU_temperature", conf_data, "on");
+	conf_data =  malloc(sizeof(mfp_data));
+	mfp_get_data_filtered_by_value("mf_plugin_xilinx", conf_data, "on");
 	/*
 	* initialize the monitoring data
 	*/
 	monitoring_data = malloc(sizeof(Plugin_metrics));
-	int ret = mf_CPU_temperature_init(monitoring_data, conf_data->keys, conf_data->size);
+	int ret = mf_xilinx_init(monitoring_data, conf_data->keys, conf_data->size);
 	if(ret == 0) {
-		char plugin_name[] = "CPU_temperature";
+		char plugin_name[] = "plugin";
 		log_error("Plugin %s init function failed.\n", plugin_name);
 		return ret;
 	}
 	/*
 	* if init succeed; register the plugin hook to the plugin manager
 	*/
-	PluginManager_register_hook(pm, "mf_plugin_CPU_temperature", mf_plugin_CPU_temperature_hook);
+	PluginManager_register_hook(pm, "mf_plugin_xilinx", mf_plugin_xilinx_hook);
 	is_initialized = 1;
 	return ret;
-}
-
-/* the hook function, sample the metrics and convert to a json-formatted string */
-char* mf_plugin_CPU_temperature_hook() {
-	if (is_initialized) {
-		/*
-		* sampling 
-		*/
-		mf_CPU_temperature_sample(monitoring_data);
-		/*
-		* Prepares a json string, including current timestamp, name of the plugin,
-		* and required metrics.
-		*/
-		char *json = calloc(JSON_MAX_LEN, sizeof(char));
-		mf_CPU_temperature_to_json(monitoring_data, json);
-		return json;
-	} else {
-		return NULL;
-	}
 }

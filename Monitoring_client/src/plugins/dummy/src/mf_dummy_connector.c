@@ -22,8 +22,8 @@
 #include <ctype.h>
 #include "mf_dummy_connector.h"
 
-#define SUCCESS 1
-#define FAILURE 0
+#define SUCCESS 0
+#define FAILURE 1
 
 #define HAS_TEST1_STAT 0x01
 

@@ -25,21 +25,18 @@
 #include <linux/perf_event.h>
 #include "mf_Linux_sys_power_connector.h"
 #include <malloc.h>
-
 /***********************************************************************
 CPU Specification
 - power per core
 ***********************************************************************/
 #define MAX_CPU_POWER 8.23
 #define MIN_CPU_POWER 0.75
-
 /***********************************************************************
 Memory Specification
 ***********************************************************************/
 #define MEMORY_POWER 3.2 //in Watts, from my memory module specification
 #define L2CACHE_MISS_LATENCY 2.09 //ns, get use calibrator
 #define L2CACHE_LINE_SIZE 256 //byte get use calibrator
-
 /***********************************************************************
 Energy of the disk specs
 - Read: 0.02 * 2.78
@@ -58,8 +55,8 @@ My Laptop Intel 2200 BG wireless network card:
 #define E_NET_SND_PER_KB (1800 / (1024 * 12.330))	// milliJoule/KB
 #define E_NET_RCV_PER_KB (1400 / (1024 * 5.665))	// milliJoule/KB
 
-#define SUCCESS 1
-#define FAILURE 0
+#define SUCCESS 0
+#define FAILURE 1
 #define POWER_EVENTS_NUM 5
 
 #define NET_STAT_FILE "/proc/net/dev"
@@ -123,25 +120,19 @@ unsigned long long memory_counter_read(void);
 *
 *  Check if input events are valid; add valid events to the data->events
 *  acquire the previous value and before timestamp
-*
 *  @return 1 on success; 0 otherwise.
 */
 int mf_Linux_sys_power_init(Plugin_metrics *data, char **events, size_t num_events, int *supported)
 {
 	/* failed to initialize flag means that all events are invalid */
-	if(flag_init(events, num_events) == 0) {
+	if(flag_init(events, num_events) == 0)
 		return FAILURE;
-	}
-	
 	/* initialize Plugin_metrics events' names according to flag */
 	int i = 0;
-
 	if(flag & HAS_ALL) {
 		data->events[i] = malloc(MAX_EVENTS_LEN * sizeof(char));	
 		strcpy(data->events[i], "estimated_total_power");
 		i++;
-
- 
 		/* read the current cpu energy */
 		if(*supported==1)
 		CPU_energy_before = CPU_energy_read( supported);
@@ -207,9 +198,7 @@ int mf_Linux_sys_power_init(Plugin_metrics *data, char **events, size_t num_even
 			sys_IO_stat_read(&io_stat_before);
 		}
 	}
-
 	data->num_events = i;
-	
 	/* get the before timestamp in second */
 	struct timespec timestamp;
 	clock_gettime(CLOCK_REALTIME, &timestamp);
@@ -218,20 +207,15 @@ int mf_Linux_sys_power_init(Plugin_metrics *data, char **events, size_t num_even
 }
 
 /** @brief Samples all possible events and stores data into the Plugin_metrics
-*
 *  @return 1 on success; 0 otherwise.
 */
-int mf_Linux_sys_power_sample(Plugin_metrics *data , int *supported)  
-{   
+int mf_Linux_sys_power_sample(Plugin_metrics *data , int *supported) {
 	/* get current timestamp in second */
 	struct timespec timestamp;
 	clock_gettime(CLOCK_REALTIME, &timestamp);
 	after_time = timestamp.tv_sec * 1.0  + (double)(timestamp.tv_nsec / 1.0e9);
-
 	double time_interval = after_time - before_time; /* get time interval */
-	
 	float ecpu=0.0, emem=0.0, enet=0.0, edisk=0.0;
-
 	int i = 0;
 	if(flag & HAS_ALL) { 
 		/* get current CPU energy (unit in milliJoule) */
@@ -314,40 +298,29 @@ int mf_Linux_sys_power_sample(Plugin_metrics *data , int *supported)
 			i++;
 		}
 	}
-
 	/* update timestamp */
 	before_time = after_time;
 	return SUCCESS;
 }
 
 /** @brief Formats the sampling data into a json string
-*
 *  json string contains: plugin name, timestamps, metrics_name and metrics_value
-*
 */
-void mf_Linux_sys_power_to_json(Plugin_metrics *data, char *json)
-{
+void mf_Linux_sys_power_to_json(Plugin_metrics *data, char *json) {
 	char tmp[128] = {'\0'};
 	int i;
-	/*
-	* prepares the json string, including current timestamp, and name of the plugin
-	*/
+	/* prepares the json string, including current timestamp, and name of the plugin */
 	sprintf(json, "\"type\":\"Linux_sys_power\"");
 	sprintf(tmp, ",\"local_timestamp\":\"%.1f\"", after_time * 1.0e3);
 	strcat(json, tmp);
-
-	/*
-	* filters the sampled data with respect to metrics values
-	*/
+	/* filters the sampled data with respect to metrics values */
 	for (i = 0; i < data->num_events; i++) {
 		/* if metrics' name is power_CPU, but flag do not HAS_CPU_STAT, ignore the value*/
 		if(strcmp(data->events[i], "estimated_memory_power") == 0 && !(flag & HAS_RAM_STAT))
 			continue;
-
 		/* if metrics' name is power_mem, but flag do not HAS_RAM_STAT, ignore the value*/
 		if(strcmp(data->events[i], "estimated_disk_power") == 0 && !(flag & HAS_IO_STAT))
 			continue;
-
 		//que pacha Conditional jump or move depends on uninitialised value(s)
 		/* if metrics' value >= 0.0, append the metrics to the json string */
 		if(data->values[i] >= 0.0) {
@@ -357,10 +330,8 @@ void mf_Linux_sys_power_to_json(Plugin_metrics *data, char *json)
 	}
 }
 
-
 /* Adds events to the data->events, if the events are valid */
-int flag_init(char **events, size_t num_events) 
-{
+int flag_init(char **events, size_t num_events) {
 	int i, ii;
 	for (i=0; i < num_events; i++) {
 		for (ii = 0; ii < POWER_EVENTS_NUM; ii++) {
@@ -379,9 +350,8 @@ int flag_init(char **events, size_t num_events)
 		}
 		fprintf(stderr, "\n");
 		return FAILURE;
-	} else {
-		return SUCCESS;
 	}
+	return SUCCESS;
 }
 
 /* Gets current network stats (send and receive bytes via wireless card). */
@@ -390,7 +360,6 @@ int NET_stat_read(struct net_stats *nets_info) {
 	char line[1024];
 	unsigned int temp;
 	unsigned long long temp_rcv_bytes, temp_send_bytes;
-
 	fp = fopen(NET_STAT_FILE, "r");
 	if(fp == NULL) {
 		fprintf(stderr, "Error: Cannot open %s.\n", NET_STAT_FILE);
@@ -399,14 +368,12 @@ int NET_stat_read(struct net_stats *nets_info) {
 	/* values reset to zeros */
 	nets_info->rcv_bytes = 0;
 	nets_info->send_bytes = 0;
-
 	while(fgets(line, 1024, fp) != NULL) {
 		char *sub_line_wlan = strstr(line, "wlan");
 		if (sub_line_wlan != NULL) {
 			sscanf(sub_line_wlan + 6, "%llu%u%u%u%u%u%u%u%llu", 
 				&temp_rcv_bytes, &temp, &temp, &temp, &temp, &temp, &temp, &temp,
 				&temp_send_bytes);
-
 			nets_info->rcv_bytes += temp_rcv_bytes;
 			nets_info->send_bytes += temp_send_bytes;
 		}
@@ -420,21 +387,17 @@ int sys_IO_stat_read(struct io_stats *total_io_stat) {
 	DIR *dir;
 	struct dirent *drp;
 	int pid;
-
 	/* open /proc directory */
 	dir = opendir("/proc");
 	if (dir == NULL) {
 		fprintf(stderr, "Error: Cannot open /proc.\n");
 		return FAILURE;
 	}
-
 	/* declare data structure which stores the io stattistics of each process */
 	struct io_stats pid_io_stat;
-
 	/* reset total_io_stat into zeros */
 	total_io_stat->read_bytes = 0;
 	total_io_stat->write_bytes = 0;
-
 	/* get the entries in the /proc directory */
 	drp = readdir(dir);
 	while (drp != NULL) {
@@ -450,7 +413,6 @@ int sys_IO_stat_read(struct io_stats *total_io_stat) {
 		/* read the next entry in the /proc directory */
 		drp = readdir(dir);
 	}
-
 	/* close /proc directory */
 	closedir(dir);
 	return SUCCESS;
@@ -460,7 +422,6 @@ int sys_IO_stat_read(struct io_stats *total_io_stat) {
 int process_IO_stat_read(int pid, struct io_stats *io_info) {
 	FILE *fp;
 	char filename[128], line[256];
-
 	sprintf(filename, IO_STAT_FILE, pid);
 	if ((fp = fopen(filename, "r")) == NULL) {
 		fprintf(stderr, "Error: Cannot open %s.\n", filename);
@@ -468,7 +429,6 @@ int process_IO_stat_read(int pid, struct io_stats *io_info) {
 	}
 	io_info->read_bytes = 0;
 	io_info->write_bytes = 0;
-
 	while (fgets(line, 256, fp) != NULL) {
 		if (!strncmp(line, "read_bytes:", 11)) {
 			sscanf(line + 12, "%llu", &io_info->read_bytes);
@@ -485,15 +445,11 @@ int process_IO_stat_read(int pid, struct io_stats *io_info) {
 }
 
 /* Calculates the system network energy consumption; updates net statistics values; return the network energy consumption (in milliJoule) */
-float sys_net_energy(struct net_stats *stats_before, struct net_stats *stats_after) 
-{
+float sys_net_energy(struct net_stats *stats_before, struct net_stats *stats_after) {
 	unsigned long long rcv_bytes, send_bytes;
-
 	rcv_bytes = stats_after->rcv_bytes - stats_before->rcv_bytes;
 	send_bytes = stats_after->send_bytes - stats_before->send_bytes;
-
 	float enet = ((rcv_bytes * E_NET_RCV_PER_KB) + (send_bytes * E_NET_SND_PER_KB)) / 1024;
-	
 	/* update the net_stat_before values by the current values */
 	stats_before->rcv_bytes = stats_after->rcv_bytes;
 	stats_before->send_bytes = stats_after->send_bytes;
@@ -501,8 +457,7 @@ float sys_net_energy(struct net_stats *stats_before, struct net_stats *stats_aft
 }
 
 /* Calculates the system disk energy consumption; updates io statistics values; return the disk energy consumption (in milliJoule) */
-float sys_disk_energy(struct io_stats *stats_before, struct io_stats *stats_after) 
-{
+float sys_disk_energy(struct io_stats *stats_before, struct io_stats *stats_after) {
 	unsigned long long read_bytes, write_bytes;
 
 	read_bytes = stats_after->read_bytes - stats_before->read_bytes;
@@ -518,8 +473,7 @@ float sys_disk_energy(struct io_stats *stats_before, struct io_stats *stats_afte
 
 //Function for increase dynamically a string concatenating strings at the end
 //It free the memory of the first pointer if not null
-char* concat_and_free(char **s1, const char *s2)
-{
+char* concat_and_free(char **s1, const char *s2) {
 	char *result = NULL;
 	unsigned int new_lenght= strlen(s2)+1; //+1 for the null-terminator;
 	if(*s1 != NULL){
@@ -543,8 +497,7 @@ char* concat_and_free(char **s1, const char *s2)
 /* get the cpu freq counting; return the cpu energy since the system's last booting 
  * if supported assigned to 0, means this metric is not supported and not need to call this function again
  */
-float CPU_energy_read(int *supported)
-{ 
+float CPU_energy_read(int *supported) { 
 	/* read the system cpu energy based on given max- and min- cpu energy, and frequencies statistics */
 	FILE *fp;
 	char line[32] = {'\0'};
@@ -552,11 +505,9 @@ float CPU_energy_read(int *supported)
 	int i, max_i;
 	struct dirent *dirent;
 	char *cpu_freq_file = NULL;
-	
 	float energy_each, energy_total;
 	unsigned long long tmp;
 	unsigned long long freqs[16];
-
 	/* check if system support cpu freq statistics */
 	fp = fopen("/sys/devices/system/cpu/cpu0/cpufreq/stats/time_in_state", "r");
 	if(fp == NULL) {
@@ -564,16 +515,13 @@ float CPU_energy_read(int *supported)
 		*supported=0; 
 		return 0.0;
 	}
-
 	energy_total = 0.0;
 	float power_range = MAX_CPU_POWER - MIN_CPU_POWER;
-
 	dir = opendir("/sys/devices/system/cpu");
 	if(!dir) {
 		printf("ERROR: Could not open directory /sys/devices/system/cpu\n");
 		return 0.0;
 	}
-
 	while ((dirent = readdir(dir))) {
 		/* for each entry name starting by cpuxx */
 		if (strncmp(dirent->d_name,"cpu", 3) != 0)
@@ -582,38 +530,34 @@ float CPU_energy_read(int *supported)
 		cpu_freq_file=concat_and_free(&cpu_freq_file, dirent->d_name);
 		cpu_freq_file=concat_and_free(&cpu_freq_file, "/cpufreq/stats/time_in_state");
 		fp = fopen(cpu_freq_file, "r");
-
 		if(!fp)
 			continue;
-
 		for (i = 0; !feof(fp) && (i <= 15); i++) {
 			if(fgets(line, 32, fp) == NULL)
 				break;
 			sscanf(line, "%llu %llu", &tmp, &freqs[i]);
 			/* each line has a pair like "<frequency> <time>", which means this CPU spent <time> usertime at <frequency>.
-			unit of <time> is 10ms
-			*/
+			unit of <time> is 10ms */
 		}
 		max_i = i - 1;
 		fclose(fp);
-
+		energy_total = MIN_CPU_POWER;
 		for (i = 0; i <= max_i; i++) {
-			energy_each = (MAX_CPU_POWER - power_range * i / max_i) * freqs[i] * 10.0; // in milliJoule
+			energy_each = ( power_range / max_i) * freqs[i] ; // instant measure is in WATTs. The energy instant W x time s = energy consumption J
+// 			energy_each = (MAX_CPU_POWER - power_range * i / max_i) * freqs[i] * 10.0; // in milliJoule
 			energy_total += energy_each; 
 		}
+		//energy consumption is prop to CV^2 f, where C is the capacitance, V is the voltage and f is the frecuency
 	}
-
 	if(cpu_freq_file!= NULL ) free(cpu_freq_file);
 	closedir(dir);
 	return energy_total;
 }
 
 /* init perf counter for hardware cache misses; get the file descriptors for all CPUs */
-void create_perf_stat_counter(void)
-{
+void create_perf_stat_counter(void) {
 	/* get the nubmer of CPUs */
 	nr_cpus = sysconf(_SC_NPROCESSORS_ONLN);
-
 	struct perf_event_attr attr; //hardware L2 cache miss
 	memset(&attr, 0, sizeof(struct perf_event_attr));
 	attr.type =	PERF_TYPE_HARDWARE; 
@@ -623,39 +567,33 @@ void create_perf_stat_counter(void)
 	attr.disabled = 0;
 	attr.enable_on_exec = 1;
 	attr.size = sizeof(attr);
-
 	/* The counter measures the CPU L2 cache misses; return the file descriptor for the counter */
-	int i;
-	for (i = 0; i < nr_cpus; i++) {
-		fd[i] = syscall(__NR_perf_event_open, &attr, -1, i, -1, 0);
-	}
+	const int pid = -1;
+	int mcpu;
+	const int mgroup_fd = -1;
+	const unsigned int mflags=0;	
+	for (mcpu = 0; mcpu < nr_cpus; mcpu++)
+		fd[mcpu] = syscall(__NR_perf_event_open, &attr, pid, mcpu,  mgroup_fd, mflags);
 }
 
 /* read the perf counter with given file descriptor */
-unsigned long long read_counter(int fd)
-{
+unsigned long long read_counter(int fd) {
 	unsigned long long single_count[3];
 	size_t res;
-
 	if (fd <= 0)
 		return 0;
-
 	res = read(fd, single_count, 3 * sizeof(unsigned long long));
-
 	if(res == 3 * sizeof(unsigned long long)) {
 		return single_count[0];
-	}else {
-		return 0;
 	}
+	return 0;
 }
 
 /* read and add all memory counters for each CPU */
-unsigned long long memory_counter_read(void)
-{
+unsigned long long memory_counter_read(void) {
 	int i;
 	unsigned long long result=0;
-	for (i = 0; i < nr_cpus; i++) {
+	for (i = 0; i < nr_cpus; i++)
 		result += read_counter(fd[i]);
-	}
 	return result;
 }

@@ -22,8 +22,8 @@
 #include <ctype.h>
 #include "mf_Linux_resources_connector.h"
 
-#define SUCCESS 1
-#define FAILURE 0
+#define SUCCESS 0
+#define FAILURE 1
 #define RESOURCES_EVENTS_NUM 5
 
 #define CPU_STAT_FILE "/proc/stat"
@@ -36,7 +36,6 @@
 #define HAS_SWAP_STAT 0x04
 #define HAS_NET_STAT 0x08
 #define HAS_IO_STAT 0x10
-
 /*******************************************************************************
  * Variable Declarations
  ******************************************************************************/
@@ -88,21 +87,17 @@ int process_IO_stat_read(int pid, struct io_stats *io_info);
  *
  *  Check if input events are valid; add valid events to the data->events
  *  acquire the previous value and before timestamp
- *
  *  @return 1 on success; 0 otherwise.
  */
 int mf_Linux_resources_init(Plugin_metrics *data, char **events, size_t num_events)
 {
 	/* failed to initialize flag means that all events are invalid */
-	if(flag_init(events, num_events) == 0) {
+	if(flag_init(events, num_events) == 0)
 		return FAILURE;
-	}
-	
 	/* get the before timestamp in second */
 	struct timespec timestamp;
 	clock_gettime(CLOCK_REALTIME, &timestamp);
     before_time = timestamp.tv_sec * 1.0  + (double)(timestamp.tv_nsec / 1.0e9);
-	
 	/* initialize Plugin_metrics events' names according to flag */
 	int i = 0;
 	if(flag & HAS_CPU_STAT) {
@@ -140,7 +135,6 @@ int mf_Linux_resources_init(Plugin_metrics *data, char **events, size_t num_even
 }
 
 /** @brief Samples all possible events and stores data into the Plugin_metrics
- *
  *  @return 1 on success; 0 otherwise.
  */
 int mf_Linux_resources_sample(Plugin_metrics *data)
@@ -148,21 +142,17 @@ int mf_Linux_resources_sample(Plugin_metrics *data)
 	/* get current timestamp in second */
 	struct timespec timestamp;
 	int i;
-	
 	for (i = 0; i < data->num_events; i++)
 		data->values[i] = 0.0; 
-	
 	clock_gettime(CLOCK_REALTIME, &timestamp);
     after_time = timestamp.tv_sec * 1.0  + (double)(timestamp.tv_nsec / 1.0e9);
 	double time_interval = after_time - before_time;
-
 	i = 0;
 	if(flag & HAS_CPU_STAT) {
 		CPU_stat_read(&cpu_stat_after);
 		if(cpu_stat_after.total_cpu_time > cpu_stat_before.total_cpu_time) {
 			data->values[i] = ((cpu_stat_after.total_cpu_time - cpu_stat_before.total_cpu_time) - (cpu_stat_after.total_idle_time - cpu_stat_before.total_idle_time)) * 100.0 /
 							(cpu_stat_after.total_cpu_time - cpu_stat_before.total_cpu_time);
-
 			/* update the cpu_stat_before values by the current values */
 			cpu_stat_before.total_cpu_time = cpu_stat_after.total_cpu_time;
 			cpu_stat_before.total_idle_time = cpu_stat_after.total_idle_time;
@@ -195,10 +185,8 @@ int mf_Linux_resources_sample(Plugin_metrics *data)
 		sys_IO_stat_read(&io_stat_after);
 		unsigned long long total_bytes = (io_stat_after.read_bytes - io_stat_before.read_bytes)
 			+ (io_stat_after.write_bytes - io_stat_before.write_bytes);
-
 		if(total_bytes > 0.0) {
 			data->values[i] = (float) (total_bytes * 1.0 / time_interval);
-		
 			/* update the io_stat_before values by the current values */
 			io_stat_before.read_bytes = io_stat_after.read_bytes;
 			io_stat_before.write_bytes = io_stat_after.write_bytes;
@@ -214,22 +202,15 @@ int mf_Linux_resources_sample(Plugin_metrics *data)
 /** @brief Formats the sampling data into a json string
  *
  *  json string contains: plugin name, timestamps, metrics_name and metrics_value
- *
  */
-void mf_Linux_resources_to_json(Plugin_metrics *data, char *json)
-{
+void mf_Linux_resources_to_json(Plugin_metrics *data, char *json) {
     char tmp[128] = {'\0'};
     int i;
-    /*
-     * prepares the json string, including current timestamp, and name of the plugin
-     */
+    /* prepares the json string, including current timestamp, and name of the plugin */
     sprintf(json, "\"type\":\"Linux_resources\"");
     sprintf(tmp, ",\"local_timestamp\":\"%.1f\"", after_time * 1.0e3);
     strcat(json, tmp);
-
-    /*
-     * filters the sampled data with respect to metrics values
-     */
+    /* filters the sampled data with respect to metrics values */
 	for (i = 0; i < data->num_events; i++) {
 		/* if metrics' value >= 0.0, append the metrics to the json string */
 		if(data->values[i] >= 0.0) {
@@ -240,8 +221,7 @@ void mf_Linux_resources_to_json(Plugin_metrics *data, char *json)
 }
 
 /* Adds events to the data->events, if the events are valid */
-int flag_init(char **events, size_t num_events) 
-{
+int flag_init(char **events, size_t num_events) {
 	int i, ii;
 	for (i=0; i < num_events; i++) {
 		for (ii = 0; ii < RESOURCES_EVENTS_NUM; ii++) {
@@ -255,13 +235,11 @@ int flag_init(char **events, size_t num_events)
 	}
 	if (flag == 0) {
 		fprintf(stderr, "Wrong given metrics.\nPlease given metrics ");
-		for (ii = 0; ii < RESOURCES_EVENTS_NUM; ii++) {
+		for (ii = 0; ii < RESOURCES_EVENTS_NUM; ii++)
 			fprintf(stderr, "%s ", Linux_resources_metrics[ii]);
-		}
 		fprintf(stderr, "\n");
 		return FAILURE;
-	}
-	else {
+	} else {
 		return SUCCESS;
 	}
 }
@@ -279,7 +257,6 @@ int CPU_stat_read(struct cpu_stats *cpu_info) {
 	}
 	cpu_info->total_cpu_time = 0;
 	cpu_info->total_idle_time = 0;
-	
 	if (fgets(line, 1024, fp) != NULL) {
 		sscanf(line + 5, "%llu %llu %llu %llu %llu %llu %llu %llu",
 			       &cpu_user,
@@ -306,13 +283,11 @@ float RAM_usage_rate_read() {
 	int MemTotal = 0;
 	int MemFree = 0;
 	float RAM_usage_rate = 0.0;
-
 	fp = fopen(RAM_STAT_FILE, "r");
 	if(fp == NULL) {
 		fprintf(stderr, "Error: Cannot open %s.\n", RAM_STAT_FILE);
 		return 0.0;
 	}
-
 	while(fgets(line, 1024, fp) != NULL) {
 		if (!strncmp(line, "MemTotal:", 9)) {
 			sscanf(line + 9, "%d", &MemTotal);
@@ -336,20 +311,16 @@ float swap_usage_rate_read() {
 	int SwapTotal = 0;
 	int SwapFree = 0;
 	float swap_usage_rate = 0.0;
-
 	fp = fopen(RAM_STAT_FILE, "r");
 	if(fp == NULL) {
 		fprintf(stderr, "Error: Cannot open %s.\n", RAM_STAT_FILE);
 		return 0.0;
 	}
-
 	while(fgets(line, 1024, fp) != NULL) {
-		if (!strncmp(line, "SwapTotal:", 10)) {
+		if (!strncmp(line, "SwapTotal:", 10))
 			sscanf(line + 10, "%d", &SwapTotal);
-		}
-		if (!strncmp(line, "SwapFree:", 9)) {
+		if (!strncmp(line, "SwapFree:", 9))
 			sscanf(line + 9, "%d", &SwapFree);
-		}
 		if ((SwapTotal * SwapFree) != 0) {
 			swap_usage_rate = (SwapTotal - SwapFree) * 100.0 / SwapTotal;
 			break;
@@ -365,7 +336,6 @@ int NET_stat_read(struct net_stats *nets_info) {
 	char line[1024];
 	unsigned int temp;
 	unsigned long long temp_rcv_bytes, temp_send_bytes;
-
 	fp = fopen(NET_STAT_FILE, "r");
 	if(fp == NULL) {
 		fprintf(stderr, "Error: Cannot open %s.\n", NET_STAT_FILE);
@@ -374,14 +344,12 @@ int NET_stat_read(struct net_stats *nets_info) {
 	/* values reset to zeros */
 	nets_info->rcv_bytes = 0;
 	nets_info->send_bytes = 0;
-
 	while(fgets(line, 1024, fp) != NULL) {
 		char *sub_line_eth = strstr(line, "eth");
 		if (sub_line_eth != NULL) {
 			sscanf(sub_line_eth + 5, "%llu%u%u%u%u%u%u%u%llu", 
 				&temp_rcv_bytes, &temp, &temp, &temp, &temp, &temp, &temp, &temp,
 				&temp_send_bytes);
-
 			nets_info->rcv_bytes += temp_rcv_bytes;
 			nets_info->send_bytes += temp_send_bytes;
 		}
@@ -390,7 +358,6 @@ int NET_stat_read(struct net_stats *nets_info) {
 			sscanf(sub_line_wlan + 6, "%llu%u%u%u%u%u%u%u%llu", 
 				&temp_rcv_bytes, &temp, &temp, &temp, &temp, &temp, &temp, &temp,
 				&temp_send_bytes);
-
 			nets_info->rcv_bytes += temp_rcv_bytes;
 			nets_info->send_bytes += temp_send_bytes;
 		}
@@ -404,21 +371,17 @@ int sys_IO_stat_read(struct io_stats *total_io_stat) {
 	DIR *dir;
 	struct dirent *drp;
 	int pid;
-
 	/* open /proc directory */
 	dir = opendir("/proc");
 	if (dir == NULL) {
 		fprintf(stderr, "Error: Cannot open /proc.\n");
 		return FAILURE;
 	}
-
 	/* declare data structure which stores the io stattistics of each process */
 	struct io_stats pid_io_stat;
-	
 	/* reset total_io_stat into zeros */
 	total_io_stat->read_bytes = 0;
 	total_io_stat->write_bytes = 0;
-
 	/* get the entries in the /proc directory */
 	drp = readdir(dir);
 	while (drp != NULL) {
@@ -434,7 +397,6 @@ int sys_IO_stat_read(struct io_stats *total_io_stat) {
 		/* read the next entry in the /proc directory */
 		drp = readdir(dir);
 	}
-
 	/* close /proc directory */
 	closedir(dir);
 	return SUCCESS; 
@@ -446,14 +408,12 @@ int process_IO_stat_read(int pid, struct io_stats *io_info) {
 	char filename[128], line[256];
 	io_info->read_bytes = 0;
 	io_info->write_bytes = 0;
-	
 	/* Gets the filename /proc/[pid]/io and open the file for reading */
 	sprintf(filename, IO_STAT_FILE, pid);
 	if ((fp = fopen(filename, "r")) == NULL) {
 		fprintf(stderr, "Error: Cannot open %s.\n", filename);
 		return FAILURE;
 	}
-
 	/* Gets the read and write bytes for the process */
 	while (fgets(line, 256, fp) != NULL) {
 		if (!strncmp(line, "read_bytes:", 11)) {

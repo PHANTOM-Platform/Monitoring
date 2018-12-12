@@ -22,8 +22,8 @@
 #include <papi.h>
 #include "mf_RAPL_power_connector.h"
 
-#define SUCCESS 1
-#define FAILURE 0
+#define SUCCESS 0
+#define FAILURE 1
 
 /*******************************************************************************
  * Variable Declarations
@@ -31,7 +31,7 @@
 double before_time, after_time;  /* time in seconds */
 int EventSet = PAPI_NULL;
 int num_sockets = 0;
-double denominator = 1.0 ; /*according to different CPU models, DRAM energy scalings are different */
+double denominator = 1.0 ; /*according to different CPU models, DRAM energy scalings are different*/
 int rapl_is_available = 0;
 float epackage_before[4], edram_before[4], epackage_after[4], edram_after[4]; //max sockets number is 4
 
@@ -65,7 +65,6 @@ int mf_RAPL_power_init(Plugin_metrics *data, char **events, size_t num_events)
 	struct timespec timestamp;
 	clock_gettime(CLOCK_REALTIME, &timestamp);
     before_time = timestamp.tv_sec * 1.0  + (double)(timestamp.tv_nsec / 1.0e9);
-
     return SUCCESS;
 }
 
@@ -73,8 +72,7 @@ int mf_RAPL_power_init(Plugin_metrics *data, char **events, size_t num_events)
  *
  *  @return 1 on success; 0 otherwise.
  */
-int mf_RAPL_power_sample(Plugin_metrics *data)
-{
+int mf_RAPL_power_sample(Plugin_metrics *data) {
 	/* get current timestamp in second */
 	struct timespec timestamp;
 	clock_gettime(CLOCK_REALTIME, &timestamp);
@@ -83,7 +81,7 @@ int mf_RAPL_power_sample(Plugin_metrics *data)
 	double time_interval = after_time - before_time; /* get time interval */
 
 	if(rapl_is_available) {
-		rapl_stat_read(epackage_after, edram_after);	
+		rapl_stat_read(epackage_after, edram_after);
 	}
 
 	int i, j;
@@ -97,7 +95,7 @@ int mf_RAPL_power_sample(Plugin_metrics *data)
 		}
 		if((data->events[i] != NULL) &&(strstr(data->events[i], "dram_power") != NULL)) {
 			for (j = 0; j < num_sockets; j++) {
-				data->values[i] = (edram_after[j] - edram_before[j]) / time_interval;		//unit is milliWatt
+				data->values[i] = (edram_after[j] - edram_before[j]) / time_interval;	//unit is milliWatt
 				i++;
 				edram_before[j] = edram_after[j];
 			}
@@ -137,28 +135,25 @@ void mf_RAPL_power_to_json(Plugin_metrics *data, char *json)
 	}
 }
 
-/* initialize RAPL counters prepare eventset and start counters */
+/** initialize RAPL counters prepare eventset and start counters */
 int rapl_init(Plugin_metrics *data, char **events, size_t num_events) 
 {
 	/* Load PAPI library */
-	if (!load_papi_library()) {
+	if (load_papi_library()!=SUCCESS)
         return FAILURE;
-    }
 
     /* check if rapl component is enabled */
-    if (!check_rapl_component()) {
+    if (check_rapl_component()!=SUCCESS)
         return FAILURE;
-    }
 
     /* get the number of sockets */
     num_sockets = hardware_sockets_count();
-    if(num_sockets <= 0) {
+    if(num_sockets <= 0)
     	return FAILURE;
-    }
 
 	/* creat an PAPI EventSet */
 	if (PAPI_create_eventset(&EventSet) != PAPI_OK) {
-		fprintf(stderr, "Error: PAPI_create_eventset failed.\n");
+		fprintf(stderr, "Error: PAPI_create_eventset failed at rapl_init.\n");
 		return FAILURE;
 	}
 
@@ -196,22 +191,17 @@ int rapl_init(Plugin_metrics *data, char **events, size_t num_events)
 	data->num_events = ii;
 	/* set dominator for DRAM energy values based on different CPU model */
 	denominator = rapl_get_denominator();
-
 	if (PAPI_start(EventSet) != PAPI_OK) {
-		fprintf(stderr, "PAPI_start failed.\n");
+		fprintf(stderr, "PAPI_start failed at rapl_init.\n");
 		return FAILURE;
 	}
-
 	return SUCCESS;
-
 }
 
-/* Load the PAPI library */
-int load_papi_library(void)
-{
-    if (PAPI_is_initialized()) {
+/** Load the PAPI library */
+int load_papi_library(void) {
+    if (PAPI_is_initialized()!=PAPI_NOT_INITED)
         return SUCCESS;
-    }
 
     int ret = PAPI_library_init(PAPI_VER_CURRENT);
     if (ret != PAPI_VER_CURRENT) {
@@ -219,11 +209,10 @@ int load_papi_library(void)
         fprintf(stderr, "Error while loading the PAPI library: %s\n", error);
         return FAILURE;
     }
-
     return SUCCESS;
 }
 
-/* Check if rapl component is enabled */
+/** Check if rapl component is enabled */
 int check_rapl_component(void)
 {
 	int numcmp, cid; /* number of component and component id variables declare */
@@ -244,7 +233,7 @@ int check_rapl_component(void)
     return FAILURE;
 }
 
-/* Count the number of available sockets by hwloc library; return the number of sockets on success; 0 otherwise*/
+/** Count the number of available sockets by hwloc library; return the number of sockets on success; 0 otherwise*/
 int hardware_sockets_count(void)
 {
 	int depth;
@@ -261,15 +250,13 @@ int hardware_sockets_count(void)
 	return skts_num;
 }
 
-/*get the coefficient of current CPU model */
-double rapl_get_denominator(void)
-{
+/** get the coefficient of current CPU model */
+double rapl_get_denominator(void) {
 	/* get cpu model */
     unsigned int eax, ebx, ecx, edx;
     eax = 1;
     native_cpuid(&eax, &ebx, &ecx, &edx);
     int cpu_model = (eax >> 4) & 0xF;
-
     if (cpu_model == 15) {
         return 15.3;
     } else {
@@ -278,9 +265,8 @@ double rapl_get_denominator(void)
 
 }
 
-/* Get native cpuid */
-void native_cpuid(unsigned int *eax, unsigned int *ebx, unsigned int *ecx, unsigned int *edx)
-{
+/** Get native cpuid */
+void native_cpuid(unsigned int *eax, unsigned int *ebx, unsigned int *ecx, unsigned int *edx) {
     asm volatile("cpuid"
         : "=a" (*eax),
           "=b" (*ebx),
@@ -290,19 +276,18 @@ void native_cpuid(unsigned int *eax, unsigned int *ebx, unsigned int *ecx, unsig
     );
 }
 
-/* Read rapl counters values, computer the energy values for CPU and DRAM (in milliJoule); counters are reset after read */
+/** Read rapl counters values, computer the energy values for CPU and DRAM (in milliJoule); 
+ *counters are reset after read */
 int rapl_stat_read(float *epackage, float *edram) 
 {
 	int i, ii, ret;
 	long long *values = malloc(2 * num_sockets * sizeof(long long));
-
 	ret = PAPI_read(EventSet, values);
 	if(ret != PAPI_OK) {
 		char *error = PAPI_strerror(ret);
 		fprintf(stderr, "Error while reading the PAPI counters: %s\n", error);
         return FAILURE;
 	}
-	
 	for(i = 0, ii = 0; ii < num_sockets; ii++) {
 		epackage[ii] = (float) (values[i] * 1.0e-6);
 		i++;
@@ -310,6 +295,5 @@ int rapl_stat_read(float *epackage, float *edram)
 		i++;
 	}
 	PAPI_reset(EventSet);
-	
 	return SUCCESS;
 }

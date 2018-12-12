@@ -20,8 +20,8 @@
 #include <nvml.h>
 #include "mf_NVML_connector.h"
 
-#define SUCCESS 1
-#define FAILURE 0
+#define SUCCESS 0
+#define FAILURE 1
 #define NVML_EVENTS_NUM 7
 
 /*******************************************************************************

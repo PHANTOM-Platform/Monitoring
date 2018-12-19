@@ -25,6 +25,23 @@
 #include <linux/perf_event.h>
 #include "mf_Linux_sys_power_connector.h"
 #include <malloc.h>
+
+#define SUCCESS 0
+#define FAILURE 1
+
+#define NET_STAT_FILE "/proc/net/dev"
+#define IO_STAT_FILE "/proc/%d/io"
+
+#define POWER_EVENTS_NUM 5
+#define HAS_CPU_STAT 0x01
+#define HAS_NET_STAT 0x02 
+#define HAS_RAM_STAT 0x04
+#define HAS_IO_STAT 0x08
+#define HAS_ALL 0x10
+
+const char Linux_sys_power_metrics[POWER_EVENTS_NUM][32] = {
+	"estimated_CPU_power", "estimated_wifi_power",
+	"estimated_memory_power", "estimated_disk_power", "estimated_total_power" };
 /***********************************************************************
 CPU Specification
 - power per core
@@ -54,20 +71,6 @@ My Laptop Intel 2200 BG wireless network card:
 ***********************************************************************/
 #define E_NET_SND_PER_KB (1800 / (1024 * 12.330))	// milliJoule/KB
 #define E_NET_RCV_PER_KB (1400 / (1024 * 5.665))	// milliJoule/KB
-
-#define SUCCESS 0
-#define FAILURE 1
-#define POWER_EVENTS_NUM 5
-
-#define NET_STAT_FILE "/proc/net/dev"
-#define IO_STAT_FILE "/proc/%d/io"
-
-#define HAS_CPU_STAT 0x01
-#define HAS_NET_STAT 0x02 
-#define HAS_RAM_STAT 0x04
-#define HAS_IO_STAT 0x08
-#define HAS_ALL 0x10
-
 /*******************************************************************************
 * Variable Declarations
 ******************************************************************************/
@@ -75,11 +78,6 @@ My Laptop Intel 2200 BG wireless network card:
 unsigned int flag = 0;
 /* time in seconds */
 double before_time, after_time; 
-
-const char Linux_sys_power_metrics[POWER_EVENTS_NUM][32] = {
-	"estimated_CPU_power", "estimated_wifi_power",
-	"estimated_memory_power", "estimated_disk_power", "estimated_total_power" };
-
 int nr_cpus;
 int fd[20];
 float CPU_energy_before, CPU_energy_after;
@@ -98,24 +96,277 @@ struct io_stats {
 };
 struct io_stats io_stat_before;
 struct io_stats io_stat_after;
-
-/*******************************************************************************
-* Forward Declarations
-******************************************************************************/
-int flag_init(char **events, size_t num_events);
-int NET_stat_read(struct net_stats *nets_info);
-int sys_IO_stat_read(struct io_stats *total_io_stat);
-int process_IO_stat_read(int pid, struct io_stats *io_info);
-float sys_net_energy(struct net_stats *stats_before, struct net_stats *stats_after);
-float sys_disk_energy(struct io_stats *stats_before, struct io_stats *stats_after);
-float CPU_energy_read(int *supported);
-void create_perf_stat_counter(void);
-unsigned long long read_counter(int fd);
-unsigned long long memory_counter_read(void);
-
 /*******************************************************************************
 * Functions implementation
 ******************************************************************************/
+/* Adds events to the data->events, if the events are valid */
+int flag_init(char **events, size_t num_events) {
+	int i, ii;
+	for (i=0; i < num_events; i++) {
+		for (ii = 0; ii < POWER_EVENTS_NUM; ii++) {
+			/* if events name matches */
+			if(strcmp(events[i], Linux_sys_power_metrics[ii]) == 0) {
+				/* get the flag updated */
+				unsigned int current_event_flag = 1 << ii;
+				flag = flag | current_event_flag;
+			}
+		}
+	}
+	if (flag == 0) {
+		fprintf(stderr, "Wrong given metrics.\nPlease given metrics ");
+		for (ii = 0; ii < POWER_EVENTS_NUM; ii++) {
+			fprintf(stderr, "%s ", Linux_sys_power_metrics[ii]);
+		}
+		fprintf(stderr, "\n");
+		return FAILURE;
+	}
+	return SUCCESS;
+}
+
+/* Gets current network stats (send and receive bytes via wireless card). */
+int NET_stat_read(struct net_stats *nets_info) {
+	FILE *fp;
+	char line[1024];
+	unsigned int temp;
+	unsigned long long temp_rcv_bytes, temp_send_bytes;
+	fp = fopen(NET_STAT_FILE, "r");
+	if(fp == NULL) {
+		fprintf(stderr, "Error: Cannot open %s.\n", NET_STAT_FILE);
+		return FAILURE;
+	}
+	/* values reset to zeros */
+	nets_info->rcv_bytes = 0;
+	nets_info->send_bytes = 0;
+	while(fgets(line, 1024, fp) != NULL) {
+		char *sub_line_wlan = strstr(line, "wlan");
+		if (sub_line_wlan != NULL) {
+			sscanf(sub_line_wlan + 6, "%llu%u%u%u%u%u%u%u%llu", 
+				&temp_rcv_bytes, &temp, &temp, &temp, &temp, &temp, &temp, &temp,
+				&temp_send_bytes);
+			nets_info->rcv_bytes += temp_rcv_bytes;
+			nets_info->send_bytes += temp_send_bytes;
+		}
+	}
+	fclose(fp);
+	return SUCCESS;
+}
+
+/* Gets the IO stats of a specified process (parameters are pid and io_info) */
+int process_IO_stat_read(int pid, struct io_stats *io_info) {
+	FILE *fp;
+	char filename[128], line[256];
+	sprintf(filename, IO_STAT_FILE, pid);
+	if ((fp = fopen(filename, "r")) == NULL) {
+		fprintf(stderr, "Error: Cannot open %s.\n", filename);
+		return FAILURE;
+	}
+	io_info->read_bytes = 0;
+	io_info->write_bytes = 0;
+	while (fgets(line, 256, fp) != NULL) {
+		if (!strncmp(line, "read_bytes:", 11)) {
+			sscanf(line + 12, "%llu", &io_info->read_bytes);
+		}
+		if (!strncmp(line, "write_bytes:", 12)) {
+			sscanf(line + 13, "%llu", &io_info->write_bytes);
+		}
+		if ((io_info->read_bytes * io_info->write_bytes) != 0) {
+			break;
+		}
+	}
+	fclose(fp);
+	return SUCCESS;
+}
+
+/* Gets the IO stats of the whole system (read IO stats for all processes and make an addition) */
+int sys_IO_stat_read(struct io_stats *total_io_stat) {
+	DIR *dir;
+	struct dirent *drp;
+	int pid;
+	/* open /proc directory */
+	dir = opendir("/proc");
+	if (dir == NULL) {
+		fprintf(stderr, "Error: Cannot open /proc.\n");
+		return FAILURE;
+	}
+	/* declare data structure which stores the io stattistics of each process */
+	struct io_stats pid_io_stat;
+	/* reset total_io_stat into zeros */
+	total_io_stat->read_bytes = 0;
+	total_io_stat->write_bytes = 0;
+	/* get the entries in the /proc directory */
+	drp = readdir(dir);
+	while (drp != NULL) {
+		/* if entry's name starts with digit,
+		get the process pid and read the IO stats of the process */
+		if (isdigit(drp->d_name[0])) {
+			pid = atoi(drp->d_name);
+			if (process_IO_stat_read(pid, &pid_io_stat)) {
+				total_io_stat->read_bytes += pid_io_stat.read_bytes;
+				total_io_stat->write_bytes += pid_io_stat.write_bytes;
+			}
+		}
+		/* read the next entry in the /proc directory */
+		drp = readdir(dir);
+	}
+	/* close /proc directory */
+	closedir(dir);
+	return SUCCESS;
+}
+
+/* Calculates the system network energy consumption; updates net statistics values; return the network energy consumption (in milliJoule) */
+float sys_net_energy(struct net_stats *stats_before, struct net_stats *stats_after) {
+	unsigned long long rcv_bytes, send_bytes;
+	rcv_bytes = stats_after->rcv_bytes - stats_before->rcv_bytes;
+	send_bytes = stats_after->send_bytes - stats_before->send_bytes;
+	float enet = ((rcv_bytes * E_NET_RCV_PER_KB) + (send_bytes * E_NET_SND_PER_KB)) / 1024;
+	/* update the net_stat_before values by the current values */
+	stats_before->rcv_bytes = stats_after->rcv_bytes;
+	stats_before->send_bytes = stats_after->send_bytes;
+	return enet;
+}
+
+/* Calculates the system disk energy consumption; updates io statistics values; return the disk energy consumption (in milliJoule) */
+float sys_disk_energy(struct io_stats *stats_before, struct io_stats *stats_after) {
+	unsigned long long read_bytes, write_bytes;
+
+	read_bytes = stats_after->read_bytes - stats_before->read_bytes;
+	write_bytes = stats_after->write_bytes - stats_before->write_bytes;
+
+	float edisk = ((read_bytes * E_DISK_R_PER_KB) + (write_bytes * E_DISK_W_PER_KB)) / 1024;
+
+	/* update the io_stat_before values by the current values */
+	stats_before->read_bytes = stats_after->read_bytes;
+	stats_before->write_bytes = stats_after->write_bytes;
+	return edisk;
+}
+
+//Function for increase dynamically a string concatenating strings at the end
+//It free the memory of the first pointer if not null
+char* concat_and_free(char **s1, const char *s2) {
+	char *result = NULL;
+	unsigned int new_lenght= strlen(s2)+1; //+1 for the null-terminator;
+	if(*s1 != NULL){
+		new_lenght+= strlen(*s1);//current lenght
+		if(new_lenght> malloc_usable_size(*s1)){
+			result = (char *) malloc(new_lenght);
+			strcpy(result, *s1);
+			free(*s1);
+		}else{
+			result = *s1;
+		}
+	}else{
+		result = malloc(new_lenght);
+		result[0]='\0';
+	}
+	//in real code you would check for errors in malloc here 
+	strcat(result, s2);
+	return result;
+}
+
+/* get the cpu freq counting; return the cpu energy since the system's last booting 
+ * if supported assigned to 0, means this metric is not supported and not need to call this function again
+ */
+float CPU_energy_read(int *supported) { 
+	/* read the system cpu energy based on given max- and min- cpu energy, and frequencies statistics */
+	FILE *fp;
+	char line[32] = {'\0'};
+	DIR *dir;
+	int i, max_i;
+	struct dirent *dirent;
+	char *cpu_freq_file = NULL;
+	float energy_each, energy_total;
+	unsigned long long tmp;
+	unsigned long long freqs[16];
+	/* check if system support cpu freq statistics */
+	fp = fopen("/sys/devices/system/cpu/cpu0/cpufreq/stats/time_in_state", "r");
+	if(fp == NULL) {
+		printf("ERROR: CPU frequency statistics are not supported.\n");
+		*supported=0; 
+		return 0.0;
+	}
+	energy_total = 0.0;
+	float power_range = MAX_CPU_POWER - MIN_CPU_POWER;
+	dir = opendir("/sys/devices/system/cpu");
+	if(!dir) {
+		printf("ERROR: Could not open directory /sys/devices/system/cpu\n");
+		return 0.0;
+	}
+	while ((dirent = readdir(dir))) {
+		/* for each entry name starting by cpuxx */
+		if (strncmp(dirent->d_name,"cpu", 3) != 0)
+			continue;
+		cpu_freq_file=concat_and_free(&cpu_freq_file, "/sys/devices/system/cpu/");
+		cpu_freq_file=concat_and_free(&cpu_freq_file, dirent->d_name);
+		cpu_freq_file=concat_and_free(&cpu_freq_file, "/cpufreq/stats/time_in_state");
+		fp = fopen(cpu_freq_file, "r");
+		if(!fp)
+			continue;
+		for (i = 0; !feof(fp) && (i <= 15); i++) {
+			if(fgets(line, 32, fp) == NULL)
+				break;
+			sscanf(line, "%llu %llu", &tmp, &freqs[i]);
+			/* each line has a pair like "<frequency> <time>", which means this CPU spent <time> usertime at <frequency>.
+			unit of <time> is 10ms */
+		}
+		max_i = i - 1;
+		fclose(fp);
+		energy_total = MIN_CPU_POWER;
+		for (i = 0; i <= max_i; i++) {
+			energy_each = ( power_range / max_i) * freqs[i] ; // instant measure is in WATTs. The energy instant W x time s = energy consumption J
+// 			energy_each = (MAX_CPU_POWER - power_range * i / max_i) * freqs[i] * 10.0; // in milliJoule
+			energy_total += energy_each; 
+		}
+		//energy consumption is prop to CV^2 f, where C is the capacitance, V is the voltage and f is the frecuency
+	}
+	if(cpu_freq_file!= NULL ) free(cpu_freq_file);
+	closedir(dir);
+	return energy_total;
+}
+
+/* init perf counter for hardware cache misses; get the file descriptors for all CPUs */
+void create_perf_stat_counter(void) {
+	/* get the nubmer of CPUs */
+	nr_cpus = sysconf(_SC_NPROCESSORS_ONLN);
+	struct perf_event_attr attr; //hardware L2 cache miss
+	memset(&attr, 0, sizeof(struct perf_event_attr));
+	attr.type =	PERF_TYPE_HARDWARE; 
+	attr.config = PERF_COUNT_HW_CACHE_MISSES;
+	attr.read_format = PERF_FORMAT_TOTAL_TIME_ENABLED | PERF_FORMAT_TOTAL_TIME_RUNNING;
+	attr.inherit = 1;
+	attr.disabled = 0;
+	attr.enable_on_exec = 1;
+	attr.size = sizeof(attr);
+	/* The counter measures the CPU L2 cache misses; return the file descriptor for the counter */
+	const int pid = -1;
+	int mcpu;
+	const int mgroup_fd = -1;
+	const unsigned int mflags=0;	
+	for (mcpu = 0; mcpu < nr_cpus; mcpu++)
+		fd[mcpu] = syscall(__NR_perf_event_open, &attr, pid, mcpu,  mgroup_fd, mflags);
+}
+
+/* read the perf counter with given file descriptor */
+unsigned long long read_counter(int fd) {
+	unsigned long long single_count[3];
+	size_t res;
+	if (fd <= 0)
+		return 0;
+	res = read(fd, single_count, 3 * sizeof(unsigned long long));
+	if(res == 3 * sizeof(unsigned long long)) {
+		return single_count[0];
+	}
+	return 0;
+}
+
+/* read and add all memory counters for each CPU */
+unsigned long long memory_counter_read(void) {
+	int i;
+	unsigned long long result=0;
+	for (i = 0; i < nr_cpus; i++)
+		result += read_counter(fd[i]);
+	return result;
+}
+
 /** @brief Initializes the Linux_sys_power plugin
 *
 *  Check if input events are valid; add valid events to the data->events
@@ -328,272 +579,4 @@ void mf_Linux_sys_power_to_json(Plugin_metrics *data, char *json) {
 			strcat(json, tmp);
 		}
 	}
-}
-
-/* Adds events to the data->events, if the events are valid */
-int flag_init(char **events, size_t num_events) {
-	int i, ii;
-	for (i=0; i < num_events; i++) {
-		for (ii = 0; ii < POWER_EVENTS_NUM; ii++) {
-			/* if events name matches */
-			if(strcmp(events[i], Linux_sys_power_metrics[ii]) == 0) {
-				/* get the flag updated */
-				unsigned int current_event_flag = 1 << ii;
-				flag = flag | current_event_flag;
-			}
-		}
-	}
-	if (flag == 0) {
-		fprintf(stderr, "Wrong given metrics.\nPlease given metrics ");
-		for (ii = 0; ii < POWER_EVENTS_NUM; ii++) {
-			fprintf(stderr, "%s ", Linux_sys_power_metrics[ii]);
-		}
-		fprintf(stderr, "\n");
-		return FAILURE;
-	}
-	return SUCCESS;
-}
-
-/* Gets current network stats (send and receive bytes via wireless card). */
-int NET_stat_read(struct net_stats *nets_info) {
-	FILE *fp;
-	char line[1024];
-	unsigned int temp;
-	unsigned long long temp_rcv_bytes, temp_send_bytes;
-	fp = fopen(NET_STAT_FILE, "r");
-	if(fp == NULL) {
-		fprintf(stderr, "Error: Cannot open %s.\n", NET_STAT_FILE);
-		return FAILURE;
-	}
-	/* values reset to zeros */
-	nets_info->rcv_bytes = 0;
-	nets_info->send_bytes = 0;
-	while(fgets(line, 1024, fp) != NULL) {
-		char *sub_line_wlan = strstr(line, "wlan");
-		if (sub_line_wlan != NULL) {
-			sscanf(sub_line_wlan + 6, "%llu%u%u%u%u%u%u%u%llu", 
-				&temp_rcv_bytes, &temp, &temp, &temp, &temp, &temp, &temp, &temp,
-				&temp_send_bytes);
-			nets_info->rcv_bytes += temp_rcv_bytes;
-			nets_info->send_bytes += temp_send_bytes;
-		}
-	}
-	fclose(fp);
-	return SUCCESS;
-}
-
-/* Gets the IO stats of the whole system (read IO stats for all processes and make an addition) */
-int sys_IO_stat_read(struct io_stats *total_io_stat) {
-	DIR *dir;
-	struct dirent *drp;
-	int pid;
-	/* open /proc directory */
-	dir = opendir("/proc");
-	if (dir == NULL) {
-		fprintf(stderr, "Error: Cannot open /proc.\n");
-		return FAILURE;
-	}
-	/* declare data structure which stores the io stattistics of each process */
-	struct io_stats pid_io_stat;
-	/* reset total_io_stat into zeros */
-	total_io_stat->read_bytes = 0;
-	total_io_stat->write_bytes = 0;
-	/* get the entries in the /proc directory */
-	drp = readdir(dir);
-	while (drp != NULL) {
-		/* if entry's name starts with digit,
-		get the process pid and read the IO stats of the process */
-		if (isdigit(drp->d_name[0])) {
-			pid = atoi(drp->d_name);
-			if (process_IO_stat_read(pid, &pid_io_stat)) {
-				total_io_stat->read_bytes += pid_io_stat.read_bytes;
-				total_io_stat->write_bytes += pid_io_stat.write_bytes;
-			}
-		}
-		/* read the next entry in the /proc directory */
-		drp = readdir(dir);
-	}
-	/* close /proc directory */
-	closedir(dir);
-	return SUCCESS;
-}
-
-/* Gets the IO stats of a specified process (parameters are pid and io_info) */
-int process_IO_stat_read(int pid, struct io_stats *io_info) {
-	FILE *fp;
-	char filename[128], line[256];
-	sprintf(filename, IO_STAT_FILE, pid);
-	if ((fp = fopen(filename, "r")) == NULL) {
-		fprintf(stderr, "Error: Cannot open %s.\n", filename);
-		return FAILURE;
-	}
-	io_info->read_bytes = 0;
-	io_info->write_bytes = 0;
-	while (fgets(line, 256, fp) != NULL) {
-		if (!strncmp(line, "read_bytes:", 11)) {
-			sscanf(line + 12, "%llu", &io_info->read_bytes);
-		}
-		if (!strncmp(line, "write_bytes:", 12)) {
-			sscanf(line + 13, "%llu", &io_info->write_bytes);
-		}
-		if ((io_info->read_bytes * io_info->write_bytes) != 0) {
-			break;
-		}
-	}
-	fclose(fp);
-	return SUCCESS;
-}
-
-/* Calculates the system network energy consumption; updates net statistics values; return the network energy consumption (in milliJoule) */
-float sys_net_energy(struct net_stats *stats_before, struct net_stats *stats_after) {
-	unsigned long long rcv_bytes, send_bytes;
-	rcv_bytes = stats_after->rcv_bytes - stats_before->rcv_bytes;
-	send_bytes = stats_after->send_bytes - stats_before->send_bytes;
-	float enet = ((rcv_bytes * E_NET_RCV_PER_KB) + (send_bytes * E_NET_SND_PER_KB)) / 1024;
-	/* update the net_stat_before values by the current values */
-	stats_before->rcv_bytes = stats_after->rcv_bytes;
-	stats_before->send_bytes = stats_after->send_bytes;
-	return enet;
-}
-
-/* Calculates the system disk energy consumption; updates io statistics values; return the disk energy consumption (in milliJoule) */
-float sys_disk_energy(struct io_stats *stats_before, struct io_stats *stats_after) {
-	unsigned long long read_bytes, write_bytes;
-
-	read_bytes = stats_after->read_bytes - stats_before->read_bytes;
-	write_bytes = stats_after->write_bytes - stats_before->write_bytes;
-
-	float edisk = ((read_bytes * E_DISK_R_PER_KB) + (write_bytes * E_DISK_W_PER_KB)) / 1024;
-
-	/* update the io_stat_before values by the current values */
-	stats_before->read_bytes = stats_after->read_bytes;
-	stats_before->write_bytes = stats_after->write_bytes;
-	return edisk;
-}
-
-//Function for increase dynamically a string concatenating strings at the end
-//It free the memory of the first pointer if not null
-char* concat_and_free(char **s1, const char *s2) {
-	char *result = NULL;
-	unsigned int new_lenght= strlen(s2)+1; //+1 for the null-terminator;
-	if(*s1 != NULL){
-		new_lenght+= strlen(*s1);//current lenght
-		if(new_lenght> malloc_usable_size(*s1)){
-			result = (char *) malloc(new_lenght);
-			strcpy(result, *s1);
-			free(*s1);
-		}else{
-			result = *s1;
-		}
-	}else{
-		result = malloc(new_lenght);
-		result[0]='\0';
-	}
-	//in real code you would check for errors in malloc here 
-	strcat(result, s2);
-	return result;
-}
-
-/* get the cpu freq counting; return the cpu energy since the system's last booting 
- * if supported assigned to 0, means this metric is not supported and not need to call this function again
- */
-float CPU_energy_read(int *supported) { 
-	/* read the system cpu energy based on given max- and min- cpu energy, and frequencies statistics */
-	FILE *fp;
-	char line[32] = {'\0'};
-	DIR *dir;
-	int i, max_i;
-	struct dirent *dirent;
-	char *cpu_freq_file = NULL;
-	float energy_each, energy_total;
-	unsigned long long tmp;
-	unsigned long long freqs[16];
-	/* check if system support cpu freq statistics */
-	fp = fopen("/sys/devices/system/cpu/cpu0/cpufreq/stats/time_in_state", "r");
-	if(fp == NULL) {
-		printf("ERROR: CPU frequency statistics are not supported.\n");
-		*supported=0; 
-		return 0.0;
-	}
-	energy_total = 0.0;
-	float power_range = MAX_CPU_POWER - MIN_CPU_POWER;
-	dir = opendir("/sys/devices/system/cpu");
-	if(!dir) {
-		printf("ERROR: Could not open directory /sys/devices/system/cpu\n");
-		return 0.0;
-	}
-	while ((dirent = readdir(dir))) {
-		/* for each entry name starting by cpuxx */
-		if (strncmp(dirent->d_name,"cpu", 3) != 0)
-			continue;
-		cpu_freq_file=concat_and_free(&cpu_freq_file, "/sys/devices/system/cpu/");
-		cpu_freq_file=concat_and_free(&cpu_freq_file, dirent->d_name);
-		cpu_freq_file=concat_and_free(&cpu_freq_file, "/cpufreq/stats/time_in_state");
-		fp = fopen(cpu_freq_file, "r");
-		if(!fp)
-			continue;
-		for (i = 0; !feof(fp) && (i <= 15); i++) {
-			if(fgets(line, 32, fp) == NULL)
-				break;
-			sscanf(line, "%llu %llu", &tmp, &freqs[i]);
-			/* each line has a pair like "<frequency> <time>", which means this CPU spent <time> usertime at <frequency>.
-			unit of <time> is 10ms */
-		}
-		max_i = i - 1;
-		fclose(fp);
-		energy_total = MIN_CPU_POWER;
-		for (i = 0; i <= max_i; i++) {
-			energy_each = ( power_range / max_i) * freqs[i] ; // instant measure is in WATTs. The energy instant W x time s = energy consumption J
-// 			energy_each = (MAX_CPU_POWER - power_range * i / max_i) * freqs[i] * 10.0; // in milliJoule
-			energy_total += energy_each; 
-		}
-		//energy consumption is prop to CV^2 f, where C is the capacitance, V is the voltage and f is the frecuency
-	}
-	if(cpu_freq_file!= NULL ) free(cpu_freq_file);
-	closedir(dir);
-	return energy_total;
-}
-
-/* init perf counter for hardware cache misses; get the file descriptors for all CPUs */
-void create_perf_stat_counter(void) {
-	/* get the nubmer of CPUs */
-	nr_cpus = sysconf(_SC_NPROCESSORS_ONLN);
-	struct perf_event_attr attr; //hardware L2 cache miss
-	memset(&attr, 0, sizeof(struct perf_event_attr));
-	attr.type =	PERF_TYPE_HARDWARE; 
-	attr.config = PERF_COUNT_HW_CACHE_MISSES;
-	attr.read_format = PERF_FORMAT_TOTAL_TIME_ENABLED | PERF_FORMAT_TOTAL_TIME_RUNNING;
-	attr.inherit = 1;
-	attr.disabled = 0;
-	attr.enable_on_exec = 1;
-	attr.size = sizeof(attr);
-	/* The counter measures the CPU L2 cache misses; return the file descriptor for the counter */
-	const int pid = -1;
-	int mcpu;
-	const int mgroup_fd = -1;
-	const unsigned int mflags=0;	
-	for (mcpu = 0; mcpu < nr_cpus; mcpu++)
-		fd[mcpu] = syscall(__NR_perf_event_open, &attr, pid, mcpu,  mgroup_fd, mflags);
-}
-
-/* read the perf counter with given file descriptor */
-unsigned long long read_counter(int fd) {
-	unsigned long long single_count[3];
-	size_t res;
-	if (fd <= 0)
-		return 0;
-	res = read(fd, single_count, 3 * sizeof(unsigned long long));
-	if(res == 3 * sizeof(unsigned long long)) {
-		return single_count[0];
-	}
-	return 0;
-}
-
-/* read and add all memory counters for each CPU */
-unsigned long long memory_counter_read(void) {
-	int i;
-	unsigned long long result=0;
-	for (i = 0; i < nr_cpus; i++)
-		result += read_counter(fd[i]);
-	return result;
 }

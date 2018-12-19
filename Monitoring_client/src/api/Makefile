@@ -43,7 +43,7 @@ LFLAGS =  -lm $(PAPI) $(APR) $(LDLIBS)
 NVML ?= 0
 ifneq ($(NVML),1)
 	override NVML=0
-	override filelist := ${SRC}/resources_monitor.o ${SRC}/disk_monitor.o ${SRC}/linux_sys_power.o ${SRC}/mf_api.o
+	override filelist := ${SRC}/linux_resources.o ${SRC}/xlnx_monitor.o ${SRC}/linux_sys_power.o ${SRC}/mf_api.o
 	override LFLAGS = -lm -lpthread $(LDLIBS)
 else
 	NVML_INC = -I${COMMON}/../nvidia_gdk_download/usr/include/nvidia/gdk -lm
@@ -53,7 +53,7 @@ else
 	else
 		$(error Unknown architecture!)
 	endif
-	override filelist :=${SRC}/resources_monitor.o ${SRC}/disk_monitor.o ${SRC}/linux_sys_power.o ${SRC}/nvml_monitor.o ${SRC}/mf_api.o
+	override filelist :=${SRC}/linux_resources.o ${SRC}/xlnx_monitor.o ${SRC}/linux_sys_power.o ${SRC}/nvml_monitor.o ${SRC}/mf_api.o
 	override LFLAGS = -lm -lpthread $(LDLIBS) -lnvidia-ml -L $(NVML_LIB)
 endif
 

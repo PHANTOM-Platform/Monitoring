@@ -310,10 +310,13 @@ int publish_file(char *URL, char *static_string, char *filename, const char *tok
 		return FAILED;
 	/*open the file, which contains data for publishing */
 	int i = 0;
+	unsigned int max_buffer= 10*320;
+	unsigned int adding_string_len;
 	CURLcode response_code;
 	FILE *fp;
 	char line[320];
-	char *message = (char *) calloc(10 * 320, sizeof(char));
+	char *message = (char *) malloc(max_buffer *sizeof(char));
+	message[0]='\0';
 	char operation[]="POST";
 	/* int curl with meaningless message */
 	CURL *curl = prepare_publish(URL, message, operation, token);
@@ -330,12 +333,29 @@ int publish_file(char *URL, char *static_string, char *filename, const char *tok
 	/* read the lines in the file and send the message for each 10 lines */
 	while(fgets(line, 320, fp) != NULL) {
 		line[strlen(line) - 1] = '\0';
+		adding_string_len=strlen(static_string)+strlen(line);
 		switch(i) {
 			case 0:
+				if(adding_string_len> max_buffer){
+					max_buffer=adding_string_len;
+					message = (char *) realloc(message,max_buffer  * sizeof(char));
+					if(message==NULL){
+						printf("Error allocating memory at publish_file\n");fflush(stdout);
+						exit(0);
+					}
+				}
 				sprintf(message, "[{%s, %s}", static_string, line);
 				i++;
 				break;
 			case 9:
+				if(strlen(message)+adding_string_len> max_buffer){
+					max_buffer+=adding_string_len;
+					message = (char *) realloc(message, max_buffer * sizeof(char));
+					if(message==NULL){
+						printf("Error allocating memory at publish_file\n");fflush(stdout);
+						exit(0);
+					}
+				}
 				sprintf(message + strlen(message), ",{%s, %s}]", static_string, line);
 				curl_easy_setopt(curl, CURLOPT_POSTFIELDS, message);
 				curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long ) strlen(message));
@@ -351,6 +371,14 @@ int publish_file(char *URL, char *static_string, char *filename, const char *tok
 				memset(message, '\0', 10*320);
 				break;
 			default:
+				if(strlen(message)+adding_string_len> max_buffer){
+					max_buffer+=adding_string_len;
+					message = (char *) realloc(message, max_buffer * sizeof(char));
+					if(message==NULL){
+						printf("Error allocating memory at publish_file\n");fflush(stdout);
+						exit(0);
+					}
+				}
 				sprintf(message + strlen(message), ",{%s, %s}", static_string, line);
 				i++;
 				break;

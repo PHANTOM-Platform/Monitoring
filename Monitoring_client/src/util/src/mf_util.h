@@ -28,7 +28,10 @@
 	#define NO_COLOUR "\033[0m"
 //	#define white "\033[0;0m"
 #endif
-	
+
+/*******************************************************************************
+* String functions
+******************************************************************************/
 /** Function for increase dynamically a string concatenating strings at the end
 * It free the memory of the first pointer if not null
 * @return s1 <-- s1 + s2 */
@@ -66,3 +69,12 @@ const char* llintToStr(const long long int x, const int d);
 //It free the memory of the first pointer if not null
 // returns: s1 <- s1 + s2 + s3 + s4
 char* concat_strings(char **s1, const char *s2, const char *s3, const char *s4);
+
+/*******************************************************************************
+* Arithmetic functions
+******************************************************************************/
+int add(int a, int b, _Bool *overflowFlag) ;
+
+long int ladd( long int a, long int b, _Bool *overflowFlag) ;
+
+long long int lladd( long long int a, long long int b, _Bool *overflowFlag);

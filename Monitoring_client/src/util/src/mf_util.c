@@ -316,3 +316,25 @@ char* concat_strings(char **s1, const char *s2, const char *s3, const char *s4){
 	strcat(result, s4);
 	return result;
 }
+
+
+/*******************************************************************************
+* Arithmetic functions
+******************************************************************************/
+int add(int a, int b, _Bool *overflowFlag) {
+        int c = a + b;
+        *overflowFlag = ((a ^ b) >= 0) & ((a ^ c) < 0);
+        return c;
+}
+
+long int ladd( long int a, long int b, _Bool *overflowFlag) {
+        long int c = a + b;
+        *overflowFlag = ((a ^ b) >= 0) & ((a ^ c) < 0);
+        return c;
+}
+
+long long int lladd( long long int a, long long int b, _Bool *overflowFlag) {
+        long long int c = a + b;
+        *overflowFlag = ((a ^ b) >= 0) & ((a ^ c) < 0);
+        return c;
+}

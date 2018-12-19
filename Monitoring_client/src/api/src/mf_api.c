@@ -25,8 +25,8 @@
 #include "mf_util.h"
 #include "mf_parser.h"
 #include "publisher.h"
-#include "resources_monitor.h"
-#include "disk_monitor.h"
+#include "linux_resources.h"
+#include "xlnx_monitor.h"
 #include "linux_sys_power.h"
 
 #ifdef NVML
@@ -117,7 +117,6 @@ int mf_user_metric_with_timestamp(char *user_defined_time_stamp, char *metric_na
 		printf("ERROR: Could not create file: %s\n", FileName);
 		return 0;
 	}
-
 	fprintf(fp, "\"local_timestamp\":\"%s\", \"%s\":%s\n", user_defined_time_stamp, metric_name, value);
 	/*close the file*/
 	fclose(fp);
@@ -366,10 +365,10 @@ char* mf_send(const char *server,const  char *application_id,const  char *compon
 	char *metric_URL = (char *) malloc(200);
 	char *static_string = (char *) malloc(200);
 	char *filename = (char *) malloc(200);
-		if(filename==NULL) {
-			printf("Failed to allocate memory.\n");
-			exit(1);
-		}
+	if(filename==NULL) {
+		printf("Failed to allocate memory.\n");
+		exit(1);
+	}
 	metric_URL[0]='\0';
 	metric_URL=concat_and_free(&metric_URL, server);
 	metric_URL=concat_and_free(&metric_URL, "/v1/phantom_mf/metrics");
@@ -390,7 +389,7 @@ char* mf_send(const char *server,const  char *application_id,const  char *compon
 			filename=concat_and_free(&filename, DataPath);
 			filename=concat_and_free(&filename, "/");
 			filename=concat_and_free(&filename, drp->d_name);
-
+// printf(" processing file %s\n",filename);
 			//static_string=concat_and_free(&static_string, "{");//****
 			static_string=concat_and_free(&static_string, "\"WorkflowID\":\"");//****
 			static_string=concat_and_free(&static_string, application_id);
@@ -423,7 +422,8 @@ char* mf_send(const char *server,const  char *application_id,const  char *compon
 		free(filename);
 	filename=NULL;
 	closedir(dir);
-	if(logFile != NULL) fclose(logFile); 
+	if(logFile != NULL) 
+		fclose(logFile); 
 	logFile=NULL;
 
 	/*remove the data directory if user unset keep_local_data_flag */
@@ -476,15 +476,20 @@ static int api_prepare(char *Data_path){
 
 static void *MonitorStart(void *arg) {
 	each_metric *metric = (each_metric*) arg;
+// 	printf("Starting monitoring modules\n");fflush(stdout);
 	if(strcmp(metric->metric_name, METRIC_NAME_1) == 0) {
-		resources_monitor(pid, DataPath, metric->sampling_interval);
+// 		printf("Starting monitoring modul %s\n",METRIC_NAME_1);fflush(stdout);
+		linux_resources(pid, DataPath, metric->sampling_interval);
 	} else if(strcmp(metric->metric_name, METRIC_NAME_2) == 0) {
-		disk_monitor(pid, DataPath, metric->sampling_interval);
+// 		printf("Starting monitoring modul %s\n",METRIC_NAME_2);fflush(stdout);
+		xlnx_monitor(DataPath, metric->sampling_interval);
 	} else if(strcmp(metric->metric_name, METRIC_NAME_3) == 0) {
+// 		printf("Starting monitoring modul %s\n",METRIC_NAME_3);fflush(stdout);
 		power_monitor(pid, DataPath, metric->sampling_interval);
 #ifdef NVML
 #if NVML == yes
 	} else if(strcmp(metric->metric_name, METRIC_NAME_4) == 0) {
+// 		printf("Starting monitoring modul %s\n",METRIC_NAME_4);fflush(stdout);
 		nvml_monitor(pid, DataPath, metric->sampling_interval);
 #endif
 #endif
@@ -494,7 +499,7 @@ static void *MonitorStart(void *arg) {
 		printf(" \"%s\", \"%s\", \"%s\"", METRIC_NAME_1, METRIC_NAME_2, METRIC_NAME_3);
 #ifdef NVML
 #if NVML == yes
-	printf(", \"%s\"", METRIC_NAME_4);
+		printf(", \"%s\"", METRIC_NAME_4);
 #endif
 #endif
 		printf("\n");
@@ -521,7 +526,7 @@ int get_config_parameters(const char *server,const char *platform_id,const char 
 		
 	unsigned int total_loaded_mf_configs =0;
 	struct json_mf_config **mf_config=NULL;
-	const char *resource_server="localhost:8600";// 141.58.0.8
+	const char *resource_server="141.58.0.8:2780";//examples: 141.58.0.8:2780 or localhost:8600
 	
 	char *html=query_mf_config(resource_server, platform_id, token);
 	parse_mf_config_json(html, &mf_config, &total_loaded_mf_configs);
@@ -750,12 +755,12 @@ static int api_prepare_loc(char *Data_path){
 	return pid;
 }
 
-int mf_user_metric_loc(char *user_metrics){
+int mf_user_metric_loc_type(char *user_metrics, const char *datatype){
 	if(DataPath[0] == '\0')
 		pid = api_prepare_loc(DataPath);
 	/*create and open the file*/
 	char FileName[256] = {'\0'};
-	sprintf(FileName, "%s/%s", DataPath, "user_defined");
+	sprintf(FileName, "%s/%s", DataPath, datatype);
 	FILE *fp = fopen(FileName, "a"); //append data to the end of the file
 	if (fp == NULL) {
 		printf("ERROR: Could not create file: %s\n", FileName);
@@ -773,6 +778,10 @@ int mf_user_metric_loc(char *user_metrics){
 	return pid;
 }
 
+int mf_user_metric_loc(char *user_metrics ){
+	int result = mf_user_metric_loc_type(user_metrics ,"user_defined" );
+	return result;
+}
 
 
 void user_metrics_buffer(char *currentid, struct Thread_report single_thread_report ){
@@ -846,7 +855,7 @@ void register_end_component(char *currentid, struct Thread_report single_thread_
 	user_metrics=myconcat(&user_metrics,",\"", comp_end, "\":\"", strend_time,"\"");
 
 /* MONITORING END */
-	mf_user_metric_loc(user_metrics);
+	mf_user_metric_loc_type( user_metrics, "duration_components");
 	if(user_metrics!=NULL) free(user_metrics); 
 	user_metrics=NULL;
 ///* MONITORING I'd like to store here the total nr. of completed loops --> nrLoops */

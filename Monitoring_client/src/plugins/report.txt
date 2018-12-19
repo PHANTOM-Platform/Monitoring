@@ -1,0 +1,12 @@
+
+
+X Board_power  
+X CPU_perf          papi.h
+X CPU_temperature   sensors.h 
+  Linux_resources   /proc/... 
+V Linux_sys_power 
+  NVML
+X RAPL_power  
+  xilinx
+
+

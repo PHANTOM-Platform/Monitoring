@@ -131,9 +131,8 @@ int mf_CPU_temperature_init(Plugin_metrics *data, char **events, size_t num_even
 	if(event_i == 0) {
 		fprintf(stderr, "ERROR: No events can be measured at mf_CPU_temperature_init.\n");
 		return FAILURE;
-	} else {
-		features_list->data->num_events = event_i;
 	}
+	features_list->data->num_events = event_i;
 	return SUCCESS;
 }
 

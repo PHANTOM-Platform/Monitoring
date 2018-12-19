@@ -13,12 +13,12 @@ var router = express.Router();
  * @apiSuccess {String} platformID.metrics            Name and status (on/off) of metrics of the plugin
  *
  * @apiExample {curl} Example usage:
- *     curl -i http://mf.excess-project.eu:3033/v1/phantom_rm/configs
+ *     curl -i http://localhost:3033/v1/phantom_rm/configs
  *
  * @apiSuccessExample Success-Response:
  *     HTTP/1.1 200 OK
  *     {
- *          "node01.excess-cluster":{
+ *          "node01":{
  *              "mf_plugin_Board_power":{
  *                  "status":"on",
  *                  "sampling_interval":"1000000000ns",
@@ -58,24 +58,28 @@ router.get('/', function(req, res, next) {
         size = 100,
         json = {};
 
-    client.search({
+    client.count({
         index: 'mf',
         type: 'configurations',
-        searchType: 'count'
+        body:{"query":{"match_all": {} }}
     }, function(error, response) {
         if (error) {
-            res.status(500);
-            return next(error);
+            res.status(501); 
+            res.json(" " +error);
+            return;
         }
         if (response.hits !== undefined) {
             size = response.hits.total;
-        }
+        }else{
+			size=0;
+		}
         if (size === 0) {
-            res.status(404);
-            json.error = "No configurations found.";
-            res.json(json);
+            res.status(404); 
+            res.json( "No configurations found.");
             return;
-        }
+        }else{
+			console.log(" total configurations found" +size);
+		}
 
         client.search({
             index: 'mf',
@@ -83,8 +87,9 @@ router.get('/', function(req, res, next) {
             size: size
         }, function(error, response) {
             if (error) {
-                res.status(500);
-                return next(error);
+                res.status(502);
+                res.json(" " +error);
+				return;
             }
             if (response.hits !== undefined) {
                 var results = response.hits.hits;
@@ -115,7 +120,7 @@ function get_details(results) {
  * @apiParam {String} platformID                  Unique platform identifier
  *
  * @apiExample {curl} Example usage:
- *     curl -i http://mf.excess-project.eu:3033/v1/phantom_rm/configs/node01.excess-cluster
+ *     curl -i http://localhost:3033/v1/phantom_rm/configs/node01.excess-cluster
  *
  * @apiSuccess (body) {String} status             Status of the plugin (on/off)
  * @apiSuccess (body) {String} sampling_interval  Sampling interval of the plugin (in nanosecond)
@@ -181,7 +186,7 @@ router.get('/:platformID', function(req, res, next) {
  * @apiParam {String} metrics            Name and status (on/off) of metrics of the plugin
  *
  * @apiExample {curl} Example usage:
- *     curl -i http://mf.excess-project.eu:3033/v1/phantom_rm/configs/node01.excess-cluster
+ *     curl -i http://localhost:3033/v1/phantom_rm/configs/node01.excess-cluster
  *
  * @apiParamExample {json} Request-Example:
  *     {
@@ -207,7 +212,7 @@ router.get('/:platformID', function(req, res, next) {
  * @apiSuccessExample Success-Response:
  *     HTTP/1.1 200 OK
  *     {
- *       "href": "http://mf.excess-project.eu:3033/v1/phantom_rm/configs/node01.excess-cluster",
+ *       "href": "http://localhost:3033/v1/phantom_rm/configs/node01.excess-cluster",
  *     }
  *
  * @apiError StorageError Given configuration could not be stored.

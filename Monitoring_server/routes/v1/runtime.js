@@ -12,7 +12,7 @@ var router = express.Router();
  * @apiParam {String} experimentID  Identifier of an experiment
  *
  * @apiExample {curl} Example usage:
- *     curl -i http://mf.excess-project.eu:3033/v1/phantom_mf/runtime/ms2/AVZ-5cqVGYwmTvCuSqZC
+ *     curl -i http://localhost:3033/v1/phantom_mf/runtime/ms2/AVZ-5cqVGYwmTvCuSqZC
  *
  * @apiSuccess {String} workflow           Identifier of the workflow
  * @apiSuccess {String} start              Start local timestamp of the entire experiment
@@ -189,7 +189,7 @@ router.get('/:workID/:expID', function(req, res, next) {
  * @apiParam {String} experimentID    Identifier of an experiment
  *
  * @apiExample {curl} Example usage:
- *     curl -i http://mf.excess-project.eu:3033/v1/phantom_mf/runtime/ms2/t1/AVSbT0ChGMPeuCn4QYjq
+ *     curl -i http://localhost:3033/v1/phantom_mf/runtime/ms2/t1/AVSbT0ChGMPeuCn4QYjq
  *
  * @apiSuccess {String} start     Start timestamp of the specific task and experiment
  * @apiSuccess {String} end       End timestamp of the specific task and experiment

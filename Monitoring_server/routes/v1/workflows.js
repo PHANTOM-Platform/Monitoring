@@ -13,16 +13,16 @@ var router = express.Router();
  * @apiSuccess {String} workflowID.href  Resource location of the given workflow
  *
  * @apiExample {curl} Example usage:
- *     curl -i http://mf.excess-project.eu:3033/v1/phantom_mf/workflows
+ *     curl -i http://localhost:3033/v1/phantom_mf/workflows
  *
  * @apiSuccessExample Success-Response:
  *     HTTP/1.1 200 OK
  *     {
  *       "ms2": {
- *         "href": "http://mf.excess-project.eu:3033/v1/phantom_mf/workflows/ms2"
+ *         "href": "http://localhost:3033/v1/phantom_mf/workflows/ms2"
  *       },
  *       "infrastructure": {
- *         "href": "http://mf.excess-project.eu:3033/v1/phantom_mf/workflows/infrastructure"
+ *         "href": "http://localhost:3033/v1/phantom_mf/workflows/infrastructure"
  *       }
  *     }
  *
@@ -34,27 +34,35 @@ var router = express.Router();
  *       "error": "No workflows found."
  *     }
  */
+	const contentType_text_plain = 'text/plain';
+	
 router.get('/', function(req, res, next) {
-    var client = req.app.get('elastic'),
-        size = 1000,
-        json = {};
-
-    client.search({
+//     var client = req.app.get('elastic'),
+//         size = 1000,
+//         json = {};
+	var elasticsearch = require('elasticsearch');
+	var client = new elasticsearch.Client({
+		host: "localhost:9400",
+		log: 'error'
+	});
+    client.count({
         index: 'mf',
         type: 'workflows',
-        searchType: 'count'
+        body:{"query":{"match_all": {} }}
     }, function(error, response) {
         if (error) {
-            res.status(500);
-            return next(error);
+			res.writeHead(500, { 'Content-Type': contentType_text_plain });
+            res.end("error: " + error );
+            return;
         }
-        if (response.hits !== undefined) {
-            size = response.hits.total;
-        }
-        if (size === 0) {
-            res.status(404);
-            json.error = "No workflows found.";
-            res.json(json);
+        if (response.count !== undefined) {
+            size = response.count;
+        }else{
+			size = 0;
+		}
+		if (size === 0) {
+            res.writeHead(500, { 'Content-Type': contentType_text_plain });
+            res.end("No workflows found.");
             return;
         }
 
@@ -64,14 +72,16 @@ router.get('/', function(req, res, next) {
             size: size
         }, function(error, response) {
             if (error) {
-                res.status(500);
-                return next(error);
+				res.writeHead(500, { 'Content-Type': contentType_text_plain });
+				res.end(" "+next(error));
+				return; 
             }
             if (response.hits !== undefined) {
                 var results = response.hits.hits;
                 json = get_details(results);
             }
-            res.json(json);
+            res.writeHead(200, { 'Content-Type': contentType_text_plain });
+            res.end( " "+ JSON.stringify( json, null, 4) );
         });
     });
 });
@@ -86,12 +96,12 @@ function get_details(results) {
     keys.forEach(function(key) {
         var source = results[key]._source,
             item = JSON.parse(JSON.stringify(source));
-        if (is_defined(source.tasks)) {
-            item.tasks = [];
-            for (var i in source.tasks) {
-                item.tasks.push(source.tasks[i].name);
-            }
-        }
+//         if (is_defined(source.tasks)) {
+//             item.tasks = [];
+//             for (var i in source.tasks) {
+//                 item.tasks.push(source.tasks[i].name);
+//             }
+//         }
         response[results[key]._id] = item;
     });
     return response;
@@ -106,7 +116,7 @@ function get_details(results) {
  * @apiParam {String} workflowID     Identifier of a workflow
  *
  * @apiExample {curl} Example usage:
- *     curl -i http://mf.excess-project.eu:3033/v1/phantom_mf/workflows/ms2
+ *     curl -i http://localhost:3033/v1/phantom_mf/workflows/ms2
  *
  * @apiSuccess (body) {String} application     Identifier of the workflow
  * @apiSuccess (body) {String} author          Author name if provided while registering a new workflow
@@ -156,11 +166,13 @@ router.get('/:id', function(req, res, next) {
         id: id
     }, function(error, response) {
         if (response.found) {
-            json = response._source;
+			res.writeHead(200, {"Content-Type": "application/json"});
+            res.end(JSON.stringify(response._source)+"\n");
         } else {
-            json.error = "Workflow with the ID '" + id + "' not found.";
+			res.writeHead(400, {"Content-Type": "application/json"});
+            res.end("Workflow with the ID '" + id + "' not found.\n");
         }
-        res.json(json);
+//         res.json(json);
     });
 });
 
@@ -173,7 +185,7 @@ router.get('/:id', function(req, res, next) {
  * @apiParam {String} workflowID     Identifier of the workflow 
  *
  * @apiExample {curl} Example usage:
- *     curl -i http://mf.excess-project.eu:3033/v1/phantom_mf/workflows/ms2
+ *     curl -i http://localhost:3033/v1/phantom_mf/workflows/ms2
  *
  * @apiParamExample {json} Request-Example:
  *     {
@@ -208,7 +220,7 @@ router.get('/:id', function(req, res, next) {
  * @apiSuccessExample Success-Response:
  *     HTTP/1.1 200 OK
  *     {
- *       "href": "http://mf.excess-project.eu:3033/v1/phantom_mf/workflows/ms2",
+ *       "href": "http://localhost:3033/v1/phantom_mf/workflows/ms2",
  *     }
  *
  * @apiError StorageError Given workflow could not be stored.

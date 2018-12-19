@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "RESTful service of the PHANTOM monitoring framework",
   "title": "PHANTOM Monitoring API",
-  "url" : "http://mf.excess-project.eu:3033/v1/phantom_mf",
+  "url" : "http://localhost:3033/v1/phantom_mf",
   "header": {
     "title": "PHANTOM Monitoring API"
   },

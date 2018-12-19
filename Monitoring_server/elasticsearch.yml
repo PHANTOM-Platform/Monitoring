@@ -107,9 +107,10 @@ script.engine.groovy.inline.update: on
 script.painless.regex.enabled: true
 # ----------------------------- WebScokets support --------------------------
 access-control-allow-origin: "*"
+http.cors.allow-origin: "*"
+access-control-allow-headers: "client-security-token, Authorization, Origin, X-Requested-With, Content-Type, Content-Length, X-User, Accept"
+http.cors.allow-headers: "client-security-token, Authorization, Origin, X-Requested-With, Content-Type, Content-Length, X-User, Accept"
 http.cors.enabled: true
-http.cors.allow-origin: "*" 
-#http.cors.allow-headers: "X-Requested-With, Content-Type, Content-Length, X-User"
 #For the websockets 
 changes.port: 9800
 #ATTENTION: The websockets plugin needs be added security permissions, please look at set-websockets.sh

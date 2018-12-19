@@ -43,6 +43,64 @@ var port = '3033',
 app.set('mf_server', 'http://' + hostname + ':' + port + '/v1');
 //app.set('pwm_idx', 'power_dreamcloud');
 
+
+
+
+//*********************************************************
+function retrieve_file(filePath,res){
+	var fs = require('fs');
+	var path = require('path');
+	var extname = path.extname(filePath);
+	var contentType = 'text/html';
+	switch (extname) {
+		case '.html':
+			contentType = 'text/html';
+			break;			
+		case '.js':
+			contentType = 'text/javascript';
+			break;
+		case '.css':
+			contentType = 'text/css';
+			break;
+		case '.json':
+			contentType = 'application/json';
+			break;
+		case '.png':
+			contentType = 'image/png';
+			break;
+		case '.jpg':
+			contentType = 'image/jpg';
+			break;
+		case '.wav':
+			contentType = 'audio/wav';
+			break;
+	}
+	fs.readFile(filePath, function(error, content) {
+		if (error) {
+			if(error.code == 'ENOENT'){
+				fs.readFile('./404.html', function(error, content) {
+					res.writeHead(404, { 'Content-Type': contentType });
+					res.end(content+ "../web-resourcemanager/phantom.css", 'utf-8');
+				});
+			} else {
+				res.writeHead(500);
+				res.end('Sorry, check with the site admin for error: '+error.code+' ..\n');
+				res.end(); 
+			}
+		} else {
+			res.writeHead(200, { 'Content-Type': contentType });
+			res.end(content, 'utf-8');
+		}
+	});
+}
+//**********************************************************
+
+app.get('/monitoringserver.html', function(req, res) {
+	var filePath = 'web-monitoring/monitoringserver.html';
+	retrieve_file(filePath,res);
+});
+
+
 app.use(logger('combined', {
   skip: function (req, res) { return res.statusCode < 400; }
 }));

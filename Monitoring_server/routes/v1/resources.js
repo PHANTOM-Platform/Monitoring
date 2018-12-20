@@ -8,36 +8,35 @@ var router = express.Router();
 * @apiGroup RM_Resources
 *
 * @apiExample {curl} Example usage:
-*     curl -i http://localhost:3033/v1/phantom_rm/resources
+*	 curl -i http://localhost:3033/v1/phantom_rm/resources
 *
 * @apiSuccessExample Success-Response:
-*     HTTP/1.1 200 OK
-*     {
-*        "alexlaptop": {
-*           "href": "http://localhost:3033/v1/phantom_rm/resources/alexlaptop"
-*        },
-*        "movidius": {
-*           "href": "http://localhost:3033/v1/phantom_rm/resources/movidius"
-*        },
-*        "excesscluster": {
-*           "href": "http://localhost:3033/v1/phantom_rm/resources/excesscluster"
-*        }
-*     }
+*	 HTTP/1.1 200 OK
+*	 {
+*		"alexlaptop": {
+*		   "href": "http://localhost:3033/v1/phantom_rm/resources/alexlaptop"
+*		},
+*		"movidius": {
+*		   "href": "http://localhost:3033/v1/phantom_rm/resources/movidius"
+*		},
+*		"excesscluster": {
+*		   "href": "http://localhost:3033/v1/phantom_rm/resources/excesscluster"
+*		}
+*	 }
 *
 * @apiError InternalSeverError No results found.
 *
 * @apiErrorExample Error-Response:
-*     HTTP/1.1 500 Internal Sever Error
-*     {
-*       "error": "No resources found."
-*     }
+*	 HTTP/1.1 500 Internal Sever Error
+*	 {
+*	   "error": "No resources found."
+*	 }
 */
 router.get('/', function(req, res, next) {
 // 	var client = req.app.get('elastic'),
 // 		mf_server = req.app.get('mf_server'),
 // 		size = 1000,
 // 		json = {};
-
 	var mf_server = "localhost:9400";
 	var elasticsearch = require('elasticsearch');
 	var client = new elasticsearch.Client({
@@ -45,45 +44,45 @@ router.get('/', function(req, res, next) {
 		log: 'error'
 	}); 
 	client.count({
-        index: 'mf',
-        type: 'resources',
-        body:{"query":{"match_all": {} }}
-    }, function(error, response) { 
-        if (error) {
+		index: 'mf',
+		type: 'resources',
+		body:{"query":{"match_all": {} }}
+	}, function(error, response) { 
+		if (error) {
 			res.writeHead(500, { 'Content-Type': contentType_text_plain });
-            res.end("error: " + error );
-            return;
-        }
-        if (response.count !== undefined) {
-            size = response.count;
-        }else{
+			res.end("error: " + error );
+			return;
+		}
+		if (response.count !== undefined) {
+			size = response.count;
+		}else{
 			size = 0;
 		}
 		if (size === 0) {
-            res.writeHead(500, { 'Content-Type': contentType_text_plain });
-            res.end("No resources found.");
-            return;
-        }
+			res.writeHead(500, { 'Content-Type': contentType_text_plain });
+			res.end("No resources found.");
+			return;
+		}
 
-        client.search({
-            index: 'mf',
-            type: 'resources',
-            size: size
-        }, function(error, response) {
-            if (error) {
+		client.search({
+			index: 'mf',
+			type: 'resources',
+			size: size
+		}, function(error, response) {
+			if (error) {
 				res.writeHead(500, { 'Content-Type': contentType_text_plain });
 				res.end(" "+next(error));
-				return; 
-            }
-            if (response.hits !== undefined) {
-                var results = response.hits.hits;
-				console.log("res"+results);	
-                json = get_resource(mf_server, results);
-            }
-            res.writeHead(200, { 'Content-Type': contentType_text_plain });
-            res.end( " "+ JSON.stringify( json, null, 4) );
-        });
-    });  
+				return;
+			}
+			if (response.hits !== undefined) {
+				var results = response.hits.hits;
+				console.log("res"+results);
+				json = get_resource(mf_server, results);
+			}
+			res.writeHead(200, { 'Content-Type': contentType_text_plain });
+			res.end( " "+ JSON.stringify( json, null, 4) );
+		});
+	});  
 });
 
 function get_resource(mf_server, results) {
@@ -105,48 +104,47 @@ function get_resource(mf_server, results) {
 * @apiName GetResourcesByPlatformID
 * @apiGroup RM_Resources
 *
-* @apiParam {String} platformID                  Unique platform identifier
+* @apiParam {String} platformID				  Unique platform identifier
 * 
 * @apiExample {curl} Example usage:
-*     curl -i http://localhost:3033/v1/phantom_rm/resources/excesscluster
+*	 curl -i http://localhost:3033/v1/phantom_rm/resources/excesscluster
 *
 * @apiSuccessExample Success-Response:
-*     HTTP/1.1 200 OK
-*     {
-*        "nodes": [
-*           {
-*              "id": "node01",
-*              "cpus": [
-*                 {
-*                    "id": "cpu0",
-*                    "cores": [
-*                       {
-*                          "id": "core0",
-*                          "pwMode": 0,
-*                          "status": "allocated",
-*                          "availTime": "2016-10-21T14:56:02.304"
-*                       },
-*                       {
-*                          "id": "core1",
-*                          "pwMode": 0,
-*                          "status": "allocated",
-*                          "availTime": "2016-10-21T15:21:07.567"
-*                       },
-*                       ...
-*                    ]
-*                 }
-*              ]
-*           }
-*        ]
-*     }
+*	 HTTP/1.1 200 OK
+*	 {
+*		"nodes": [
+*		   {
+*			  "id": "node01",
+*			  "cpus": [
+*				 {
+*					"id": "cpu0",
+*					"cores": [
+*					   {
+*						  "id": "core0",
+*						  "pwMode": 0,
+*						  "status": "allocated",
+*						  "availTime": "2016-10-21T14:56:02.304"
+*					   }, {
+*						  "id": "core1",
+*						  "pwMode": 0,
+*						  "status": "allocated",
+*						  "availTime": "2016-10-21T15:21:07.567"
+*					   },
+*					   ...
+*					]
+*				 }
+*			  ]
+*		   }
+*		]
+*	 }
 *
 * @apiError PlatformNotAvailable Given platformID does not exist.
 *
 * @apiErrorExample Error-Response:
-*     HTTP/1.1 404 Not Found
-*     {
-*       "error": "Configuration for the platform is not found."
-*     }
+*	 HTTP/1.1 404 Not Found
+*	 {
+*	   "error": "Configuration for the platform is not found."
+*	 }
 */
 router.get('/:platformID', function(req, res, next) {
 	var client = req.app.get('elastic'),
@@ -160,8 +158,7 @@ router.get('/:platformID', function(req, res, next) {
 	}, function(error, response) {
 		if (error) {
 			json.error = "Resources for the platform '" + id + "' is not found.";
-		}
-		else {
+		} else {
 			json = response._source;
 		}
 		res.json(json);
@@ -174,51 +171,50 @@ router.get('/:platformID', function(req, res, next) {
 * @apiName PutResources
 * @apiGroup RM_Resources
 *
-* @apiParam {String} platformID         Unique platform identifier
-* @apiParam {String} [id]               Unique identifier of the resource
-* @apiParam {String} [pwMode]           Power mode of the resource
-* @apiParam {String} [status]           Status of the resource (allocated/free)
-* @apiParam {String} [availTime]        Until when the resource will be free
+* @apiParam {String} platformID		 Unique platform identifier
+* @apiParam {String} [id]			   Unique identifier of the resource
+* @apiParam {String} [pwMode]		   Power mode of the resource
+* @apiParam {String} [status]		   Status of the resource (allocated/free)
+* @apiParam {String} [availTime]		Until when the resource will be free
 *
 * @apiExample {curl} Example usage:
-*     curl -i http://localhost:3033/v1/phantom_rm/resources/excesscluster
+*	 curl -i http://localhost:3033/v1/phantom_rm/resources/excesscluster
 *
 * @apiParamExample {json} Request-Example:
-*     {
-*        "nodes": [
-*           {
-*              "id": "node01",
-*              "cpus": [
-*                 {
-*                    "id": "cpu0",
-*                    "cores": [
-*                       {
-*                          "id": "core0",
-*                          "pwMode": 0,
-*                          "status": "allocated",
-*                          "availTime": "2016-10-21T14:56:02.304"
-*                       },
-*                       {
-*                          "id": "core1",
-*                          "pwMode": 0,
-*                          "status": "allocated",
-*                          "availTime": "2016-10-21T15:21:07.567"
-*                       },
-*                       ...
-*                    ]
-*                 }
-*              ]
-*           }
-*        ]
-*     }
+*	 {
+*		"nodes": [
+*		   {
+*			  "id": "node01",
+*			  "cpus": [
+*				 {
+*					"id": "cpu0",
+*					"cores": [
+*						{
+*						  "id": "core0",
+*						  "pwMode": 0,
+*						  "status": "allocated",
+*						  "availTime": "2016-10-21T14:56:02.304"
+*						}, {
+*						  "id": "core1",
+*						  "pwMode": 0,
+*						  "status": "allocated",
+*						  "availTime": "2016-10-21T15:21:07.567"
+*						},
+*						...
+*					]
+*				 }
+*			  ]
+*		   }
+*		]
+*	 }
 *
 * @apiError StorageError Given resources could not be stored.
 *
 * @apiErrorExample Error-Response:
-*     HTTP/1.1 500 Internal Server Error
-*     {
-*       "error": "Could not change the resources."
-*     }
+*	 HTTP/1.1 500 Internal Server Error
+*	 {
+*	   "error": "Could not change the resources."
+*	 }
 */
 router.put('/:platformID', function(req, res, next) {
 	var mf_server = req.app.get('mf_server'),

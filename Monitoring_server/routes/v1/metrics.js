@@ -174,55 +174,112 @@ router.get('/:workflowID/:taskID/:experimentID', function(req, res, next) {
 * @apiError DatabaseError Elasticsearch specific error message.
 */
 router.post('/', function(req, res, next) {
-	var data = req.body,
-		mf_server = req.app.get('mf_server'),
-		client = req.app.get('elastic'),
-		bulk_data = [];
-	var tmp = {};
-	tmp.index = {};
-	for (i = 0; i != data.length; ++i) {
-		var action = JSON.parse(JSON.stringify(tmp));
-		var index = data[i].WorkflowID;
-		if (data[i].TaskID) {
-			index = index + '_' + data[i].TaskID;
-		} else {
-			index = index + '_all';
-		}
-		/*
-		if(data[i]['@timestamp'] == undefined) {
-		data[i]['@timestamp'] = dateFormat(new Date(), "yyyy-mm-dd'T'HH:MM:ss.l");
-		}*/
-		data[i].server_timestamp = dateFormat(new Date(), "yyyy-mm-dd'T'HH:MM:ss.l");
-		if(data[i].local_timestamp == undefined) {
-			data[i].local_timestamp = data[i].server_timestamp;
-		} else {
-			var tmp_value = parseInt(data[i].local_timestamp);
-			data[i].local_timestamp = dateFormat(new Date(tmp_value), "yyyy-mm-dd'T'HH:MM:ss.l");
+// 	var data = req.body,
+// 		mf_server = req.app.get('mf_server'),
+// 		client = req.app.get('elastic');
+	var bulk_data = [];
+	var data = req.body;
+
+	var mf_server = "localhost:9400";
+	var elasticsearch = require('elasticsearch');
+	var client = new elasticsearch.Client({
+		host: "localhost:9400",
+		log: 'error'
+	}); 
+	
+ 
+	const contentType_text_plain = 'text/plain';
+// 	console.log("data is "+JSON.stringify(data)+"\n");
+// // 			res.end("data is "+JSON.stringify(data)+"\n", 'utf-8');
+// 			res.writeHead(600, { 'Content-Type': contentType_text_plain });
+// 			res.end("data is " +"\n");
+// 			return("data is " +"\n");
+	if(data.length>1){	
+		var tmp = {};
+		tmp.index = {};
+		for (i = 0; i != data.length; ++i) {
+			var action = JSON.parse(JSON.stringify(tmp));
+			var index = data[i].WorkflowID;
+			if (data[i].TaskID) {
+				index = index + '_' + data[i].TaskID;
+			} else {
+				index = index + '_all';
+			}
+			/*
+			if(data[i]['@timestamp'] == undefined) {
+			data[i]['@timestamp'] = dateFormat(new Date(), "yyyy-mm-dd'T'HH:MM:ss.l");
+			}*/
+			data[i].server_timestamp = dateFormat(new Date(), "yyyy-mm-dd'T'HH:MM:ss.l");
+			if(data[i].local_timestamp == undefined) {
+				data[i].local_timestamp = data[i].server_timestamp;
+			} else {
+				var tmp_value = parseInt(data[i].local_timestamp);
+				data[i].local_timestamp = dateFormat(new Date(tmp_value), "yyyy-mm-dd'T'HH:MM:ss.l");
+			}
+			action.index._index = index;
+			action.index._type = data[i].ExperimentID;
+			delete data[i].WorkflowID;
+			delete data[i].ExperimentID;
+			bulk_data.push(action);
+			bulk_data.push(data[i]);
 		}
 
-		action.index._index = index;
-		action.index._type = data[i].ExperimentID;
-		delete data[i].WorkflowID;
-		delete data[i].ExperimentID;
-		bulk_data.push(action);
-		bulk_data.push(data[i]);
+
+		client.bulk({
+			body: bulk_data
+		},function(error, response) {
+			if (error) {
+				res.status(500);
+				return next(error);
+			}
+			var json = [];
+			for (var i in response.items) {
+				json.push(mf_server + '/phantom_mf/profiles/' +
+				response.items[i].create._index.replace('_all', '/all') +
+				'/' + response.items[i].create._type);
+			}
+// 			res.end(JSON.stringify(json));
+			res.end("aaa");
+		});
+	}else{ 
+		var index = data[0].WorkflowID;
+			if (data[0].TaskID) {
+				index = index + '_' + data[0].TaskID;
+			} else {
+				index = index + '_all';
+			}
+			/*
+			if(data[i]['@timestamp'] == undefined) {
+			data[i]['@timestamp'] = dateFormat(new Date(), "yyyy-mm-dd'T'HH:MM:ss.l");
+			}*/
+			data[0].server_timestamp = dateFormat(new Date(), "yyyy-mm-dd'T'HH:MM:ss.l");
+			if(data[0].local_timestamp == undefined) {
+				data[0].local_timestamp = data[i].server_timestamp;
+			} else {
+				var tmp_value = parseInt(data[0].local_timestamp);
+				data[0].local_timestamp = dateFormat(new Date(tmp_value), "yyyy-mm-dd'T'HH:MM:ss.l");
+			}
+		
+		var mytype=data[0].ExperimentID;
+		delete data[0].WorkflowID;
+		delete data[0].ExperimentID;
+		var bulk_data = data[0];
+		client.index({
+			index: index,
+			type: mytype,
+			body: bulk_data
+		}, function(error, response) {
+			if (error !== 'undefined') { 
+				res.status(400);
+				res.end("error: "+error +"\n");
+			} else {
+				res.status(420);
+				res.end("error: "+error +"\n");
+			}
+		});//end query client.index
+		res.status(200);
+		res.end("success"+"\n");
 	}
-
-	client.bulk({
-		body: bulk_data
-	},function(error, response) {
-		if (error) {
-			res.status(500);
-			return next(error);
-		}
-		var json = [];
-		for (var i in response.items) {
-			json.push(mf_server + '/phantom_mf/profiles/' +
-			response.items[i].create._index.replace('_all', '/all') +
-			'/' + response.items[i].create._type);
-		}
-		res.json(json);
-	});	
 });
 
 /**

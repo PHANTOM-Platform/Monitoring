@@ -1,0 +1,33 @@
+## Copyright 2014-2018 University of Stuttgart
+## by J.M. Montañana
+
+appname := test
+COMMON := $(PWD)
+
+ARCH   := $(shell getconf LONG_BIT)
+
+xlnx = $(COMMON)
+MFUTIL = -L$(COMMON)/../../utils -lmfutil
+
+xlnx_INC = -I$(COMMON)
+MFUTIL_INC = -I$(COMMON)/../../utils
+
+CXX := gcc
+CXXFLAGS := -pedantic -Wall -Wwrite-strings -Wpointer-arith -Wcast-align -O0 -Wall -g $(xlnx_INC) $(MFUTIL_INC)
+LDLIBS := $(xlnx) $(MFUTIL) -I. -lpthread 
+
+srcfiles := $(appname).c
+objects  := $(appname).o 
+
+all: $(appname)
+
+$(appname): $(objects)
+	@echo 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(appname) $(appname).c $(LDLIBS)  -lmfutil
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(appname) $(appname).c $(LDLIBS)  -lmfutil
+
+clean:
+	rm -f $(objects) $(appname)
+
+dist-clean: clean
+	rm -f *~
+

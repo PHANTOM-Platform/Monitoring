@@ -112,7 +112,6 @@ int test1_read() {
 }
 
 
-
 /* Gets the voltage, current and temperature */
 int file_read_float(float *value, const char filename[]) {
 	FILE *fp;
@@ -170,21 +169,57 @@ char* itoa(int i, char b[]){
 	return b;
 }
 
-
-/** @brief Samples all possible events and stores data into the Plugin_metrics
- *
- *  @return 1 on success; 0 otherwise.
- */
-int mf_xilinx_sample(Plugin_metrics *data) {
+int print_xlnx_report(Plugin_metrics *data) {
+	float a;
+	float watts=0;	
 // #### GLOBAL consts and Variables:
-	#define NUMBER_OF_STRINGS 6
-	#define STRING_LENGTH 17
+	#define NUMBER_OF_STRINGS 5
+	#define STRING_LENGTH 17	
 	const char labels[NUMBER_OF_STRINGS][STRING_LENGTH+1] = {"VCCINT     ", "VCCAUX     ", "VCC1V5_PL  ", "VADJ_FPGA  ", "VCC3V3_FPGA"}; //also referred as Rail
 	const float expected_v[NUMBER_OF_STRINGS] = {1.000, 1.800, 1.500, 2.500, 3.300};
 // 	char range_a[NUMBER_OF_STRINGS][STRING_LENGTH+1] = {"0-16", "0-4.2", "0-2.8", "0-1", "0-0.5"};
 //	#range_a[NUMBER_OF_STRINGS][STRING_LENGTH+1] = {"0-8A" "0-4A" "0-2A" "0-2A" "0-2A");
-	float watts=0;
-	float a;
+// 	printf("\n\n\n%sMetrics from board %sZC706%s, where power is controlled by %s%s%s\n",BLUE,WHITE,BLUE,yellow,xilinx_info.name,NO_COLOUR); // expected name UCD90120A
+	printf("\n\n\n%sMetrics from board %sZC706%s\n",xBLUE,xWHITE,xNO_COLOUR); // expected name UCD90120A
+	printf("%sTEMPERATURE of power controller: %s%.2fC%s\n",xBLUE,xyellow,data->values[0] /1000.0,xNO_COLOUR);
+	printf("\n%sChannel_num  Rail       Expected      Measured      Measured       Power\n",xBLUE);
+	printf("%s                        Voltage [V]   Voltage [mV]  current [mA]   Consumption [mW]\n",xBLUE);
+	printf("------------------------------------------------------------------------------------\n");
+	for (int i=0;i<NUMBER_OF_STRINGS;i++){ // this is the counter of channels
+		a= (data->values[2*i+1] * data->values[2*i] )/1000.0;
+		printf("%s   %i        %s%s%s   %.3f%s         %4.0f            %4.0f           %7.2f%s\n",xBLUE,i+1,xWHITE,labels[i],xBLUE,expected_v[i],xyellow,data->values[2*i+1], data->values[2*i], a,xNO_COLOUR);
+		watts+=a;
+	}
+	printf("\n\n%sTOTAL power consumption: %s%.2f mW%s\n\n",xBLUE,xyellow,watts,xNO_COLOUR);
+	/* update timestamp */
+	//before_time = after_time;
+	return SUCCESS;
+}
+
+//         "TaskID" : "pthread-example",
+//         "type" : "xlnx_monitor",
+//         "host" : "node01",
+//         "local_timestamp" : "2019-01-03T22:11:35.288",
+//         "temperature" : "22.53",
+//         "VCCINT_current" : "125",
+//         "VCCINT_volt" : "1000",
+//         "VCCAUX_current" : "62",
+//         "VCCAUX_volt" : "1777",
+//         "VCC1V5_PL_current" : "46",
+//         "VCC1V5_PL_volt" : "1496",
+//         "VADJ_FPGA_current" : "93",
+//         "VADJ_FPGA_volt" : "2449",
+//         "VCC3V3_FPGA_current" : "46",
+//         "VCC3V3_FPGA_volt" : "3291",
+//         "server_timestamp" : "2019-01-03T22:11:37.268"
+
+
+
+/** @brief Samples all possible events and stores data into the Plugin_metrics
+ *
+ *  @return SUCCESS on success; FAILURE otherwise.
+ */
+int mf_xilinx_sample(Plugin_metrics *data) {
 	char new_string[20];
 	char filename[1024];
 
@@ -200,7 +235,6 @@ int mf_xilinx_sample(Plugin_metrics *data) {
 	//double time_interval = after_time - before_time;
 
 	i = 0;
-
 // #### NAME AND TEMPERATURE
 // 	file_read_string(xilinx_info.name,"name");
 // 	if(flag & HAS_TEST1_STAT) {
@@ -218,22 +252,11 @@ int mf_xilinx_sample(Plugin_metrics *data) {
 		file_read_float(&data->values[i],filename); i++;
 	}
 	// ### REPORT
-// 	printf("\n\n\n%sMetrics from board %sZC706%s, where power is controlled by %s%s%s\n",BLUE,WHITE,BLUE,yellow,xilinx_info.name,NO_COLOUR); // expected name UCD90120A
-	printf("\n\n\n%sMetrics from board %sZC706%s\n",xBLUE,xWHITE,xNO_COLOUR); // expected name UCD90120A
-	printf("%sTEMPERATURE of power controller: %s%.2fC%s\n",xBLUE,xyellow,data->values[0] /1000.0,xNO_COLOUR);
-	printf("\n%sChannel_num  Rail       Expected      Measured      Measured       Power\n",xBLUE);
-	printf("%s                        Voltage [V]   Voltage [mV]  current [mA]   Consumption [mW]\n",xBLUE);
-	printf("------------------------------------------------------------------------------------\n");
-	for (int i=0;i<5;i++){ // this is the counter of channels
-		a= (data->values[2*i+1] * data->values[2*i] )/1000.0;
-		printf("%s   %i        %s%s%s   %.3f%s         %4.0f            %4.0f           %7.2f%s\n",xBLUE,i+1,xWHITE,labels[i],xBLUE,expected_v[i],xyellow,data->values[2*i+1], data->values[2*i], a,xNO_COLOUR);
-		watts+=a;
-	}
-	printf("\n\n%sTOTAL power consumption: %s%.2f mW%s\n\n",xBLUE,xyellow,watts,xNO_COLOUR);
-	/* update timestamp */
-	//before_time = after_time;
+	print_xlnx_report(data);
 	return SUCCESS;
 }
+
+
 
 /** @brief Formats the sampling data into a json string
  *

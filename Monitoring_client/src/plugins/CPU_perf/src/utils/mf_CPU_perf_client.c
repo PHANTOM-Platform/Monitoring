@@ -29,8 +29,7 @@ static int num_cores = 10;
 static void my_exit_handler();
 
 /* mf_CPU_perf_client main function */
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
     if (argc <= 1) {
         printf("Error: No metrics required for monitoring.");
         exit(0);
@@ -59,7 +58,6 @@ int main(int argc, char** argv)
         printf("Error: Plugin init function failed.\n");
         exit(0);
     }
-
     do {
         /*
          * sleep for a given time until next sample
@@ -83,13 +81,11 @@ int main(int argc, char** argv)
          */
         puts(json);
         free(json);
-
     } while (1);
 }
 
 /* Exit handler */
-static void my_exit_handler(int s)
-{
+static void my_exit_handler(int s) {
     mf_CPU_perf_shutdown(num_cores);
     puts("Bye bye!\n");
     exit(0);

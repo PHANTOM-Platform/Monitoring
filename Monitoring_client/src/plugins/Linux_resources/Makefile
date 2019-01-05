@@ -2,6 +2,22 @@
 ## Copyright (C) 2018 University of Stuttgart
 ##
 CC = gcc
+
+#
+# includes and libs
+#
+SRC = ${CURDIR}/src
+LIB = ${CURDIR}/lib
+
+PARSER_INC = -I${CURDIR}/../../parser/src
+UTILS_INC = -I${CURDIR}/../utils
+AGENT_INC = -I${CURDIR}/../../agent
+EXCESS_QUEUE_INC = -I${CURDIR}/../../../ext/queue
+CORE_INC = -I${CURDIR}/../../core 
+
+#
+# compile and link flags
+#
 COPT_SO = ${CFLAGS} -fpic
 
 CFLAGS = -std=gnu99 -pedantic -Wall -Wwrite-strings  -Wpointer-arith -Wcast-align -O0 -ggdb \
@@ -16,19 +32,18 @@ else
 	CFLAGS += -DNDEBUG
 endif
 
-SRC = ${CURDIR}/src
-LIB = ${CURDIR}/lib
+all: clean prepare mf_Linux_resources_client mf_plugin_Linux_resources.so libmf_plugin_Linux_resources.a
 
-PARSER_INC = -I${CURDIR}/../../parser/src
-UTILS_INC = -I${CURDIR}/../utils
-AGENT_INC = -I${CURDIR}/../../agent
-EXCESS_QUEUE_INC = -I${CURDIR}/../../../ext/queue
-CORE_INC = -I${CURDIR}/../../core 
+clean:
+	rm -rf *.o *.so
+	rm -f mf_Linux_resources_client
+	rm -rf ${LIB}
 
-all: clean prepare mf_Linux_resources_client mf_plugin_Linux_resources.so
-
-mf_plugin_Linux_resources.so: mf_Linux_resources_connector.o mf_plugin_Linux_resources.o
-	${CC} -shared $^ -o ${LIB}/mf_plugin_Linux_resources.so ${LFLAGS}
+prepare: 
+	@mkdir -p ${LIB}
+	
+mf_Linux_resources_client: ${SRC}/utils/mf_Linux_resources_client.c ${SRC}/mf_Linux_resources_connector.c
+	${CC} $^ -o $@ ${CFLAGS} ${LFLAGS}
 
 mf_Linux_resources_connector.o: ${SRC}/mf_Linux_resources_connector.c
 	${CC} -c $< -o $@ ${COPT_SO}
@@ -36,13 +51,8 @@ mf_Linux_resources_connector.o: ${SRC}/mf_Linux_resources_connector.c
 mf_plugin_Linux_resources.o: ${SRC}/mf_plugin_Linux_resources.c
 	${CC} -c $< -o $@ ${COPT_SO}
 
-mf_Linux_resources_client: ${SRC}/utils/mf_Linux_resources_client.c ${SRC}/mf_Linux_resources_connector.c
-	${CC} $^ -o $@ ${CFLAGS} ${LFLAGS}
+mf_plugin_Linux_resources.so: mf_Linux_resources_connector.o mf_plugin_Linux_resources.o
+	${CC} -shared $^ -o ${LIB}/mf_plugin_Linux_resources.so ${LFLAGS}
 
-prepare: 
-	@mkdir -p ${LIB}
-
-clean:
-	rm -rf *.o *.so
-	rm -f mf_Linux_resources_client
-	rm -rf ${LIB}
+libmf_plugin_Linux_resources.a: mf_Linux_resources_connector.o mf_plugin_Linux_resources.o
+	ar rcs ${LIB}/$@ $^

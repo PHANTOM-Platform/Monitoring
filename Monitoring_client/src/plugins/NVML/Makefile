@@ -2,20 +2,10 @@
 ## Copyright (C) 2018 University of Stuttgart
 ##
 CC = gcc
-COPT_SO = ${CFLAGS} -fpic
 
-CFLAGS = -std=gnu99 -pedantic -Wall -Wwrite-strings  -Wpointer-arith -Wcast-align -O0 -ggdb \
--I${SRC} ${NVML_INC} ${PARSER_INC} ${UTILS_INC} ${AGENT_INC} ${EXCESS_QUEUE_INC} ${CORE_INC}
-
-LFLAGS = -lrt -ldl ${NVML_LIB}
-
-DEBUG ?= 1
-ifeq ($(DEBUG), 1)
-	CFLAGS += -DDEBUG -g
-else
-	CFLAGS += -DNDEBUG
-endif
-
+#
+# includes and libs
+#
 SRC = ${CURDIR}/src
 LIB = ${CURDIR}/lib
 NVML_PATH = ${CURDIR}/../../../bin/nvidia/usr
@@ -35,11 +25,36 @@ AGENT_INC = -I${CURDIR}/../../agent
 EXCESS_QUEUE_INC = -I${CURDIR}/../../../ext/queue
 CORE_INC = -I${CURDIR}/../../core 
 
-all: clean prepare mf_NVML_client mf_plugin_NVML.so
+#
+# compile and link flags
+#
+CFLAGS = -std=gnu99 -pedantic -Wall -Wwrite-strings  -Wpointer-arith -Wcast-align -O0 -ggdb \
+-I${SRC} ${NVML_INC} ${PARSER_INC} ${UTILS_INC} ${AGENT_INC} ${EXCESS_QUEUE_INC} ${CORE_INC}
 
-mf_plugin_NVML.so: mf_NVML_connector.o mf_plugin_NVML.o
+COPT_SO = ${CFLAGS} -fpic
+
+LFLAGS = -lrt -ldl ${NVML_LIB}
+
+DEBUG ?= 1
+ifeq ($(DEBUG), 1)
+	CFLAGS += -DDEBUG -g
+else
+	CFLAGS += -DNDEBUG
+endif
+
+all: clean prepare mf_NVML_client mf_plugin_NVML.so libmf_plugin_NVML.a
+
+clean:
+	rm -rf *.o *.so
+	rm -f mf_NVML_client
+	rm -rf ${LIB}
+
+prepare: 
+	@mkdir -p ${LIB}
+
+mf_NVML_client: ${SRC}/utils/mf_NVML_client.c ${SRC}/mf_NVML_connector.c
 ifneq (,$(wildcard /usr/lib64/libnvidia-ml.so))
-	${CC} -shared $^ -o ${LIB}/mf_plugin_NVML.so ${LFLAGS}
+	${CC} $^ -o $@ ${CFLAGS} ${LFLAGS}
 endif
 
 mf_NVML_connector.o: ${SRC}/mf_NVML_connector.c
@@ -52,15 +67,12 @@ ifneq (,$(wildcard /usr/lib64/libnvidia-ml.so))
 	${CC} -c $< -o $@ ${COPT_SO}
 endif
 
-mf_NVML_client: ${SRC}/utils/mf_NVML_client.c ${SRC}/mf_NVML_connector.c
+mf_plugin_NVML.so: mf_NVML_connector.o mf_plugin_NVML.o
 ifneq (,$(wildcard /usr/lib64/libnvidia-ml.so))
-	${CC} $^ -o $@ ${CFLAGS} ${LFLAGS}
+	${CC} -shared $^ -o ${LIB}/mf_plugin_NVML.so ${LFLAGS}
 endif
 
-prepare: 
-	@mkdir -p ${LIB}
-
-clean:
-	rm -rf *.o *.so
-	rm -f mf_NVML_client
-	rm -rf ${LIB}
+libmf_plugin_NVML.a: mf_NVML_connector.o mf_plugin_NVML.o
+ifneq (,$(wildcard /usr/lib64/libnvidia-ml.so))
+	ar rcs ${LIB}/$@ $^
+endif

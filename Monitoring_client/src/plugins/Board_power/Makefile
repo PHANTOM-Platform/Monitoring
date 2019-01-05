@@ -2,7 +2,6 @@
 ## Copyright (C) 2018 University of Stuttgart
 ##
 CC = gcc
-CXX = g++
 
 #
 # includes and libs
@@ -37,11 +36,18 @@ else
 	CFLAGS += -DNDEBUG
 endif
 
+all: clean prepare mf_Board_power_client mf_plugin_Board_power.so libmf_plugin_Board_power.a
 
-all: clean prepare mf_Board_power_client mf_plugin_Board_power.so
+clean:
+	rm -rf *.o *.so
+	rm -f mf_Board_power_client
+	rm -rf ${LIB}
 
-mf_plugin_Board_power.so: mf_Board_power_connector.o mf_plugin_Board_power.o
-	${CC} -shared $^ -o ${LIB}/mf_plugin_Board_power.so ${LFLAGS}
+prepare: 
+	@mkdir -p ${LIB}
+
+mf_Board_power_client: ${SRC}/utils/mf_Board_power_client.c ${SRC}/mf_Board_power_connector.c
+	${CC} $^ -o $@ ${CFLAGS} ${LFLAGS}
 
 mf_Board_power_connector.o: ${SRC}/mf_Board_power_connector.c
 	${CC} -c $< -o $@ ${COPT_SO}
@@ -49,13 +55,8 @@ mf_Board_power_connector.o: ${SRC}/mf_Board_power_connector.c
 mf_plugin_Board_power.o: ${SRC}/mf_plugin_Board_power.c
 	${CC} -c $< -o $@ ${COPT_SO}
 
-mf_Board_power_client: ${SRC}/utils/mf_Board_power_client.c ${SRC}/mf_Board_power_connector.c
-	${CC} $^ -o $@ ${CFLAGS} ${LFLAGS}
+mf_plugin_Board_power.so: mf_Board_power_connector.o mf_plugin_Board_power.o
+	${CC} -shared $^ -o ${LIB}/mf_plugin_Board_power.so ${LFLAGS}
 
-prepare: 
-	@mkdir -p ${LIB}
-
-clean:
-	rm -rf *.o *.so
-	rm -f mf_Board_power_client
-	rm -rf ${LIB}
+libmf_plugin_Board_power.a: mf_Board_power_connector.o mf_plugin_Board_power.o
+	ar rcs ${LIB}/$@ $^

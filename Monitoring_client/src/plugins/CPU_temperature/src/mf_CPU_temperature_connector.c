@@ -73,15 +73,22 @@ int mf_CPU_temperature_init(Plugin_metrics *data, char **events, size_t num_even
 // 			printf("***** feature_tmp->type is %i -- %i\n",feature_tmp->type, SENSORS_FEATURE_TEMP);
 			if (feature_tmp->type != SENSORS_FEATURE_TEMP)
 				continue;
+// 			char *sensors_get_label(const sensors_chip_name *name, const sensors_feature *feature);
 			char *label = sensors_get_label(chip, feature_tmp);
 // 			printf("***** xlabel is %s\n",label);
 			if (prefix("Physical id", label) == 0){
 // 				printf("***** zlabel is %s\n",label);
 				strncpy(chipnum, label+12, strlen(label)-12);// remove "Physical id "
+				if(label!=NULL) free(label);
+				label=NULL;				
 			}else if (prefix("Package id", label) == 0){
 // 				printf("***** zlabel is %s\n",label);
 				strncpy(chipnum, label+11, strlen(label)-11);// remove "Package id "
+				if(label!=NULL) free(label);
+				label=NULL;				
 			}else{
+				if(label!=NULL) free(label);
+				label=NULL;				
 				continue;
 			}
 		}
@@ -98,16 +105,22 @@ int mf_CPU_temperature_init(Plugin_metrics *data, char **events, size_t num_even
 				/* get corenum */
 				char *label = sensors_get_label(chip, feature);
 // 				printf("***** label is %s\n",label);
-				if (prefix("Core", label) != 0)
+				if (prefix("Core", label) != 0){
+					if(label!=NULL) free(label);
+					label=NULL;					
 					continue;
+				}
 				char corenum[3] = {'\0'};
 				strncpy(corenum, label+5, strlen(label)-5);
+				if(label!=NULL) free(label);
+				label=NULL;
 				/* get my_label with acquired chipnum and corenum */
 				char my_label[32] = {'\0'};
 				sprintf(my_label, "CPU%s:core%s", chipnum, corenum);
 // 				printf("***** my_label is %s\n",my_label);
 				/* use flag to mark if my_label can be found in the given events */
 				int i, flag = 0;
+// 				printf("             ----- num events %lu\n",num_events);
 				for (i = 0; i < num_events; i++) {
 // 					printf("***** even is %s -- %s\n", events[i],my_label);
 					if(strcmp(events[i], my_label) == 0) {

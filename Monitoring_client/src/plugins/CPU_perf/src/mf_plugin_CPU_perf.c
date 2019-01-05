@@ -23,6 +23,8 @@
 #include <plugin_utils.h> /* Plugin_metrics */
 #include "mf_CPU_perf_connector.h"
 
+#define SUCCESS 0
+#define FAILURE 1
 /*******************************************************************************
 * Variable Declarations
 ******************************************************************************/
@@ -42,8 +44,7 @@ char* mf_plugin_CPU_perf_hook();
 /* Initialize the plugin; 
 register the plugin hook to the plugin manager 
 @return 1 on success; 0 otherwise */
-extern int init_mf_plugin_CPU_perf(PluginManager *pm)
-{
+extern int init_mf_plugin_CPU_perf(PluginManager *pm) {
 	/*
 	* get the turned on metrics from the configuration file
 	*/
@@ -60,7 +61,7 @@ extern int init_mf_plugin_CPU_perf(PluginManager *pm)
 	*/
 	monitoring_data_perf = malloc(sizeof(Plugin_metrics));
 	int ret = mf_CPU_perf_init(monitoring_data_perf, conf_data->keys, conf_data->size, num_cores);
-	if(ret == 0) {
+	if(ret == FAILURE) {
 		char plugin_name[] = "CPU_perf";
 		log_error("Plugin %s init function failed.\n", plugin_name);
 		return ret;
@@ -74,8 +75,7 @@ extern int init_mf_plugin_CPU_perf(PluginManager *pm)
 }
 
 /* the hook function, sample the metrics and convert to a json-formatted string */
-char* mf_plugin_CPU_perf_hook()
-{
+char* mf_plugin_CPU_perf_hook() {
 	if (is_initialized) {
 		/*
 		* sampling 

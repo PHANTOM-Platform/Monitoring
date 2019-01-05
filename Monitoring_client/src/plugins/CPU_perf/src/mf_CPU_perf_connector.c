@@ -28,7 +28,7 @@
 ******************************************************************************/
 static int DEFAULT_CPU_COMPONENT = 0;
 const int PAPI_EVENTS[PAPI_EVENTS_NUM] = {PAPI_FP_INS, PAPI_FP_OPS, PAPI_TOT_INS};
-const char CPU_perf_metrics[PAPI_EVENTS_NUM][16] = {"MFLIPS", "MFLOPS", "MIPS"};
+const char CPU_perf_metrics[PAPI_EVENTS_NUM][8] = {"MFLIPS", "MFLOPS", "MIPS"};
 int *EventSet = NULL;
 long long before_time, after_time;
 
@@ -116,7 +116,11 @@ int mf_CPU_perf_init(Plugin_metrics *data, char **events, size_t num_events, int
 			fprintf(stderr, "PAPI_start failed at mf_CPU_perf_init.\n");
 			return FAILURE;
 		}
-	}	
+	}
+	
+// 	for(i = 0; i < num_cores; i++) {
+// 		PAPI_reset(EventSet[i]);
+// 	}	
 	return SUCCESS;
 }
 
@@ -141,16 +145,15 @@ int mf_CPU_perf_sample(Plugin_metrics *data, int num_cores) {
 			return FAILURE;
 		}
 		for(ii = 0; ii < PAPI_EVENTS_NUM; ii++) {
-			data->values[jj] = (float) (values[ii] * 1.0e3) / duration; /*units are Mflips, Mflops, and Mips */
-			jj++;
+			jj=ii+i*PAPI_EVENTS_NUM; //or just jj++;
+			data->values[jj] = (float) (values[i] * 1.0e3) / duration; /*units are Mflips, Mflops, and Mips */
 			if(jj== MAX_EVENTS_NUMBER){
 				printf("error, overflow on number of events\n");
 				exit(1);
 			}
 		}
-		PAPI_reset(EventSet[i]);	
+		PAPI_reset(EventSet[i]);
 	}
-	//jj should be equal to data->num_events 
 	before_time = after_time;
 	return SUCCESS;
 }

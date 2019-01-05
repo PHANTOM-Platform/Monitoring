@@ -2,20 +2,10 @@
 ## Copyright (C) 2014-2015 University of Stuttgart
 ##
 CC = gcc
-COPT_SO = ${CFLAGS} -fpic
 
-CFLAGS = -std=gnu99 -pedantic -Wall -Wwrite-strings  -Wpointer-arith -Wcast-align -O0 -ggdb \
--I${SRC} ${SENSORS_INC} ${PARSER_INC} ${UTILS_INC} ${AGENT_INC} ${EXCESS_QUEUE_INC} ${CORE_INC}
-
-LFLAGS = -lrt -ldl -Wl,-rpath,${SENSORS_PATH} ${SENSORS_LIB}
-
-DEBUG ?= 1
-ifeq ($(DEBUG), 1)
-    CFLAGS += -DDEBUG -g
-else
-	CFLAGS += -DNDEBUG
-endif
-
+#
+# includes and libs
+#
 SRC = ${CURDIR}/src
 LIB = ${CURDIR}/lib
 
@@ -29,10 +19,35 @@ AGENT_INC = -I${CURDIR}/../../agent
 EXCESS_QUEUE_INC = -I${CURDIR}/../../../ext/queue
 CORE_INC = -I${CURDIR}/../../core 
 
-all: clean prepare mf_CPU_temperature_client mf_plugin_CPU_temperature.so
+#
+# compile and link flags
+#
+CFLAGS = -std=gnu99 -pedantic -Wall -Wwrite-strings  -Wpointer-arith -Wcast-align -O0 -ggdb \
+-I${SRC} ${SENSORS_INC} ${PARSER_INC} ${UTILS_INC} ${AGENT_INC} ${EXCESS_QUEUE_INC} ${CORE_INC}
 
-mf_plugin_CPU_temperature.so: mf_CPU_temperature_connector.o mf_plugin_CPU_temperature.o
-	${CC} -shared $^ -o ${LIB}/mf_plugin_CPU_temperature.so ${LFLAGS}
+COPT_SO = ${CFLAGS} -fpic
+
+LFLAGS = -lrt -ldl -Wl,-rpath,${SENSORS_PATH} ${SENSORS_LIB}
+
+DEBUG ?= 1
+ifeq ($(DEBUG), 1)
+    CFLAGS += -DDEBUG -g
+else
+	CFLAGS += -DNDEBUG
+endif
+
+all: clean prepare mf_CPU_temperature_client mf_plugin_CPU_temperature.so libmf_plugin_CPU_temperature.a
+
+clean:
+	rm -rf *.o *.so
+	rm -f mf_CPU_temperature_client
+	rm -rf ${LIB}
+
+prepare: 
+	@mkdir -p ${LIB}
+
+mf_CPU_temperature_client: ${SRC}/utils/mf_CPU_temperature_client.c ${SRC}/mf_CPU_temperature_connector.c
+	${CC} $^ -o $@ ${CFLAGS} ${LFLAGS}
 
 mf_CPU_temperature_connector.o: ${SRC}/mf_CPU_temperature_connector.c
 	${CC} -c $< -o $@ ${COPT_SO}
@@ -40,13 +55,8 @@ mf_CPU_temperature_connector.o: ${SRC}/mf_CPU_temperature_connector.c
 mf_plugin_CPU_temperature.o: ${SRC}/mf_plugin_CPU_temperature.c
 	${CC} -c $< -o $@ ${COPT_SO}
 
-mf_CPU_temperature_client: ${SRC}/utils/mf_CPU_temperature_client.c ${SRC}/mf_CPU_temperature_connector.c
-	${CC} $^ -o $@ ${CFLAGS} ${LFLAGS}
+mf_plugin_CPU_temperature.so: mf_CPU_temperature_connector.o mf_plugin_CPU_temperature.o
+	${CC} -shared $^ -o ${LIB}/mf_plugin_CPU_temperature.so ${LFLAGS}
 
-prepare: 
-	@mkdir -p ${LIB}
-
-clean:
-	rm -rf *.o *.so
-	rm -f mf_CPU_temperature_client
-	rm -rf ${LIB}
+libmf_plugin_CPU_temperature.a: mf_CPU_temperature_connector.o mf_plugin_CPU_temperature.o
+	ar rcs ${LIB}/$@ $^

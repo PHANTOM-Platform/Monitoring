@@ -270,7 +270,7 @@ int prepare(const char *token) {
 
 // 	create_new_experiment(experiments_URL, msg, experiment_id); --> new experiment_id is response.data
 	char operation[]="POST";
-	query_message_json(URL, msg, &response, operation, token); //*****
+	query_message_json(URL, msg, NULL,  &response, operation, token); //*****
 	if(response.data[0] == '\0') {
 		log_error("Cannot create new experiment for application %s\n", application_id);
 		return FAILURE;

@@ -1,6 +1,6 @@
 # PHANTOM monitoring client
 
-> PHANTOM monitoring client is one part of the PHANTOM monitoring framework, which supports metrics collection based on hardware availabilities and platform configuration. The target platform of the monitoring client includes CPUs, GPUs, Myriad2, ACME power measurement kit and FPGA-based platform.
+> PHANTOM monitoring client is one part of the PHANTOM monitoring framework, which supports metrics collection based on hardware availabilities and platform configuration. The target platform of the monitoring client includes CPUs, GPUs, ACME power measurement kit and FPGA-based platform.
 
 
 ## Introduction

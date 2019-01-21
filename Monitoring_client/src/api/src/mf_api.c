@@ -106,6 +106,239 @@ int get_config_parameters(const char *server,const char *platform_id,const char 
 * Function Definitions
 ******************************************************************************/
 
+struct app_report_t *reserve_app_report(const unsigned int num_of_threads,const char *currentid){
+	struct app_report_t *my_reservation = (struct app_report_t *)malloc(2*sizeof(struct app_report_t));
+	my_reservation->num_of_threads=num_of_threads;
+	strcpy(my_reservation->currentid,currentid);
+	my_reservation->my_thread_report = (struct Thread_report_t **) malloc(num_of_threads * sizeof(struct Thread_report_t *));
+	for (int i=0;i<num_of_threads;i++){
+		my_reservation->my_thread_report[i] = (struct Thread_report_t *) malloc(sizeof(struct Thread_report_t));
+		strcpy(my_reservation->my_thread_report[i]->currentid,currentid);
+		my_reservation->my_thread_report[i]->total_metrics=0;
+	}
+	struct timespec timestamp;
+	clock_gettime(CLOCK_REALTIME, &timestamp);
+	/*convert to milliseconds */
+	my_reservation->timestamp_ms = timestamp.tv_sec * 1000.0 + (double)(timestamp.tv_nsec / 1.0e6);// in ms + one decimal position
+	return my_reservation;
+}
+
+int free_app_report(struct app_report_t *my_app_report){
+	for (int i=0;i<my_app_report->num_of_threads;i++){
+		for (int j=0;j<my_app_report->my_thread_report[i]->total_metrics;j++){
+			free(my_app_report->my_thread_report[i]->user_label[j]);
+			free(my_app_report->my_thread_report[i]->user_value[j]);
+			free(my_app_report->my_thread_report[i]->metric_time[j]);
+		}
+		free(my_app_report->my_thread_report[i]->user_label);
+		free(my_app_report->my_thread_report[i]->user_value);
+		free(my_app_report->my_thread_report[i]->metric_time);
+		free(my_app_report->my_thread_report[i]);
+	}
+	free(my_app_report->my_thread_report);
+	free(my_app_report);
+	return 0;
+}
+
+// int reserve_memory_user_def_metrics(struct Thread_report_t *my_thread_report, const unsigned int total_metrics){
+// 	my_thread_report->total_metrics= total_metrics;
+// 	my_thread_report->user_label  = (char **) malloc(total_metrics * sizeof(char*));
+// 	my_thread_report->user_value  = (char **) malloc(total_metrics * sizeof(char*));
+// 	my_thread_report->metric_time = (char **) malloc(total_metrics * sizeof(char*));
+// 	for (int i=0;i<total_metrics;i++){
+// 		my_thread_report->user_label[i]  = (char *) malloc(40 * sizeof(char));
+// 		my_thread_report->user_value[i]  = (char *) malloc(40 * sizeof(char));
+// 		my_thread_report->metric_time[i] = (char *) malloc(40 * sizeof(char));
+// 	}
+// 	return 0;
+// }
+
+
+int register_user_metric(struct Thread_report_t *my_thread_report, const char *time,const char *label,const int value,const int num_metric){
+	int n =my_thread_report->total_metrics;
+	if(n==0){
+		my_thread_report->user_label  = (char **) malloc( (n+1) * sizeof(char*));
+		my_thread_report->user_value  = (char **) malloc( (n+1) * sizeof(char*));
+		my_thread_report->metric_time = (char **) malloc( (n+1) * sizeof(char*));
+	}else{
+		my_thread_report->user_label  = (char **) realloc(my_thread_report->user_label, (n+1)  * sizeof(char*));
+		my_thread_report->user_value  = (char **) realloc(my_thread_report->user_value, (n+1)  * sizeof(char*));
+		my_thread_report->metric_time = (char **) realloc(my_thread_report->metric_time, (n+1) * sizeof(char*));
+	}
+		my_thread_report->user_label[n]  = (char *) malloc(40 * sizeof(char));
+		my_thread_report->user_value[n]  = (char *) malloc(40 * sizeof(char));
+		my_thread_report->metric_time[n] = (char *) malloc(40 * sizeof(char));
+	my_thread_report->total_metrics=n+1;
+	strcpy(my_thread_report->metric_time[n], time); // <<-- TIME
+	strcpy(my_thread_report->user_label[n], label); // <<-- LABEL
+	itoa((int) value, my_thread_report->user_value[n]); // <<-- VALUE
+	return 0;
+}
+
+
+struct resources_stats_t *stat_resources=NULL;
+struct task_data_t *mmy_task_data_a =NULL;
+ 
+
+/**
+* Query for a new Execution, return 400 if the execution is not registered yet.
+* or 200 in other case.
+*
+* curl -s -H "Authorization: OAuth ${mytoken}" -H "Content-Type: multipart/form-data" -XPOST -F "UploadJSON=@../web-execmanager/execstatus.json" http://${server}:${execmanager_port}/register_new_exec;
+* 
+* @return NULL if error
+*/
+char* new_exec(const char *server, const char *filenamepath, char * token){
+	/* create an Execution */
+	char *URL = NULL;
+	struct url_data response;
+	response.size=0;
+	response.data=NULL;
+	response.headercode=NULL;
+	URL=concat_and_free(&URL, server);
+	URL=concat_and_free(&URL, "/update_exec");
+// 	printf("******* register Execution ******\n");
+	char operation[]="POST";
+
+// 	printf(" token is %s\n",token);
+// 	printf(" filenamepath is %s\n",filenamepath);
+
+	query_message_json(URL,NULL, filenamepath, &response, operation, token); //*****
+	
+// 	printf(" response is %s\n",response.data);
+	
+	if(URL!=NULL) free(URL);
+	URL=NULL;
+	if(response.headercode!=NULL) free(response.headercode);
+	response.headercode=NULL;
+	if(response.data[0] == '\0') {
+		printf("ERROR: Cannot register execution\n");
+		return NULL;
+	}
+	char* p= response.data;
+	return p;
+}
+
+char *mf_exec_stats( struct app_report_t my_app_report, char *application_id, char *exec_id, char *platform_id ){
+	/*create and open the file*/
+	char *json_msg = NULL;
+	char tempstr[2560] = {'\0'};
+// 	double localtimestamp;
+	struct timespec timestamp;
+	/*get current timestamp */
+	clock_gettime(CLOCK_REALTIME, &timestamp);
+	/*convert to milliseconds */
+	double timestamp_ms = timestamp.tv_sec * 1000.0 + (double)(timestamp.tv_nsec / 1.0e6);
+// 	concat_and_free(&json_msg, "\"local_timestamp\":\"%.1f\"", timestamp_ms);
+	concat_and_free(&json_msg, "{\n\t\"app\":\"");
+	concat_and_free(&json_msg, application_id);
+	concat_and_free(&json_msg, "\",\n");
+	concat_and_free(&json_msg, "\t\"device\":\"");
+	concat_and_free(&json_msg, platform_id);
+	concat_and_free(&json_msg, "\",\n");
+
+	concat_and_free(&json_msg, "\t\"execution_id\":\"");
+	concat_and_free(&json_msg, exec_id);
+	concat_and_free(&json_msg, "\",\n");
+	
+	concat_and_free(&json_msg, "\t\"start_timestamp\":\"");
+// 	sprintf(tempstr, "%.1f",my_app_report.timestamp_ms);
+// 	concat_and_free(&json_msg, tempstr);
+	concat_and_free(&json_msg, "2018-03-22T21:02:15.333");	
+	concat_and_free(&json_msg, "\",\n");
+	concat_and_free(&json_msg, "\t\"end_timestamp\": \"");
+// 	sprintf(tempstr, "%.1f", timestamp_ms);concat_and_free(&json_msg, tempstr);
+	concat_and_free(&json_msg, "2018-03-22T21:02:15.333");
+	concat_and_free(&json_msg, "\",\n");	
+	concat_and_free(&json_msg, "\t\"energy\": \"");
+	sprintf(tempstr, "%.2f", 22.12);
+	concat_and_free(&json_msg, tempstr);
+	concat_and_free(&json_msg, "\",\n");
+	// 2- read the duration_components, and remove the fields
+	concat_and_free(&json_msg, "\t\"component_stats\": [\n");
+	long long int end_time = mycurrenttime();
+		concat_and_free(&json_msg, "\t\t{\n");
+		concat_and_free(&json_msg, "\t\t\t\"component_name\": \"");
+		concat_and_free(&json_msg, "main_compent");
+		concat_and_free(&json_msg, "\",\n");
+		concat_and_free(&json_msg, "\t\t\t\"component_duration\": \"");
+		sprintf(tempstr, "%lli", end_time - my_app_report.start_app);
+		concat_and_free(&json_msg, tempstr);
+		concat_and_free(&json_msg, "\",\n");
+		concat_and_free(&json_msg, "\t\t\t\"component_start\": \"");
+		sprintf(tempstr, "%.1f", timestamp_ms);
+		concat_and_free(&json_msg, tempstr);
+		concat_and_free(&json_msg, "\",\n");
+		char *json_msgb=save_stats_resources( stat_resources,1,3);
+		concat_and_free(&json_msg, json_msgb); free(json_msgb);
+		concat_and_free(&json_msg, "\n\t\t},\n");
+
+	for(int i=0;i<my_app_report.num_of_threads;i++){
+		long long int start_time_ns = my_app_report.my_thread_report[i]->start_time;
+		long long int end_time_ns = my_app_report.my_thread_report[i]->end_time;
+		concat_and_free(&json_msg, "\t\t{\n");
+		concat_and_free(&json_msg, "\t\t\t\"component_name\": \"");
+		concat_and_free(&json_msg, my_app_report.my_thread_report[i]->taskid);
+		concat_and_free(&json_msg, "\",\n");
+		concat_and_free(&json_msg, "\t\t\t\"component_duration\": \"");
+		sprintf(tempstr, "%lli", (end_time_ns - start_time_ns)/1000);
+		concat_and_free(&json_msg, tempstr);
+		concat_and_free(&json_msg, "\",\n");
+		concat_and_free(&json_msg, "\t\t\t\"component_start\": \"");
+		sprintf(tempstr, "%.1f", my_app_report.my_thread_report[i]->start_timestamp_ms);
+		concat_and_free(&json_msg, tempstr);
+		concat_and_free(&json_msg, "\",\n");
+		// end time of the component
+// 		char strend_time[100];
+// 		llint_to_string_alloc(my_app_report.my_thread_report[i]->end_time,strend_time);
+// 		concat_and_free(&json_msg, "\t\t\t\"component_end\": \"%s\"\n", strend_time);
+		char *json_msgc=save_stats_resources_comp( mmy_task_data_a->subtask[i],1,3);
+		concat_and_free(&json_msg, json_msgc); free(json_msgc);
+		concat_and_free(&json_msg, "\n\t\t}");//end of component stats
+		if(i<my_app_report.num_of_threads-1)
+			concat_and_free(&json_msg, ",");//end of component stats
+		concat_and_free(&json_msg, "\n");
+	}
+// Notice: "local_timestamp":"1545342592137.9" esta en ms
+// Notice: "component_duration":"2057984735" esta en ns
+	concat_and_free(&json_msg, "\t]\n");//end of component stats
+	concat_and_free(&json_msg, "}\n");
+	return json_msg;
+}
+
+
+
+
+
+// 3- send the json to exec_server:port/update_exec
+// 		url=update_exec
+// 		var demoreplaceb = document.getElementById("demoreplaceb");
+// 	var debug_phantom = document.getElementById("debug_phantom");
+// // 	share_session_storage();
+// 	if(!sessionStorage.token) {
+// 		if(demoreplaceb) demoreplaceb.innerHTML = "Sorry, try login again, missing token...";
+// 		if(debug_phantom) debug_phantom.style.display = "block";
+// 		return false;
+// 	}
+// 	if((sessionStorage.token !== undefined) && (sessionStorage.token.length>0)) {
+// 		var xhr = new XMLHttpRequest();
+// 		var formData = new FormData();
+// 		xhr.open('POST', url, true);
+// 		xhr.setRequestHeader("Authorization", "JWT " + sessionStorage.token);
+// 		xhr.addEventListener('load', function() {
+// 			var responseObject = (xhr.responseText);
+// 			if(demoreplaceb) demoreplaceb.innerHTML = "<pre>"+ responseObject + " status: " +xhr.status+ "</pre>";
+// 			if(debug_phantom) debug_phantom.style.display = "block";
+// 		});
+// 		formData.append("UploadJSON", UploadJSON.files[0]);
+// //formData.append("UploadFile", UploadFile.data);
+// 		xhr.send(formData);//may fault code appear here
+// 	}else {
+// 		if(demoreplaceb) demoreplaceb.innerHTML = "Sorry, try login again, missing token...";
+// 		if(debug_phantom) debug_phantom.style.display = "block";
+// 	}
+
+
 int mf_user_metric_with_timestamp(char *user_defined_time_stamp, char *metric_name, char *value) {
 	if(DataPath[0] == '\0')
 		pid = api_prepare(DataPath);
@@ -123,7 +356,6 @@ int mf_user_metric_with_timestamp(char *user_defined_time_stamp, char *metric_na
 	return 1;
 }
 
-
 int mf_user_metric(char *metric_name, char *value) {
 	if(DataPath[0] == '\0')
 		pid = api_prepare(DataPath);
@@ -140,12 +372,46 @@ int mf_user_metric(char *metric_name, char *value) {
 	clock_gettime(CLOCK_REALTIME, &timestamp);
 	/*convert to milliseconds */
 	double timestamp_ms = timestamp.tv_sec * 1000.0 + (double)(timestamp.tv_nsec / 1.0e6);
-
 	fprintf(fp, "\"local_timestamp\":\"%.1f\", \"%s\":%s\n", timestamp_ms, metric_name, value);
 	/*close the file*/
 	fclose(fp);
 	return 1;
 }
+
+static void *Monitor_tid_Start(void *arg) {
+	struct task_data_t *my_task_data_a = (struct task_data_t*) arg;
+	char FileName[100];
+	FILE *fp;
+	sprintf(FileName, "%s/%s", DataPath, "resource_usage_comp");
+	fp = fopen(FileName, "w");
+	while (running==1) {
+		stats_sample(my_task_data_a->pid, my_task_data_a);
+		if(my_task_data_a!= NULL){
+			for(int jk=0;jk<my_task_data_a->total_user_def;jk++){
+			save_stats(fp,my_task_data_a->task_def[jk]->pstid, my_task_data_a);
+// 			print_stats(my_task_data_a->tids[jk], my_task_data_a);
+			}
+		}
+		usleep(my_task_data_a->microsleep);//420000
+	}
+	fflush(fp);
+	fclose(fp);
+	return NULL;
+}
+
+
+
+// void __attribute__((optimize("O0"))) add_tid_to_report(char *component_name, int tid){
+void add_tid_to_report(char *component_name, int tid){
+	if(mmy_task_data_a!= NULL){
+		if(mmy_task_data_a->total_user_def<max_report_tids){
+			strcpy(mmy_task_data_a->task_def[mmy_task_data_a->total_user_def]->component_name, component_name);
+			mmy_task_data_a->task_def[mmy_task_data_a->total_user_def]->pstid=tid;
+			mmy_task_data_a->total_user_def=mmy_task_data_a->total_user_def+1;
+		}
+	}
+}
+
 
 /**
 * Get the pid, and setup the DataPath for data storage.
@@ -155,11 +421,11 @@ int mf_user_metric(char *metric_name, char *value) {
 struct each_metric_t **each_m=NULL;
 
 /** server consists on an address or ip with a port number like http://129.168.0.1:8600/ */
-char *mf_start(const char *server,const char *platform_id, metrics *m,const char *token) {
+char *mf_start(const char *server, const char* resource_manager, const char *platform_id, metrics *m,struct app_report_t *my_app_report, const char *token) {
 	/* get pid and setup the DataPath according to pid */
 	pid = api_prepare(DataPath);
 	/* get parameters from server with given platform_id */
-	if(get_config_parameters(server, platform_id, token) != SUCCESS) {
+	if(get_config_parameters(resource_manager, platform_id, token) != SUCCESS) {
 		printf("ERROR : get_config_parameters failed.\n");
 		return NULL;
 	}
@@ -167,20 +433,21 @@ char *mf_start(const char *server,const char *platform_id, metrics *m,const char
 	printf("num_threads %i\n",m->num_metrics);
 	fflush(stdout);
 	num_threads = m->num_metrics;
+	if(num_threads+1 >=MAX_NUM_METRICS){
+		printf(" error num_threads >=MAX_NUM_METRICS !!\n");
+		return NULL;
+	}
 	int t;
 	int iret[num_threads];
-
 	each_m=(struct each_metric_t **) malloc(num_threads*sizeof(struct each_metric_t *));
 	if(each_m==NULL) {
 		printf("Failed to allocate memory.\n");
 		exit(1);
-	}	
+	}
 	for(t=0;t<num_threads;t++)
 		each_m[t]=(struct each_metric_t *) malloc(1*sizeof(struct each_metric_t));
-
 	running = 1;
 	keep_local_data_flag = m->local_data_storage;
-
 	for (t = 0; t < num_threads; t++) {
 		/*prepare the argument for the thread*/
 		each_m[t]->sampling_interval = m->sampling_interval[t];
@@ -194,9 +461,27 @@ char *mf_start(const char *server,const char *platform_id, metrics *m,const char
 			each_m[t]=NULL;
 			return NULL;
 		}
-	} 
+	}
+	// !! mf_start_tid(pid, 420000);
+	mmy_task_data_a=(struct task_data_t *) malloc(sizeof(struct task_data_t));
+	init_stats(mmy_task_data_a);//this reserves the memory struct
+	mmy_task_data_a->pid=pid;
+	mmy_task_data_a->microsleep=420000;
+	mmy_task_data_a->totaltid=0;
+	mmy_task_data_a->total_user_def=0;
+	mmy_task_data_a->task_def[0]->pstid=0;
+	mmy_task_data_a->task_def[1]->pstid=0;
+	/*create the thread and pass associated arguments */
+	strcpy( mmy_task_data_a->subtask[0]->taskid, my_app_report->my_thread_report[0]->taskid);
+	strcpy( mmy_task_data_a->subtask[1]->taskid, my_app_report->my_thread_report[1]->taskid);
+	int tidret = pthread_create(&threads[num_threads], NULL, Monitor_tid_Start, mmy_task_data_a);
+	if (tidret) {
+		printf("ERROR: pthread_create failed for %s\n", strerror(tidret));
+		return NULL;
+	}
 	return DataPath;
 }
+
 
 /**
 * Stop threads.
@@ -205,17 +490,17 @@ char *mf_start(const char *server,const char *platform_id, metrics *m,const char
 void mf_end(void){
 	int t;
 	running = 0;
-	for (t = 0; t < num_threads; t++)
+	for (t = 0; t < num_threads+1; t++) //we add one more for the Monitor_tid_Start
 		pthread_join(threads[t], NULL);
 	int totalfree=0;
 	if(each_m!=NULL){
 		for (t = 0; t < num_threads; t++){
-			if(each_m[t]!=NULL) 
+			if(each_m[t]!=NULL)
 				free(each_m[t]);
 			each_m[t]=NULL;
 			totalfree++;
 		}
-		if(totalfree==num_threads && each_m!=NULL) 
+		if(totalfree==num_threads && each_m!=NULL)
 			free(each_m);
 		each_m=NULL;
 	}
@@ -235,34 +520,31 @@ char* mf_query_workflow(char *server, char *application_id ){
 	response.size=0;
 	response.data=NULL;
 	response.headercode=NULL;
-
 	URL=concat_and_free(&URL, server);
 	URL=concat_and_free(&URL, "/v1/phantom_mf/workflows/");
 	URL=concat_and_free(&URL, application_id);
-
 // 	printf("******* register workflow ******\n");
 	char operation[]="GET";
-	new_query_json(URL, &response, operation,NULL); //*****
-	
+// 	new_query_json(URL, &response, operation,NULL); //********2 times ??? ****************************************
 	if(new_query_json(URL, &response, operation, NULL) > 0) {
 		printf("ERROR: query with %s failed.\n", URL);
-		if(URL!=NULL) free(URL); 
+		if(URL!=NULL) free(URL);
 		URL=NULL;
 		if(response.data!=NULL) { free(response.data); response.data=NULL; }
 		if(response.headercode!=NULL) { free(response.headercode); response.headercode = NULL; }
 		return NULL;
 	}
-	if(URL!=NULL) free(URL); 
-	URL=NULL; 
+	if(URL!=NULL) free(URL);
+	URL=NULL;
 	if(response.data[0] == '\0') {
 		printf("ERROR: Cannot register workflow for application %s\n", application_id);
-		if(response.data!=NULL) free(response.data); 
+		if(response.data!=NULL) free(response.data);
 		response.data=NULL;
-		if(response.headercode!=NULL) free(response.headercode); 
+		if(response.headercode!=NULL) free(response.headercode);
 		response.headercode=NULL;
 		return NULL;
 	}
-	if(response.data!=NULL) free(response.data); 
+	if(response.data!=NULL) free(response.data);
 	response.data=NULL;
 	return response.headercode;
 }
@@ -270,10 +552,10 @@ char* mf_query_workflow(char *server, char *application_id ){
 
 /**
 * Register a new workflow.
-* @return  the path to query the workflow.
+* @return the path to query the workflow.
 */
 char* mf_new_workflow(char *server, char *application_id, char *author_id,
-		char *optimization, char *tasks_desc, char *token) {
+	char *optimization, char *tasks_desc, char *token) {
 	/* create an workflow */
 	char *URL = NULL;
 	struct url_data response;
@@ -290,25 +572,24 @@ char* mf_new_workflow(char *server, char *application_id, char *author_id,
 	msg=concat_and_free(&msg, "\", \"tasks\": ");
 	msg=concat_and_free(&msg, tasks_desc);
 	msg=concat_and_free(&msg, "}");
-
 	URL=concat_and_free(&URL, server);
 	URL=concat_and_free(&URL, "/v1/phantom_mf/workflows/");
 	URL=concat_and_free(&URL, application_id);
-
-// 	printf("******* register workflow ******\n"); 
+// 	printf("******* register workflow ******\n");
 	char operation[]="PUT";
-	query_message_json(URL, msg, &response, operation, token); //***** 
-	if(msg!=NULL) free(msg); 
+	query_message_json(URL, msg, NULL, &response, operation, token); //*****
+	if(msg!=NULL) free(msg);
 	msg=NULL;
-	if(URL!=NULL) free(URL); 
+	if(URL!=NULL) free(URL);
 	URL=NULL;
-	if(response.headercode!=NULL) free(response.headercode); 
-	response.headercode=NULL; 
+	if(response.headercode!=NULL) free(response.headercode);
+	response.headercode=NULL;
 	if(response.data[0] == '\0') {
 		printf("ERROR: Cannot register workflow for application %s\n", application_id);
 		return NULL;
 	}
-	return response.data;
+	char* p= response.data;
+	return p;
 }
 
 
@@ -317,7 +598,7 @@ char* mf_new_workflow(char *server, char *application_id, char *author_id,
 * Send the monitoring data in all the files to mf_server.
 *@return the execution_id
 */
-char* mf_send(const char *server,const  char *application_id,const  char *component_id,const  char *platform_id,const  char *token) {
+char* mf_send(const char *server,const char *application_id,const char *component_id,const char *platform_id,const char *token) {
 	/* create an experiment with regards of given application_id, component_id and so on */
 	char *URL = NULL;
 	struct url_data response;
@@ -333,14 +614,12 @@ char* mf_send(const char *server,const  char *application_id,const  char *compon
 	msg=concat_and_free(&msg, "\", \"host\": \"");
 	msg=concat_and_free(&msg, platform_id);
 	msg=concat_and_free(&msg, "\"}");
-
 	URL=concat_and_free(&URL, server);
 	URL=concat_and_free(&URL, "/v1/phantom_mf/experiments/");
 	URL=concat_and_free(&URL, application_id);
-
-// 	printf("******* new_create_new_experiment ******\n"); 
+// 	printf("******* new_create_new_experiment ******\n");
 	char operation[]="POST";
-	if(query_message_json(URL, msg, &response, operation, token)==FAILED){
+	if(query_message_json(URL, msg, NULL, &response, operation, token)==FAILED){
 		printf("ERROR: Cannot create new experiment for application %s\n", application_id);
 		if(msg!=NULL) {free(msg); msg=NULL;}
 		if(URL!=NULL) {free(URL); URL=NULL;}
@@ -348,7 +627,6 @@ char* mf_send(const char *server,const  char *application_id,const  char *compon
 		if(response.headercode!=NULL) {free(response.headercode); response.headercode=NULL;}
 		return NULL;
 	}
-	
 	if(msg!=NULL) {free(msg); msg=NULL;}
 	if(URL!=NULL) {free(URL); URL=NULL;}
 	if(response.headercode!=NULL) {free(response.headercode); response.headercode=NULL;}
@@ -359,8 +637,7 @@ char* mf_send(const char *server,const  char *application_id,const  char *compon
 	if(response.data[0] == '\0') {//response->data containes the experiment_id
 		printf("ERROR: Cannot create new experiment for application %s\n", application_id);
 		return NULL;
-	} 
-
+	}
 	/*malloc variables for send metrics */
 	char *metric_URL = (char *) malloc(200);
 	char *static_string = (char *) malloc(200);
@@ -372,15 +649,14 @@ char* mf_send(const char *server,const  char *application_id,const  char *compon
 	metric_URL[0]='\0';
 	metric_URL=concat_and_free(&metric_URL, server);
 	metric_URL=concat_and_free(&metric_URL, "/v1/phantom_mf/metrics");
-
+	//processing all the files in the directory, and forward to the Monitoring-Server
+	struct dirent *drp;
 	DIR *dir = opendir(DataPath);
 	if(dir == NULL) {
 		printf("Error: Cannot open directory %s\n", DataPath);
 		return NULL;
 	}
-
-	struct dirent *drp = readdir(dir);
-	while(drp != NULL) {
+	while ((drp = readdir(dir)) != NULL){
 		static_string[0]='\0';//in the next loop the string will be empty
 		//memset(static_string, '\0', malloc_usable_size(static_string));//this is too much, not need that effort
 		filename[0]='\0';//in the next loop the string will be empty
@@ -389,8 +665,6 @@ char* mf_send(const char *server,const  char *application_id,const  char *compon
 			filename=concat_and_free(&filename, DataPath);
 			filename=concat_and_free(&filename, "/");
 			filename=concat_and_free(&filename, drp->d_name);
-// printf(" processing file %s\n",filename);
-			//static_string=concat_and_free(&static_string, "{");//****
 			static_string=concat_and_free(&static_string, "\"WorkflowID\":\"");//****
 			static_string=concat_and_free(&static_string, application_id);
 			static_string=concat_and_free(&static_string, "\", \"TaskID\": \"");
@@ -402,16 +676,14 @@ char* mf_send(const char *server,const  char *application_id,const  char *compon
 			static_string=concat_and_free(&static_string, "\", \"host\": \"");
 			static_string=concat_and_free(&static_string, platform_id);
 			static_string=concat_and_free(&static_string, "\"");
-			//static_string=concat_and_free(&static_string, "}");
 			publish_file(metric_URL, static_string, filename, token);
 			/*remove the file if user unset keep_local_data_flag */
 			if(keep_local_data_flag == 0)
 				unlink(filename);
 		}
-		/*get the next entry */
-		drp = readdir(dir);
 	}
-
+	closedir(dir);
+	
 	if(metric_URL!= NULL)
 		free(metric_URL);
 	metric_URL=NULL;
@@ -421,11 +693,9 @@ char* mf_send(const char *server,const  char *application_id,const  char *compon
 	if(filename!= NULL)
 		free(filename);
 	filename=NULL;
-	closedir(dir);
 	if(logFile != NULL) 
-		fclose(logFile); 
+		fclose(logFile);
 	logFile=NULL;
-
 	/*remove the data directory if user unset keep_local_data_flag */
 	if(keep_local_data_flag == 0)
 		rmdir(DataPath);
@@ -439,7 +709,6 @@ static int api_prepare(char *Data_path){
 	/*reset Data_path*/
 	size_t size = strlen(Data_path);
 	memset(Data_path, '\0', size);
-
 	/*get the pid*/
 	int pid = getpid();
 	/*get the pwd*/
@@ -451,20 +720,16 @@ static int api_prepare(char *Data_path){
 		exit(0);
 	}
 	memcpy(buf_2, buf_1, strlen(buf_1) * sizeof(char));
-
 	/* extract path folder of executable from it's path */
 	char *lastslash = strrchr(buf_2, '/');
 	int ptr = lastslash - buf_2;
 	memcpy(Data_path, buf_2, ptr);
-
 	/*create logfile*/
 	char logFileName[256] = {'\0'};
 	sprintf(logFileName, "%s/log.txt", Data_path);
 	logFile = fopen(logFileName, "w");
-	if (logFile == NULL) {
+	if (logFile == NULL)
 		printf("Could not create log file %s", logFileName);
-	}
-
 	/*create the folder with regards of the pid*/
 	sprintf(Data_path + strlen(Data_path), "/%d", pid);
 	struct stat st = { 0 };
@@ -474,22 +739,23 @@ static int api_prepare(char *Data_path){
 }
 
 
+
 static void *MonitorStart(void *arg) {
 	each_metric *metric = (each_metric*) arg;
-// 	printf("Starting monitoring modules\n");fflush(stdout);
+// 	printf("Starting monitoring modules\n");
 	if(strcmp(metric->metric_name, METRIC_NAME_1) == 0) {
-// 		printf("Starting monitoring modul %s\n",METRIC_NAME_1);fflush(stdout);
-		linux_resources(pid, DataPath, metric->sampling_interval);
+// 		printf("Starting monitoring modul %s\n",METRIC_NAME_1);
+		stat_resources=linux_resources(pid, DataPath, metric->sampling_interval);
 	} else if(strcmp(metric->metric_name, METRIC_NAME_2) == 0) {
-// 		printf("Starting monitoring modul %s\n",METRIC_NAME_2);fflush(stdout);
+// 		printf("Starting monitoring modul %s\n",METRIC_NAME_2);
 		xlnx_monitor(DataPath, metric->sampling_interval);
 	} else if(strcmp(metric->metric_name, METRIC_NAME_3) == 0) {
-// 		printf("Starting monitoring modul %s\n",METRIC_NAME_3);fflush(stdout);
+// 		printf("Starting monitoring modul %s\n",METRIC_NAME_3);
 		power_monitor(pid, DataPath, metric->sampling_interval);
 #ifdef NVML
 #if NVML == yes
 	} else if(strcmp(metric->metric_name, METRIC_NAME_4) == 0) {
-// 		printf("Starting monitoring modul %s\n",METRIC_NAME_4);fflush(stdout);
+// 		printf("Starting monitoring modul %s\n",METRIC_NAME_4);
 		nvml_monitor(pid, DataPath, metric->sampling_interval);
 #endif
 #endif
@@ -518,17 +784,17 @@ void debugging_mf_configs(struct json_mf_config **mf_config,const unsigned int t
 /**
 * @return SUCCESS(0) if succeed, otherwise returns FAILED
 */
-int get_config_parameters(const char *server,const char *platform_id,const char *token){
+int get_config_parameters(const char *resource_manager,const char *platform_id,const char *token){
 	/* send the query and retrieve the response string */
 // 	char resoucemanager_path[]="query_device_mf_config?pretty=true\\&device=\"";//pretty is not needed
 	if(strlen(platform_id)==0)
 		return 1;//we can not proceed without a platform_id
-		
+
 	unsigned int total_loaded_mf_configs =0;
 	struct json_mf_config **mf_config=NULL;
-	const char *resource_server="141.58.0.8:2780";//examples: 141.58.0.8:2780 or localhost:8600
+// 	const char *resource_manager="141.58.0.8:2780";//examples: 141.58.0.8:2780 or localhost:8600
 	
-	char *html=query_mf_config(resource_server, platform_id, token);
+	char *html=query_mf_config(resource_manager, platform_id, token);
 	parse_mf_config_json(html, &mf_config, &total_loaded_mf_configs);
 	if(html!=NULL) free(html);
 	//****************** END OF LOADING THE MF_CONFIG FROM RESOURCE MANAGER, ALREADY PARSED*****/
@@ -538,14 +804,14 @@ int get_config_parameters(const char *server,const char *platform_id,const char 
 	char search_plugin[]="mf_plugin_board_power";
 	char *response_query = query_for_plugin_parsed_json(0, search_plugin, mf_config,total_loaded_mf_configs);
 	printf(" found plugin: %s%s%s as %s%s%s\n", yellow,search_plugin, NO_COLOUR, LIGHT_BLUE,
-		   (response_query==NULL)?"NULL":response_query, NO_COLOUR);
+		 (response_query==NULL)?"NULL":response_query, NO_COLOUR);
 	if(response_query!=NULL) free(response_query);
 	//**************************** END OF PARSING THE MF_CONFIG ************/
 	debugging_mf_configs(mf_config, total_loaded_mf_configs);
 	//free mf_config memory
 	int num,counter, total_fields,total_objects;
 	for(num =0; num <total_loaded_mf_configs;num++){
-		for(total_fields =0;  total_fields<mf_config[num]->count_f; total_fields++){
+		for(total_fields =0; total_fields<mf_config[num]->count_f; total_fields++){
 			total_objects= mf_config[num]->field[total_fields]->count_o;
 			for(counter=0;counter< total_objects ;counter++){
 				free(mf_config[num]->field[total_fields]-> object[counter]-> label_o);
@@ -755,6 +1021,7 @@ static int api_prepare_loc(char *Data_path){
 	return pid;
 }
 
+
 int mf_user_metric_loc_type(char *user_metrics, const char *datatype){
 	if(DataPath[0] == '\0')
 		pid = api_prepare_loc(DataPath);
@@ -770,7 +1037,7 @@ int mf_user_metric_loc_type(char *user_metrics, const char *datatype){
 	/*get current timestamp */
 	clock_gettime(CLOCK_REALTIME, &timestamp);
 	/*convert to milliseconds */
-	double timestamp_ms = timestamp.tv_sec * 1000.0 + (double)(timestamp.tv_nsec / 1.0e6); 
+	double timestamp_ms = timestamp.tv_sec * 1000.0 + (double)(timestamp.tv_nsec / 1.0e6);
 	fprintf(fp, "\"local_timestamp\":\"%.1f\"", timestamp_ms);
 	fprintf(fp, "%s\n",user_metrics);
 	/*close the file*/
@@ -784,10 +1051,9 @@ int mf_user_metric_loc(char *user_metrics ){
 }
 
 
-void user_metrics_buffer(char *currentid, struct Thread_report single_thread_report ){
+void user_metrics_buffer(struct Thread_report_t single_thread_report ){
 	unsigned int j;
 /* MONITORING I'd like to store here the duration of each loop --> duration */
-	char component_name[]="component_name";
 	char run_id[]="runid";
 	char *user_metrics= (char *) malloc(510);
 	if(user_metrics==NULL)
@@ -795,8 +1061,8 @@ void user_metrics_buffer(char *currentid, struct Thread_report single_thread_rep
 for(j=0;j<single_thread_report.total_metrics;j++){
 	user_metrics[0]='\0';
 		// common id of the different components of one execution of the task/workflow/application
-	user_metrics=myconcat(&user_metrics,",\"", run_id, "\":\"", currentid,"\"");
-	user_metrics=myconcat(&user_metrics,",\"", component_name, "\":\"", single_thread_report.taskid,"\"");
+	user_metrics=myconcat(&user_metrics,",\"", run_id, "\":\"", single_thread_report.currentid,"\"");
+	user_metrics=myconcat(&user_metrics,",\"", "component_name", "\":\"", single_thread_report.taskid,"\"");
 	user_metrics=myconcat(&user_metrics,",\"", "metric_time", "\":\"", single_thread_report.metric_time[j],"\"");
 	user_metrics=myconcat(&user_metrics,",\"", single_thread_report.user_label[j], "\": ", single_thread_report.user_value[j],"");
 
@@ -814,8 +1080,8 @@ for(j=0;j<single_thread_report.total_metrics;j++){
 }
 
 
-void register_end_component(char *currentid, struct Thread_report single_thread_report ){
-	long long int total_execution_time = single_thread_report.end_time - single_thread_report.start_time;
+void register_end_component(char *currentid, struct Thread_report_t single_thread_report ){
+	long long int total_execution_time_us = (single_thread_report.end_time - single_thread_report.start_time)/1000;
 // 	printf(" TOTAL EXECUTION TIME:%9Li s ", (total_execution_time)/1000000000LL);
 // 	long long int temp_time = (total_execution_time)%1000000000LL;
 // 	printf(" + %3Li ms ", temp_time/1000000);
@@ -826,7 +1092,7 @@ void register_end_component(char *currentid, struct Thread_report single_thread_
 /* MONITORING I'd like to store here the duration of each loop --> duration */
 	char metric_value[100];
 	// 	sprintf(metric_value, "%Li", total_execution_time);
-	llint_to_string_alloc(total_execution_time,metric_value);
+	llint_to_string_alloc(total_execution_time_us,metric_value);
 	char comp_start[]="component_start";
 	char comp_end[]="component_end";
 	char duration_str[]="component_duration";
@@ -834,7 +1100,6 @@ void register_end_component(char *currentid, struct Thread_report single_thread_
 // 	char user_defined_metric[]="user_defined_metric";
 // 	char run_id[]="runid";
 
-// 	char component_name[]="component_name";
 	char run_id[]="runid";
 
 	char *user_metrics= (char *) malloc(510);
@@ -856,7 +1121,7 @@ void register_end_component(char *currentid, struct Thread_report single_thread_
 
 /* MONITORING END */
 	mf_user_metric_loc_type( user_metrics, "duration_components");
-	if(user_metrics!=NULL) free(user_metrics); 
+	if(user_metrics!=NULL) free(user_metrics);
 	user_metrics=NULL;
 ///* MONITORING I'd like to store here the total nr. of completed loops --> nrLoops */
 //	int nrLoops=5;
@@ -866,22 +1131,57 @@ void register_end_component(char *currentid, struct Thread_report single_thread_
 /* MONITORING SEND */
 }
 
-
-void monitoring_send(char *server, char *appid,char *execfile, char *regplatformid, char *token){
+//it calls the mf_end and mf_send and frees memory, and closes logfile
+void monitoring_end(char *mf_server, char *exec_server, char *appid, char *exec_id, char *execfile, char *regplatformid, char *token, struct app_report_t *my_app_report){
+	mf_end();
 	/* MONITORING SEND */
-	char *experiment_id = mf_send(server, appid, execfile, regplatformid, token);
+	char *experiment_id = mf_send(mf_server, appid, execfile, regplatformid, token);
 // 	printf(" experiment_id is %s\n",experiment_id);
-	if(experiment_id!=NULL) free(experiment_id);//dinamically allocated by mf_send 
+	if(experiment_id!=NULL) free(experiment_id);//dynamically allocated by mf_send 
 	experiment_id=NULL;
+	if(my_app_report==NULL) {
+		printf("my_app_report NULL!!\n");
+		return;
+	}
+
+	char *json_msg=mf_exec_stats(*my_app_report, appid, exec_id, regplatformid);
+
+	//SAVE the FILE for forwarding it to the Execution Manager
+	char FileName[256] = {'\0'};
+	sprintf(FileName, "%s", "exec_stats.json");
+	FILE *fp = fopen(FileName, "a"); //append data to the end of the file
+	if (fp == NULL) {
+		printf("ERROR: Could not create file: %s\n", FileName);
+		return;
+	}
+	fprintf(fp,"%s",json_msg);
+	/*close the file*/
+	fclose(fp);
+
+	char filenamepath[]="/home/jmontana/phantom_mf/Monitoring_client/my-json-parser/exec_stats.json";
+	char* resp= new_exec(exec_server, filenamepath, token);
+// 	printf("%s",json_msg);
+	free(resp);
+	free(json_msg);
+
+	for(int i=0;i<my_app_report->num_of_threads;i++){
+		printf(" Execution label of the workflow: \"%s\"\n", my_app_report->currentid);
+		printf("   THREAD num %i, name : %s\n",i, my_app_report->my_thread_report[i]->taskid);
+		printf("     total metrics %i:\n",my_app_report->my_thread_report[i]->total_metrics);
+		for(int j=0;j<my_app_report->my_thread_report[i]->total_metrics;j++)
+			printf("   %s : %s\n", my_app_report->my_thread_report[i]->user_label[0], my_app_report->my_thread_report[i]->user_value[0]);
+		printf("   duration of the component : %lli us\n", (my_app_report->my_thread_report[i]->end_time- my_app_report->my_thread_report[i]->start_time)/1000);
+	}
+	free_app_report(my_app_report);
+	free_mem_report(mmy_task_data_a);
 }
 
 
 /**
 * this function query for a workflow was registered or not
 * if the status code is 400 means that it was not registered before*/
-char *query_workflow(char *server, char *appid){
-	char* response=NULL;
-	response=mf_query_workflow( server, appid );
+char* query_workflow(char *server, char *appid){
+	char* response=response=mf_query_workflow( server, appid );
 	return response;
 }
 
@@ -898,6 +1198,7 @@ int register_workflow( char *server, char *regplatformid, char *appid, char *exe
 	}
 	int rc = strcmp(response, "400"); //if 400 then the workflow was not registered before
 	if(rc == 0){ //0 stands for equal
+		printf("free reposnes\n");
 		if(response!=NULL) free(response);
 // 		printf("\nREGISTERING WORKFLOW ...\n");
 		response= mf_new_workflow(server, appid, author, optimization, tasks_desc, token);

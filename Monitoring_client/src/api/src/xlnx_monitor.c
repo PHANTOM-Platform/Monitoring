@@ -34,7 +34,7 @@
 #define xilinx_path "/home/jmontana/fake_fpga/%s%s%s"
 
 #define MAX_CHANNELS 5
-const char channel_labels[MAX_CHANNELS][32] = {//also referrred as Rails
+const char channel_labels[MAX_CHANNELS][16] = {//also referrred as Rails
 	"VCCINT","VCCAUX", "VCC1V5_PL", "VADJ_FPGA", "VCC3V3_FPGA"};
 /*******************************************************************************
 * Implementaion
@@ -160,36 +160,35 @@ int xlnx_monitor(char *DataPath, long sampling_interval) {
 	}
 	fprintf(fp, "\"local_timestamp\":\"%.1f\"", timestamp_ms);
 	fprintf(fp, ",\"%s\":\"%.3f\"", "total_watts",result.total_watts );
-	fprintf(fp, ",[{" );
+	fprintf(fp, "," );
 	for (int i=0;i<MAX_CHANNELS;i++){
-		fprintf(fp, "\"%s%s\":{", channel_labels[i],"_current" );
-		fprintf(fp, ",\"count\":\"%li\"", counter);
+		fprintf(fp, "\"stats_%s%s\":{", channel_labels[i],"_current" );
+		fprintf(fp, "\"count\":\"%li\"", counter);
 		fprintf(fp, ",\"min\":\"%lli\"", result.min_current[i]);
 		fprintf(fp, ",\"max\":\"%lli\"", result.max_current[i]);
-		fprintf(fp, ",\"avg\":\"%lli\"", result.avg_current[i]/counter);
-		fprintf(fp, ",\"sum\":\"%lli\"},", result.avg_current[i]);
 		if(avg_current_overflow[i]== false){
 			fprintf(fp, ",\"avg\":\"%lli\"", result.avg_current[i]/counter);
-			fprintf(fp, ",\"sum\":\"%lli\"},", result.avg_current[i]);
+			fprintf(fp, ",\"sum\":\"%lli\"}", result.avg_current[i]);
 		}else{
 			fprintf(fp, ",\"avg\":\"%s\"", "overflow");
-			fprintf(fp, ",\"sum\":\"%s\"},", "overflow");
+			fprintf(fp, ",\"sum\":\"%s\"}", "overflow");
 		}
 
-		fprintf(fp, "\"%s%s\":{", channel_labels[i],"_volt" );
-		fprintf(fp, ",\"count\":\"%li\"", counter);
+		fprintf(fp, ",\"stats_%s%s\":{", channel_labels[i],"_volt" );
+		fprintf(fp, "\"count\":\"%li\"", counter);
 		fprintf(fp, ",\"min\":\"%lli\"", result.min_volt[i]);
 		fprintf(fp, ",\"max\":\"%lli\"", result.max_volt[i]);
 		if(avg_volt_overflow[i]== false){
 			fprintf(fp, ",\"avg\":\"%lli\"", result.avg_volt[i]/counter);
-			fprintf(fp, ",\"sum\":\"%lli\"},", result.avg_volt[i]);
+			fprintf(fp, ",\"sum\":\"%lli\"}", result.avg_volt[i]);
 		}else{
 			fprintf(fp, ",\"avg\":\"%s\"", "overflow");
-			fprintf(fp, ",\"sum\":\"%s\"},", "overflow");
+			fprintf(fp, ",\"sum\":\"%s\"}", "overflow");
 		}
+		fprintf(fp, "," );
 	}
-	fprintf(fp, "\"temperature\":{"  );
-	fprintf(fp, ",\"count\":\"%lu\"", counter);
+	fprintf(fp, "\"stats_temperature\":{"  );
+	fprintf(fp, "\"count\":\"%lu\"", counter);
 	fprintf(fp, ",\"min\":\"%.2f\"", (float) result.min_temp/1000.0);
 	fprintf(fp, ",\"max\":\"%.2f\"", (float) result.max_temp/1000.0);
 	if(avg_temp_overflow== false){
@@ -199,7 +198,8 @@ int xlnx_monitor(char *DataPath, long sampling_interval) {
 		fprintf(fp, ",\"avg\":\"%s\"", "overflow");
 		fprintf(fp, ",\"sum\":\"%s\"}", "overflow");
 	}
-	fprintf(fp, "}]\n" );
+	fprintf(fp, "\n" );
 	fclose(fp);
+	printf("finishing files\n\n");
 	return 1;
 }

@@ -19,7 +19,7 @@ For code instrumentation and user-defined metrics collection, we provide a monit
 The monitoring client requires at first a running server and database. In order to install these requirements, please
 checkout the associated [PHANTOM monitoring server][server] and follow the setup instructions given in the repository `README.md` file. A successful setup process can be checked by the following command as testing whether the server is running in the specific url:
 ```bash
-curl localhost:3033
+curl http://localhost:3033
 ```
 
 Please note that the installation and setup steps mentioned below assume that you are running a current Linux as operating system. We have tested the monitoring agent with Ubuntu 14.04 LTS as well as with Scientific Linux 6 (Carbon).

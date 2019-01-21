@@ -118,9 +118,9 @@ void mfp_get_data_filtered_by_value(const char* section, mfp_data* data, const c
 				continue;
 			}
 		}
-		data->keys[data->size] = malloc(sizeof(char) * 256);
+		data->keys[data->size] = malloc(sizeof(char) * (strlen(key)+1));
 		strcpy(data->keys[data->size], key);
-		data->values[data->size] = malloc(sizeof(char) * 256);
+		data->values[data->size] = malloc(sizeof(char) * (strlen(value)+1) );
 		strcpy(data->values[data->size], value);
 		data->size++;
 	}
@@ -237,6 +237,7 @@ int parse_mf_config_json(char *html, struct json_mf_config ***in_mf_config,unsig
 	int total_fields,total_objects;
 	int level=0;
 	int i=0;
+	if(html==NULL) return 0;
 	if(strlen(html)> strlen(hits_head)){
 		while ((hits_head[i]==html[i])&&(i< strlen(hits_head))){
 			i++;

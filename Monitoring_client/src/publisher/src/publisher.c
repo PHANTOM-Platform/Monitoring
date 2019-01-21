@@ -21,21 +21,24 @@
 #include "mf_util.h"
 #include "publisher.h"
 #include <malloc.h>
+#include <sys/stat.h>
 
 // From http://curl.haxx.se/libcurl/c/curl_global_init.html, I see 
 // 
-// "This function is not thread safe. You must not call it when any other thread 
-// in the program (i.e. a thread sharing the same memory) is running. This doesn't 
+// "This function is not thread safe. You must not call it when any other thread
+// in the program (i.e. a thread sharing the same memory) is running. This doesn't
 // just mean no other thread that is using libcurl. Because curl_global_init() 
-// calls functions of other libraries that are similarly thread unsafe, it could 
-// conflict with any other thread that uses these other libraries. " 
-// 
-// 
+// calls functions of other libraries that are similarly thread unsafe, it could
+// conflict with any other thread that uses these other libraries. "
+//
+//
 // void curl_global_cleanup(void);
 // DESCRIPTION: This function releases resources acquired by curl_global_init.
 
 #define SUCCESS 0
 #define FAILED 1
+
+#define headercode_char_size 11
 /*******************************************************************************
 * Variables Declarations
 ******************************************************************************/
@@ -47,12 +50,15 @@ struct curl_slist *headers = NULL;
 int check_URL(const char *URL);
 int check_message(const char *message);
 void init_curl(const char *token);
-CURL *prepare_publish(char *URL, char *message, char *operation, const char *token);
+CURL *prepare_publish(char *URL, char *message, FILE *send_fp, char *operation, const char *token);
 CURL *prepare_query(char* URL, char *operation, const char *token);
 // static size_t get_stream_data(void *buffer, size_t size, size_t nmemb, char *stream);
 
+/** Callback function for writing with libcurl */
 #ifdef NDEBUG
-static size_t write_non_data(void *buffer, size_t size, size_t nmemb, void *userp);
+static size_t write_non_data(void *buffer, size_t size, size_t nmemb, void *userp) {
+	return size * nmemb;
+}
 #endif
 
 // //definitions for new_query_json
@@ -97,11 +103,11 @@ size_t write_data(void *ptr, size_t size, size_t nitems, struct url_data *data) 
 		int rc = strcmp(tempinit, "HTTP/1.1 ");//[0..8] 
 		if(rc == 0){ 
 			if(data->headercode==NULL)
-				data->headercode = (char *) malloc(11); 
+				data->headercode = (char *) malloc(headercode_char_size); 
 			//we wish to cut the first 9 characters which must be: "HTTP/1.1 ", 
 			// then take those numeric characters after that 
 			i=0;
-			while (data->data[i+9]>='0' && data->data[i+9]<='9'){
+			while (data->data[i+9]>='0' && data->data[i+9]<='9' && i<headercode_char_size){
 				data->headercode[i]=data->data[i+9];
 				i++;
 			} 
@@ -110,6 +116,7 @@ size_t write_data(void *ptr, size_t size, size_t nitems, struct url_data *data) 
 	}
 	return size * nitems;
 }
+
 
 // size_t header_callback(void *ptr, size_t size, size_t nitems, struct url_data *data) {
 // 	if(strncmp((char *)ptr, "X-Auth-Token:", 13) == 0) { // get Token
@@ -122,7 +129,6 @@ size_t write_data(void *ptr, size_t size, size_t nitems, struct url_data *data) 
 //     }
 // 	return size * nitems;
 // }
-
 
 /* Callback function to get stream data during writing */
 // static size_t get_stream_data(void *buffer, size_t size, size_t nmemb, char *stream)
@@ -158,12 +164,12 @@ int reserve_data_struc(struct url_data *data){
 		return FAILED;
 	}
 	data->data[0] = '\0';
-	data->headercode = malloc(5192); /* reasonable size initial buffer */
+	data->headercode = malloc(headercode_char_size); /* reasonable size initial buffer */
 	if(NULL == data->headercode) {
 		free_data_struc(data);
 		return FAILED;
 	}
-	data->headercode[0] = '\0';
+	data->headercode[0]= '\0';
 	return SUCCESS;
 }
 
@@ -177,18 +183,19 @@ int new_query_json(char *URL, struct url_data *response, char *operation, const 
 	response->data = NULL;
 	response->headercode = NULL;
 
+	if(check_URL(URL)!=SUCCESS)
+		return FAILED;
+
 	if(reserve_data_struc(&data) == FAILED) {
 		fprintf(stderr, "Failed to allocate memory.\n");
 		return FAILED;
 	}
-	if(reserve_data_struc(&rescode) == FAILED) {
+	if(reserve_data_struc(&rescode) == FAILED) { //***********************************************************
 		fprintf(stderr, "Failed to allocate memory.\n");
 		free_data_struc(&data);
 		return FAILED;
 	}
 
-	if(check_URL(URL)!=SUCCESS)
-		return FAILED;
 	CURL *curl = prepare_query(URL, operation, token);
 	if(curl == NULL) {
 		free_data_struc(&data);
@@ -201,14 +208,14 @@ int new_query_json(char *URL, struct url_data *response, char *operation, const 
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
 
 	curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, write_data);//header_callback);
-	curl_easy_setopt(curl, CURLOPT_HEADERDATA, &rescode); // set userdata in callback function	
-	CURLcode response_code = curl_easy_perform(curl);
+	curl_easy_setopt(curl, CURLOPT_HEADERDATA, &rescode); // set userdata in callback function
+	CURLcode response_code = curl_easy_perform(curl);//***********************************************************
 
 	if(response_code != CURLE_OK) {
 		const char *error_msg = curl_easy_strerror(response_code);
 		log_error("ERROR query %s", error_msg);
 		free_data_struc(&data);
-		free_data_struc(&rescode);		
+		free_data_struc(&rescode);
 		return FAILED;
 	}
 
@@ -222,18 +229,23 @@ int new_query_json(char *URL, struct url_data *response, char *operation, const 
 	}
 	
 	if(response->data !=NULL) free(response->data);
+		response->data=NULL;
 	if(response->headercode !=NULL) free(response->headercode);
-	response->data=data.data;
-	response->headercode=rescode.headercode;
+		response->headercode=NULL;
  
 	if(rescode.data!=NULL) free(rescode.data);
-	rescode.data=NULL;
-	free(data.headercode); data.headercode=NULL;
+		rescode.data=NULL;
+	if(rescode.headercode!=NULL) free(data.headercode); 
+	data.headercode=NULL;
 	
 	if(data.data == NULL){
 		printf("data.data = NULL\n");
+		free_data_struc(&data);
+		free_data_struc(&rescode);
 		return FAILED;
 	}
+	response->data=data.data;
+	response->headercode=rescode.headercode;
 	return SUCCESS;
 }
  
@@ -261,27 +273,17 @@ return 1 on success; otherwise return 0 */
 // 	return SUCCESS;
 // }
 
+
 /** json-formatted data publish using libcurl
 * return 1 on success; otherwise return 0 */
-int publish_json(char *URL, char *message, const char *token) {
+int publish_json(char *URL, char *message,   const char *token) {
 	struct url_data rescode;
-	rescode.size=0;
-	rescode.data = malloc(5192); /* reasonable size initial buffer */
-	if(NULL == rescode.data) {
-		fprintf(stderr, "Failed to allocate memory.\n");
+	if(reserve_data_struc(&rescode)==FAILED)
 		return FAILED;
-	}
-	rescode.data[0] = '\0';
-	rescode.headercode = (char *) malloc(5120); /* reasonable size initial buffer */
-	if(NULL == rescode.headercode) {
-		fprintf(stderr, "Failed to allocate memory.\n");
-		return FAILED;
-	}
-	rescode.headercode[0] = '\0';	
 	if(check_URL(URL)!=SUCCESS || check_message(message)!=SUCCESS)
 		return FAILED;
 	char operation[]="POST";
-	CURL *curl = prepare_publish(URL, message, operation, token);
+	CURL *curl = prepare_publish(URL, message, NULL, operation, token);
 	if(curl == NULL)
 		return FAILED;
 	#ifdef NDEBUG
@@ -310,16 +312,16 @@ int publish_file(char *URL, char *static_string, char *filename, const char *tok
 		return FAILED;
 	/*open the file, which contains data for publishing */
 	int i = 0;
-	unsigned int max_buffer= 10*320;
+	unsigned int max_buffer= 10*2048;
 	unsigned int adding_string_len;
 	CURLcode response_code;
 	FILE *fp;
-	char line[320];
+	char line[2048];
 	char *message = (char *) malloc(max_buffer *sizeof(char));
 	message[0]='\0';
 	char operation[]="POST";
 	/* int curl with meaningless message */
-	CURL *curl = prepare_publish(URL, message, operation, token);
+	CURL *curl = prepare_publish(URL, message, NULL, operation, token);
 	if(curl == NULL)
 		return FAILED;
 	#ifdef NDEBUG
@@ -331,7 +333,7 @@ int publish_file(char *URL, char *static_string, char *filename, const char *tok
 		return FAILED;
 	}
 	/* read the lines in the file and send the message for each 10 lines */
-	while(fgets(line, 320, fp) != NULL) {
+	while(fgets(line, 2048, fp) != NULL) {
 		line[strlen(line) - 1] = '\0';
 		adding_string_len=strlen(static_string)+strlen(line);
 		switch(i) {
@@ -360,7 +362,6 @@ int publish_file(char *URL, char *static_string, char *filename, const char *tok
 				curl_easy_setopt(curl, CURLOPT_POSTFIELDS, message);
 				curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long ) strlen(message));
 				  response_code = curl_easy_perform(curl);
-
 				if(response_code != CURLE_OK) {
 					const char *error_msg = curl_easy_strerror(response_code);
 					log_error("publish(char *, Message) %s", error_msg);
@@ -368,7 +369,7 @@ int publish_file(char *URL, char *static_string, char *filename, const char *tok
 				}
 				/* reset i and message for following sending */
 				i = 0;
-				memset(message, '\0', 10*320);
+				message[0]='\0';//memset(message, '\0', 10*320);
 				break;
 			default:
 				if(strlen(message)+adding_string_len> max_buffer){
@@ -399,7 +400,7 @@ int publish_file(char *URL, char *static_string, char *filename, const char *tok
 			return FAILED;
 		}
 	}
-	/* clean the curl handle */	
+	/* clean the curl handle */
 	//curl_slist_free_all(headers);/* free the list again */
 	curl_easy_cleanup(curl);
 	if(message!=NULL) free(message);
@@ -408,6 +409,8 @@ int publish_file(char *URL, char *static_string, char *filename, const char *tok
 	return SUCCESS;
 }
 
+
+//file fp is already opened as read operation, or assing to NULL if not file will be transmitted 
 /**
 * It can not be register experiments and workflows 
 * read back the path to the workflow, after send the msg
@@ -436,45 +439,19 @@ int publish_file(char *URL, char *static_string, char *filename, const char *tok
 * curl -H "Content-Type: application/json" -XPOST ${server}:${port}/v1/phantom_mf/experiments/${appid} -d '{
 * "application": "'"${appid}"'", "task": "'"${task}"'", "host": "'"${regplatformid}"'"}'
 */ 
-int query_message_json(char *URL, char *message, struct url_data *response, char *operation, const char *token) {
+int query_message_json(char *URL, char *message,const char *filenamepath, struct url_data *response, char *operation, const char *token) {
+	struct curl_slist *headers = NULL;
+	
 	struct url_data data;
-	data.size = 0;
-	data.data = (char *) malloc(5120); /* reasonable size initial buffer */
-	if(NULL == data.data) {
-		fprintf(stderr, "Failed to allocate memory.\n");
+	if(reserve_data_struc(&data)==FAILED)
 		return FAILED;
-	}
-	data.data[0] = '\0';
-	data.headercode = (char *) malloc(5120); /* reasonable size initial buffer */
-	if(NULL == data.headercode) {
-		fprintf(stderr, "Failed to allocate memory.\n");
-		free(data.data); data.data=NULL;
-		return FAILED;
-	}
-	data.headercode[0] = '\0';
-
 	struct url_data rescode;
-	rescode.size=0;
-	rescode.data = malloc(5192); /* reasonable size initial buffer */
-	if(NULL == rescode.data) {
-		fprintf(stderr, "Failed to allocate memory.\n");
-		free(data.data); data.data=NULL;
-		free(data.headercode); data.headercode=NULL;
+	if(reserve_data_struc(&rescode)==FAILED){
+		free_data_struc(&data);
 		return FAILED;
 	}
-	rescode.data[0] = '\0';
-	rescode.headercode = (char *) malloc(5192); /* reasonable size initial buffer */
-	if(NULL == rescode.headercode) {
-		fprintf(stderr, "Failed to allocate memory.\n");
-		free(data.data); data.data=NULL;
-		free(data.headercode); data.headercode=NULL;
-		free(rescode.data); rescode.data=NULL;
-		return FAILED;
-	}
-	rescode.headercode[0] = '\0';
-	
+
 	response->data=NULL;
-	
 	if(check_URL(URL)!=SUCCESS) {
 		free(data.data); data.data=NULL;
 		free(data.headercode); data.headercode=NULL;
@@ -483,7 +460,72 @@ int query_message_json(char *URL, char *message, struct url_data *response, char
 		return FAILED;
 	}
 
-	CURL *curl = prepare_publish(URL, message, operation, token);
+	
+	if(filenamepath!= NULL){
+		headers=NULL;
+		// 	curl_slist_free_all(headers);/* free the list again */
+		// 	curl_global_init(CURL_GLOBAL_ALL);kkj
+		if(token !=NULL){
+			if(token[0]!='0'){
+				const char authorization_header[]="Authorization: OAuth ";
+				unsigned int size=strlen(authorization_header) + strlen(token)+1;
+				char *newheader = (char *) malloc(size);
+				if(newheader==NULL) {
+					printf("Failed to allocate memory.\n");
+					exit(1);
+				}
+				newheader[0]='0';
+				strcpy(newheader,authorization_header);
+				strcat(newheader,token);
+				headers = curl_slist_append(headers, newheader);
+				free(newheader);
+			}
+		}
+	// 	headers = curl_slist_append(headers, string("X-Auth-Token: " + token).c_str());
+		headers = curl_slist_append(headers, "Expect: 100-continue");
+		headers = curl_slist_append (headers, "Content-type: multipart/form-data");
+	// 	headers = curl_slist_append(headers, "Accept: application/json");
+	// 	headers = curl_slist_append(headers, "Content-Type: application/json");
+		headers = curl_slist_append(headers, "charsets: utf-8");
+	}else{
+		init_curl(token);//this defined the headers
+	}
+
+	CURL *curl = NULL;
+	
+	struct curl_httppost *formpost = NULL;
+	struct curl_httppost *lastptr = NULL;
+	if(filenamepath!= NULL){
+		curl = curl_easy_init();
+		curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);//not using signals to notify timeouts on requests and seems not to work fine with multi-threading
+		curl_easy_setopt(curl, CURLOPT_URL, URL);
+		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+		if (message!= NULL){
+			curl_easy_setopt(curl, CURLOPT_POSTFIELDS, message);
+			curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long ) strlen(message));
+		}
+		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, operation); /* PUT, POST, ... */
+// 		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+		if(filenamepath!= NULL){
+			curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+			curl_global_init(CURL_GLOBAL_ALL);
+			curl_formadd(&formpost,
+				&lastptr,
+				CURLFORM_COPYNAME, "UploadJSON",
+				CURLFORM_FILE, filenamepath,
+	// 			CURLFORM_CONTENTTYPE, "application/octet-stream", 
+				CURLFORM_END);
+		}	
+		if(filenamepath!= NULL){
+	// 		curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);kaka
+			curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
+		}
+	}else{
+		curl = prepare_publish(URL, message, NULL, operation, token);
+	}
+
+	
+		
 	if(curl == NULL) {
 		free(data.data); data.data=NULL;
 		free(data.headercode); data.headercode=NULL;
@@ -494,7 +536,7 @@ int query_message_json(char *URL, char *message, struct url_data *response, char
 
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data); // the functions get_stream_data seems was not correct.
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
- 
+
 	curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, write_data);//header_callback);
 	curl_easy_setopt(curl, CURLOPT_HEADERDATA, &rescode);  // set userdata in callback function
 	CURLcode response_code = curl_easy_perform(curl);
@@ -504,8 +546,14 @@ int query_message_json(char *URL, char *message, struct url_data *response, char
 // 	printf("\n data is %s\n", data.data);
 	free(rescode.data); rescode.data=NULL;
 	//curl_slist_free_all(headers);/* free the list again */
-	curl_easy_cleanup(curl);
 
+	if(filenamepath!=NULL)
+		curl_formfree(formpost);
+
+	curl_easy_cleanup(curl);
+ 
+// 	curl_global_cleanup();kkj
+	
 	if(response_code != CURLE_OK) {
 		const char *error_msg = curl_easy_strerror(response_code);
 		log_error("ERROR query_message_json %s", error_msg);
@@ -564,7 +612,7 @@ char* query_mf_config(char *server, char *platform_id, char *token) {
 
 // 	printf("******* new_create_new_experiment ******\n"); 
 	char operation[]="GET";
-	if(query_message_json(URL, msg, &response, operation, token)==FAILED){
+	if(query_message_json(URL, msg, NULL, &response, operation, token)==FAILED){
 		printf("ERROR: searching for DEFAULT mf_config for device %s\n", platform_id);
 		if(msg!=NULL) {free(msg); msg=NULL;}
 		if(URL!=NULL) {free(URL); URL=NULL;}
@@ -580,7 +628,7 @@ char* query_mf_config(char *server, char *platform_id, char *token) {
 		printf("ERROR: on response.data when searching for DEFAULT mf_config for device %s\n", platform_id);
 		return NULL;
 	}
-	if(response.data[0] == '\0') { 
+	if(response.data[0] == '\0') {
 		printf("ERROR: Cannot find DEFAULT mf_config for device %s\n", platform_id);
 		return NULL;
 	}
@@ -594,7 +642,7 @@ return 1 on success; otherwise return 0 */
 // 	//You should use query_message_json instead of this function create_new_experiment !!
 // 	if(check_URL(URL)!=SUCCESS || check_message(message)!=SUCCESS)
 // 		return FAILED;
-// 	CURL *curl = prepare_publish(URL, message, "POST", token);
+// 	CURL *curl = prepare_publish(URL, message, NULL, "POST", token);
 // 	if(curl == NULL)
 // 		return FAILED;
 // 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, get_stream_data);
@@ -610,7 +658,7 @@ return 1 on success; otherwise return 0 */
 // 	return SUCCESS;
 // }
 
-/** Check if the url is set 
+/** Check if the url is set
 * @return 0 on success; otherwise returns 1 */
 int check_URL(const char *URL) {
 	if(URL == NULL || *URL == '\0') {
@@ -622,7 +670,7 @@ int check_URL(const char *URL) {
 	return SUCCESS;
 }
 
-/** Check if the message is set 
+/** Check if the message is set
 * @return 1 on success; otherwise return 0 */
 int check_message(const char *message) {
 	if(message == NULL || *message == '\0') {
@@ -668,7 +716,66 @@ void close_curl(void) {
 
 
 /** Prepare for using libcurl with message */
-CURL *prepare_publish(char *URL, char *message, char *operation, const char *token) {
+CURL *prepare_publish(char *URL, char *message, FILE *send_fp, char *operation, const char *token) {
+// struct curl_httppost *formpost = NULL;
+// struct curl_httppost *lastptr = NULL;
+// 		if(send_fp!= NULL){
+// 		 curl_global_init(CURL_GLOBAL_ALL);
+		
+// curl_mime *form = NULL;
+// curl_mimepart *field = NULL;
+// 
+// form = curl_mime_init(curl);
+// 
+// /* Fill in the file upload field */ 
+// field = curl_mime_addpart(form);
+// curl_mime_name(field, "UploadJSON");
+// curl_mime_filedata(field, "/home/jmontana/phantom_mf/Monitoring_client/my-json-parser/exec_stats.json");
+// 
+// //     /* Fill in the filename field */ 
+// //     field = curl_mime_addpart(form);
+// //     curl_mime_name(field, "filename");
+// //     curl_mime_data(field, "postit2.c", CURL_ZERO_TERMINATED);
+//  
+//     /* Fill in the submit field too, even if this is rarely needed */ 
+// //     field = curl_mime_addpart(form);
+// //     curl_mime_name(field, "submit");
+// //     curl_mime_data(field, "send", CURL_ZERO_TERMINATED);
+
+// curl_easy_setopt(curl, CURLOPT_MIMEPOST, form);
+
+	//  ******************************************	
+
+// curl_formadd(&formpost,
+//              &lastptr,
+//              CURLFORM_COPYNAME, "UploadJSON",
+//              CURLFORM_FILE, "/home/jmontana/phantom_mf/Monitoring_client/my-json-parser/exec_stats.json",
+//              CURLFORM_END);
+//other files should be next
+// curl_formadd(&formpost,
+//              &lastptr,
+//              CURLFORM_COPYNAME, "UploadJSON",
+//              CURLFORM_COPYCONTENTS, "exec_stats.json",
+//              CURLFORM_END);
+
+
+//  ******************************************
+// 		/* to get the file size */
+// 		printf("set the file for the curl !!\n");
+// 		if(fstat(fileno(send_fp), &file_info) != 0)
+// 			return NULL; /* can't continue */
+// 
+// 		/* tell it to "upload" to the URL */
+// 		curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
+// 
+// 		/* set where to read from */
+// 		curl_easy_setopt(curl, CURLOPT_READDATA, send_fp);//opened for read operation
+// 
+// 		/* and give the size of the upload (optional) */
+// 		curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, (curl_off_t)file_info.st_size);
+// 	}
+	
+// 	struct stat file_info;
 	init_curl(token);//this defined the headers
 	CURL *curl = curl_easy_init();
 	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);//not using signals to notify timeouts on requests and seems not to work fine with multi-threading
@@ -678,6 +785,9 @@ CURL *prepare_publish(char *URL, char *message, char *operation, const char *tok
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, message);
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long ) strlen(message));
 	}
+// 		if(send_fp!= NULL){
+// 			curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
+// 		}
 	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, operation); /* PUT, POST, ... */
 
 	#ifdef DEBUG
@@ -686,12 +796,12 @@ CURL *prepare_publish(char *URL, char *message, char *operation, const char *tok
 	return curl;
 }
 
-/** Prepare for using libcurl without message 
+/** Prepare for using libcurl without message
 * Leave the token as NULL or empty string if not using tokens*/
 CURL *prepare_query(char* URL, char *operation, const char *token) {
 	CURL *curl = curl_easy_init();
 	if(curl) {
-		init_curl(token);//this defined the headers		
+		init_curl(token);//this defined the headers
 		curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);//not using signals to notify timeouts on requests and seems not to work fine with multi-threading
 		curl_easy_setopt(curl, CURLOPT_URL, URL);
 		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
@@ -703,11 +813,4 @@ CURL *prepare_query(char* URL, char *operation, const char *token) {
 		//  curl_slist_free_all(headers);
 	}
 	return curl;
-} 
-
-/** Callback function for writing with libcurl */
-#ifdef NDEBUG
-static size_t write_non_data(void *buffer, size_t size, size_t nmemb, void *userp) {
-	return size * nmemb;
 }
-#endif

@@ -9,15 +9,15 @@ CXX = g++
 #
 COMMON = ${CURDIR}/..
 
-PARSER_INC = -I${COMMON}/parser/src
-PUBLISHER_INC = -I${COMMON}/publisher/src
-MFUTIL_INC = -I${COMMON}/util/src
+PARSER_INC = -I$(COMMON)/parser/src
+PUBLISHER_INC = -I$(COMMON)/publisher/src
+MFUTIL_INC = -I$(COMMON)/util/src
 CORE_INC = -I$(COMMON)/core
 CURL_INC = -I$(COMMON)/../bin/curl/include
 
-PARSER = -L${COMMON}/parser -lparser
-PUBLISHER = -L${COMMON}/publisher -lpublisher
-MFUTIL = -L${COMMON}/util -lmfutil
+PARSER = -L$(COMMON)/parser -lparser
+PUBLISHER = -L$(COMMON)/publisher -lpublisher
+MFUTIL = -L$(COMMON)/util -lmfutil
 CURL = -L$(COMMON)/../bin/curl/lib -lcurl
 
 #

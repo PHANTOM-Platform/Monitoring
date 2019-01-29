@@ -219,10 +219,53 @@ char* new_exec(const char *server, const char *filenamepath, char * token){
 	return p;
 }
 
+
+struct Mydate {
+	unsigned int name_day, year, month,day, hour, min, sec, msec;
+};
+
+void calculate_date(long long int current, struct Mydate *exampledate) {
+	int months[12]={31, 28, 31, 30, 31, 30, 31, 31, 30 ,31 ,30 ,31 };
+	exampledate->msec =current % 1000;
+	current= current /1000;
+	exampledate->sec = current %60;
+	current =current / 60;
+	exampledate->min = current % 60;
+	current = current /60;
+	exampledate->hour = current %24;
+	current = current /24;
+	exampledate->year=0;
+
+	exampledate->name_day = current % 7;
+	if(current > 365+365+366){
+		exampledate->year=3;
+		current -= (365+365+366);
+	}
+	if(current > 1461){
+		exampledate->year+=4*(current / 1461);
+		current = current % 1461;
+	}
+	exampledate->year+=current / 365;
+	current = current % 365;
+	int leap_year= (exampledate->year %4==2) ? 1 : 0;
+	if (leap_year==1) months[1]=29;
+	exampledate->month=0;
+	while(current> months[exampledate->month]){
+		current -= months[exampledate->month];
+		exampledate->month++;
+	}
+	exampledate->year= 1970+ exampledate->year;
+	exampledate->day= 1+ current;
+	exampledate->month=1+exampledate->month;
+}
+
+#define FLOAT_TO_LLINT(x) ((x)>=0?(long long int)((x)+0.5):(long long int)((x)-0.5))
+
 char *mf_exec_stats( struct app_report_t my_app_report, char *application_id, char *exec_id, char *platform_id ){
 	/*create and open the file*/
 	char *json_msg = NULL;
 	char tempstr[2560] = {'\0'};
+	struct Mydate exampledate;
 // 	double localtimestamp;
 	struct timespec timestamp;
 	/*get current timestamp */
@@ -240,16 +283,22 @@ char *mf_exec_stats( struct app_report_t my_app_report, char *application_id, ch
 	concat_and_free(&json_msg, "\t\"execution_id\":\"");
 	concat_and_free(&json_msg, exec_id);
 	concat_and_free(&json_msg, "\",\n");
-	
+
 	concat_and_free(&json_msg, "\t\"start_timestamp\":\"");
-// 	sprintf(tempstr, "%.1f",my_app_report.timestamp_ms);
-// 	concat_and_free(&json_msg, tempstr);
-	concat_and_free(&json_msg, "2018-03-22T21:02:15.333");	
+	// We convert Epoch into timestamp format, required by ElasticSearch:
+	calculate_date(FLOAT_TO_LLINT(my_app_report.timestamp_ms), &exampledate);
+ 	sprintf(tempstr," %u-%02u-%02uT%02u:%02u:%02u.%03u",exampledate.year,exampledate.month,
+		exampledate.day, exampledate.hour, exampledate.min , exampledate.sec, exampledate.msec);
+	concat_and_free(&json_msg, tempstr);
 	concat_and_free(&json_msg, "\",\n");
 	concat_and_free(&json_msg, "\t\"end_timestamp\": \"");
-// 	sprintf(tempstr, "%.1f", timestamp_ms);concat_and_free(&json_msg, tempstr);
-	concat_and_free(&json_msg, "2018-03-22T21:02:15.333");
-	concat_and_free(&json_msg, "\",\n");	
+
+	// We convert Epoch into timestamp format, required by ElasticSearch:
+	calculate_date(FLOAT_TO_LLINT(timestamp_ms), &exampledate);
+ 	sprintf(tempstr," %u-%02u-%02uT%02u:%02u:%02u.%03u",exampledate.year,exampledate.month,
+		exampledate.day, exampledate.hour, exampledate.min , exampledate.sec, exampledate.msec);
+	concat_and_free(&json_msg, tempstr);
+	concat_and_free(&json_msg, "\",\n");
 	concat_and_free(&json_msg, "\t\"energy\": \"");
 	sprintf(tempstr, "%.2f", 22.12);
 	concat_and_free(&json_msg, tempstr);

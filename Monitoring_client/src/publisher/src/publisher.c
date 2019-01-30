@@ -64,7 +64,7 @@ static size_t write_non_data(void *buffer, size_t size, size_t nmemb, void *user
 // //definitions for new_query_json
 // struct url_data {
 // 	size_t size;
-// 	char* headercode ;
+// 	char* headercode;
 // 	char* data;
 // };
 
@@ -117,7 +117,6 @@ size_t write_data(void *ptr, size_t size, size_t nitems, struct url_data *data) 
 	return size * nitems;
 }
 
-
 // size_t header_callback(void *ptr, size_t size, size_t nitems, struct url_data *data) {
 // 	if(strncmp((char *)ptr, "X-Auth-Token:", 13) == 0) { // get Token
 // //         strtok((char *)ptr, " ");
@@ -143,7 +142,6 @@ size_t write_data(void *ptr, size_t size, size_t nitems, struct url_data *data) 
 // 	stream[total] = '\0';
 // 	return total;
 // }
-
 
 /**********************************************************
  * FUNCTION DECLARATIONS
@@ -276,7 +274,7 @@ return 1 on success; otherwise return 0 */
 
 /** json-formatted data publish using libcurl
 * return 1 on success; otherwise return 0 */
-int publish_json(char *URL, char *message,   const char *token) {
+int publish_json(char *URL, char *message, const char *token) {
 	struct url_data rescode;
 	if(reserve_data_struc(&rescode)==FAILED)
 		return FAILED;
@@ -441,7 +439,6 @@ int publish_file(char *URL, char *static_string, char *filename, const char *tok
 */ 
 int query_message_json(char *URL, char *message,const char *filenamepath, struct url_data *response, char *operation, const char *token) {
 	struct curl_slist *headers = NULL;
-	
 	struct url_data data;
 	if(reserve_data_struc(&data)==FAILED)
 		return FAILED;
@@ -459,8 +456,6 @@ int query_message_json(char *URL, char *message,const char *filenamepath, struct
 		free(rescode.headercode); rescode.headercode=NULL;
 		return FAILED;
 	}
-
-	
 	if(filenamepath!= NULL){
 		headers=NULL;
 		// 	curl_slist_free_all(headers);/* free the list again */
@@ -483,7 +478,7 @@ int query_message_json(char *URL, char *message,const char *filenamepath, struct
 		}
 	// 	headers = curl_slist_append(headers, string("X-Auth-Token: " + token).c_str());
 		headers = curl_slist_append(headers, "Expect: 100-continue");
-		headers = curl_slist_append (headers, "Content-type: multipart/form-data");
+		headers = curl_slist_append(headers, "Content-type: multipart/form-data");
 	// 	headers = curl_slist_append(headers, "Accept: application/json");
 	// 	headers = curl_slist_append(headers, "Content-Type: application/json");
 		headers = curl_slist_append(headers, "charsets: utf-8");
@@ -492,7 +487,6 @@ int query_message_json(char *URL, char *message,const char *filenamepath, struct
 	}
 
 	CURL *curl = NULL;
-	
 	struct curl_httppost *formpost = NULL;
 	struct curl_httppost *lastptr = NULL;
 	if(filenamepath!= NULL){
@@ -513,7 +507,7 @@ int query_message_json(char *URL, char *message,const char *filenamepath, struct
 				&lastptr,
 				CURLFORM_COPYNAME, "UploadJSON",
 				CURLFORM_FILE, filenamepath,
-	// 			CURLFORM_CONTENTTYPE, "application/octet-stream", 
+	// 			CURLFORM_CONTENTTYPE, "application/octet-stream",
 				CURLFORM_END);
 		}	
 		if(filenamepath!= NULL){
@@ -523,9 +517,6 @@ int query_message_json(char *URL, char *message,const char *filenamepath, struct
 	}else{
 		curl = prepare_publish(URL, message, NULL, operation, token);
 	}
-
-	
-		
 	if(curl == NULL) {
 		free(data.data); data.data=NULL;
 		free(data.headercode); data.headercode=NULL;
@@ -549,11 +540,8 @@ int query_message_json(char *URL, char *message,const char *filenamepath, struct
 
 	if(filenamepath!=NULL)
 		curl_formfree(formpost);
-
 	curl_easy_cleanup(curl);
- 
 // 	curl_global_cleanup();kkj
-	
 	if(response_code != CURLE_OK) {
 		const char *error_msg = curl_easy_strerror(response_code);
 		log_error("ERROR query_message_json %s", error_msg);
@@ -806,7 +794,6 @@ CURL *prepare_query(char* URL, char *operation, const char *token) {
 		curl_easy_setopt(curl, CURLOPT_URL, URL);
 		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, operation); /* GET, PUT... */
-
 		#ifdef DEBUG
 		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 		#endif

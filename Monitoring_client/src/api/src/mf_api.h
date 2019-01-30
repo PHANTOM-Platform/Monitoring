@@ -74,11 +74,9 @@ void monitoring_end(char *server, char *exec_server, char *appid, char *execid, 
 	
 int register_workflow(char *server, char *regplatformid, char *appid, char *execfile, char *token);
 
-
 //for monitoring the threads
 int mf_start_tid(const unsigned int pid, const long unsigned int microsleep);
 void add_tid_to_report(char *component_name, int tid);
-
 
 int mf_user_metric(char *metric_name, char *value);
 
@@ -87,8 +85,8 @@ int mf_user_metric(char *metric_name, char *value);
 * For each metric, create a thread, open a file for data storage, and start sampling the metrics periodically.
 * Return the path of data files
 */
-char *mf_start(const char *server, const char* resource_manager, const char *platform_id, metrics *m, struct app_report_t *my_app_report, const char *token);
-
+char *mf_start(const char *server, const char *exec_server, const char *exec_id, const char* resource_manager, const char *platform_id, metrics *m,struct app_report_t *my_app_report, const char *token);
+	
 /**
 * Stop threads.
 * Close all the files for data storage.

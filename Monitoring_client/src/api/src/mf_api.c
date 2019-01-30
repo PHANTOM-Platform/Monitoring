@@ -189,7 +189,6 @@ struct task_data_t *mmy_task_data_a =NULL;
 * @return NULL if error
 */
 char* new_exec(const char *server, const char *filenamepath, char * token){
-	/* create an Execution */
 	char *URL = NULL;
 	struct url_data response;
 	response.size=0;
@@ -197,16 +196,9 @@ char* new_exec(const char *server, const char *filenamepath, char * token){
 	response.headercode=NULL;
 	URL=concat_and_free(&URL, server);
 	URL=concat_and_free(&URL, "/update_exec");
-// 	printf("******* register Execution ******\n");
 	char operation[]="POST";
-
-// 	printf(" token is %s\n",token);
-// 	printf(" filenamepath is %s\n",filenamepath);
-
 	query_message_json(URL,NULL, filenamepath, &response, operation, token); //*****
-	
 // 	printf(" response is %s\n",response.data);
-	
 	if(URL!=NULL) free(URL);
 	URL=NULL;
 	if(response.headercode!=NULL) free(response.headercode);
@@ -219,6 +211,31 @@ char* new_exec(const char *server, const char *filenamepath, char * token){
 	return p;
 }
 
+
+char* starting_exec(const char *server, const char *exec_id, const char * token){
+	char *URL = NULL;
+	struct url_data response;
+	response.size=0;
+	response.data=NULL;
+	response.headercode=NULL;
+	URL=concat_and_free(&URL, server);
+	URL=concat_and_free(&URL, "/started_exec?exec_id=\"");
+	URL=concat_and_free(&URL, exec_id);
+	URL=concat_and_free(&URL, "\"");
+	char operation[]="POST";
+	query_message_json(URL,NULL, NULL, &response, operation, token); //*****
+// 	printf(" response is %s\n",response.data);
+	if(URL!=NULL) free(URL);
+	URL=NULL;
+	if(response.headercode!=NULL) free(response.headercode);
+	response.headercode=NULL;
+	if(response.data[0] == '\0') {
+		printf("ERROR: Cannot register execution\n");
+		return NULL;
+	}
+	char* p= response.data;
+	return p;
+}
 
 struct Mydate {
 	unsigned int name_day, year, month,day, hour, min, sec, msec;
@@ -287,7 +304,7 @@ char *mf_exec_stats( struct app_report_t my_app_report, char *application_id, ch
 	concat_and_free(&json_msg, "\t\"start_timestamp\":\"");
 	// We convert Epoch into timestamp format, required by ElasticSearch:
 	calculate_date(FLOAT_TO_LLINT(my_app_report.timestamp_ms), &exampledate);
- 	sprintf(tempstr," %u-%02u-%02uT%02u:%02u:%02u.%03u",exampledate.year,exampledate.month,
+	sprintf(tempstr," %u-%02u-%02uT%02u:%02u:%02u.%03u",exampledate.year,exampledate.month,
 		exampledate.day, exampledate.hour, exampledate.min , exampledate.sec, exampledate.msec);
 	concat_and_free(&json_msg, tempstr);
 	concat_and_free(&json_msg, "\",\n");
@@ -354,9 +371,6 @@ char *mf_exec_stats( struct app_report_t my_app_report, char *application_id, ch
 	concat_and_free(&json_msg, "}\n");
 	return json_msg;
 }
-
-
-
 
 
 // 3- send the json to exec_server:port/update_exec
@@ -470,7 +484,9 @@ void add_tid_to_report(char *component_name, int tid){
 struct each_metric_t **each_m=NULL;
 
 /** server consists on an address or ip with a port number like http://129.168.0.1:8600/ */
-char *mf_start(const char *server, const char* resource_manager, const char *platform_id, metrics *m,struct app_report_t *my_app_report, const char *token) {
+char *mf_start(const char *server, const char *exec_server, const char *exec_id, const char* resource_manager, const char *platform_id, metrics *m,struct app_report_t *my_app_report, const char *token) {
+	char* resp= starting_exec(exec_server, exec_id, token);
+	free(resp);
 	/* get pid and setup the DataPath according to pid */
 	pid = api_prepare(DataPath);
 	/* get parameters from server with given platform_id */
@@ -1194,7 +1210,6 @@ void monitoring_end(char *mf_server, char *exec_server, char *appid, char *exec_
 	}
 
 	char *json_msg=mf_exec_stats(*my_app_report, appid, exec_id, regplatformid);
-
 	//SAVE the FILE for forwarding it to the Execution Manager
 	char FileName[256] = {'\0'};
 	sprintf(FileName, "%s", "exec_stats.json");
@@ -1207,8 +1222,7 @@ void monitoring_end(char *mf_server, char *exec_server, char *appid, char *exec_
 	/*close the file*/
 	fclose(fp);
 
-	char filenamepath[]="/home/jmontana/phantom_mf/Monitoring_client/my-json-parser/exec_stats.json";
-	char* resp= new_exec(exec_server, filenamepath, token);
+	char* resp= new_exec(exec_server, FileName, token);
 // 	printf("%s",json_msg);
 	free(resp);
 	free(json_msg);

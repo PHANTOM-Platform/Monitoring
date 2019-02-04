@@ -104,7 +104,13 @@ void Test_resources_monitor(const char* token) {
 	m_resources.sampling_interval[0] = 1000; // 1s
 	strcpy(m_resources.metrics_names[0], "resources_usage");
 
-	char *datapath = mf_start(server, platform_id, &m_resources, token);
+	
+	int total_num_threads =2;
+	struct app_report_t *my_app_report= reserve_app_report(total_num_threads, "currentid");//argv[1] is a text string for later friendly query the results
+	strcpy(my_app_report->my_thread_report[0]->taskid,"component_a");
+	strcpy(my_app_report->my_thread_report[1]->taskid,"component_b");
+	
+	char *datapath = mf_start(server,  "localhost:8600", platform_id, &m_resources,my_app_report, token);
 	printf("datapath is :%s\n", datapath);
 	sleep(5);
 	
@@ -152,7 +158,13 @@ void Test_disk_monitor(const char* token) {
 	m_resources.local_data_storage = 1;
 	m_resources.sampling_interval[0] = 1000; // 1s
 	strcpy(m_resources.metrics_names[0], "disk_io");
-	char *datapath = mf_start(server, platform_id, &m_resources, token);
+
+	int total_num_threads =2;
+	struct app_report_t *my_app_report= reserve_app_report(total_num_threads, "currentid");//argv[1] is a text string for later friendly query the results
+	strcpy(my_app_report->my_thread_report[0]->taskid,"component_a");
+	strcpy(my_app_report->my_thread_report[1]->taskid,"component_b");
+	
+	char *datapath = mf_start(server,  "localhost:8600", platform_id, &m_resources,my_app_report, token);
 	printf("datapath is :%s\n", datapath);
 	sleep(5);
 	
@@ -244,7 +256,12 @@ void Test_power_monitor(const char *token) {
 	m_resources.sampling_interval[0] = 2000; // 2s
 	strcpy(m_resources.metrics_names[0], "power");
 
-	char *datapath = mf_start(server, platform_id, &m_resources,token);
+	int total_num_threads =2;
+	struct app_report_t *my_app_report= reserve_app_report(total_num_threads, "currentid");//argv[1] is a text string for later friendly query the results
+	strcpy(my_app_report->my_thread_report[0]->taskid,"component_a");
+	strcpy(my_app_report->my_thread_report[1]->taskid,"component_b");
+	
+	char *datapath = mf_start(server, "localhost:8600",  platform_id, &m_resources,my_app_report, token);
 	printf("datapath : %s\n", datapath);
 	/*do dummy things*/
 	for(i = 0; i < 100; i++) {
@@ -274,7 +291,12 @@ void Test_all(const char *token) {
 	char application_id[] = "dummy";
 	char task_id[] = "t1";
 
-	char *datapath = mf_start(server, platform_id, &m_resources, token);
+	int total_num_threads =2;
+	struct app_report_t *my_app_report= reserve_app_report(total_num_threads, "currentid");//argv[1] is a text string for later friendly query the results
+	strcpy(my_app_report->my_thread_report[0]->taskid,"component_a");
+	strcpy(my_app_report->my_thread_report[1]->taskid,"component_b");
+	
+	char *datapath = mf_start(server, "localhost:8600",  platform_id, &m_resources, my_app_report, token);
 	printf("datapath : %s\n", datapath);
 	
 	/*do dummy things*/
@@ -287,7 +309,7 @@ void Test_all(const char *token) {
 	/* when "dummy" application already exists in database, check with /v1/phantom_mf/workflows, 
 	it is possible to send collected metrics to the server */
 	
-	char *experiment_id = mf_send(server, application_id, task_id, platform_id,token);
+	char *experiment_id = mf_send(server,application_id, task_id, platform_id,token);
 	printf("> application_id : %s\n", application_id);
 	printf("> task_id : %s\n", task_id);
 	printf("> experiment_id : %s\n", experiment_id);
@@ -313,7 +335,7 @@ int main(void) {
 	//Test_resources_monitor(token); 	//only resources monitoring 
 	//Test_disk_monitor(token);		//only disk monitoring
 
-	/* test mf interfaces: mf_start, mf_end, mf_send */	
+	/* test mf interfaces: mf_start, mf_end, mf_send */
 	Test_all(token);	//both resources and disk monitoring
 	//Test_power_monitor(token);
 

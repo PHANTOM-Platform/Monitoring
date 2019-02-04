@@ -19,15 +19,15 @@ APU_CONFIG = $(PWD)/bin/apr/bin/apu-1-config
 APR = $(shell $(APR_CONFIG) --link-ld) $(shell $(APU_CONFIG) --link-ld)
 APR_INC = $(shell $(APR_CONFIG) --includes) $(shell $(APR_CONFIG) --includes)
 
-PARSER_INC = -I${COMMON}/parser/src
-PUBLISHER_INC = -I${COMMON}/publisher/src
-MFUTIL_INC = -I${COMMON}/util/src
+PARSER_INC = -I$(COMMON)/parser/src
+PUBLISHER_INC = -I$(COMMON)/publisher/src
+MFUTIL_INC = -I$(COMMON)/util/src
 CORE_INC = -I$(COMMON)/core
 CURL_INC = -I$(COMMON)/../bin/curl/include
 
-PARSER = -L${COMMON}/parser -lparser
-PUBLISHER = -L${COMMON}/publisher -lpublisher
-MFUTIL = -L${COMMON}/util -lmfutil
+PARSER = -L$(COMMON)/parser -lparser
+PUBLISHER = -L$(COMMON)/publisher -lpublisher
+MFUTIL = -L$(COMMON)/util -lmfutil
 CURL = -L$(COMMON)/../bin/curl/lib -lcurl
 
 EXCESS_QUEUE = -I$(PWD)/ext/queue/data-structures-library/src/include
@@ -169,4 +169,5 @@ copy_libs:
 	cp -f $(PWD)/bin/sensors/lib/lib*.so* $(INSTALL_LIB_DIR)
 	cp -f $(PWD)/src/parser/lib*.so* $(INSTALL_LIB_DIR)
 	cp -f $(PWD)/src/publisher/lib*.so* $(INSTALL_LIB_DIR)
+	cp -f $(PWD)/src/util/lib*.so* $(INSTALL_LIB_DIR)	
 	cp -f $(PWD)/src/api/lib*.so* $(INSTALL_LIB_DIR)

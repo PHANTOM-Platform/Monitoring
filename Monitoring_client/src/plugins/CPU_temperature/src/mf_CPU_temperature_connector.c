@@ -44,8 +44,8 @@ int prefix(const char *pre, const char *str) {
 * Functions implementation
 ******************************************************************************/
 /** @brief Initializes the CPU_temperature plugin
-*  Load libsensors library; prepare features_list for sampling
-*  @return 1 on success; 0 otherwise.
+* Load libsensors library; prepare features_list for sampling
+* @return 1 on success; 0 otherwise.
 */
 int mf_CPU_temperature_init(Plugin_metrics *data, char **events, size_t num_events) {
 	int retval = sensors_init(NULL);
@@ -85,10 +85,10 @@ int mf_CPU_temperature_init(Plugin_metrics *data, char **events, size_t num_even
 // 				printf("***** zlabel is %s\n",label);
 				strncpy(chipnum, label+11, strlen(label)-11);// remove "Package id "
 				if(label!=NULL) free(label);
-				label=NULL;				
+				label=NULL;
 			}else{
 				if(label!=NULL) free(label);
-				label=NULL;				
+				label=NULL;
 				continue;
 			}
 		}
@@ -107,7 +107,7 @@ int mf_CPU_temperature_init(Plugin_metrics *data, char **events, size_t num_even
 // 				printf("***** label is %s\n",label);
 				if (prefix("Core", label) != 0){
 					if(label!=NULL) free(label);
-					label=NULL;					
+					label=NULL;
 					continue;
 				}
 				char corenum[3] = {'\0'};
@@ -150,7 +150,7 @@ int mf_CPU_temperature_init(Plugin_metrics *data, char **events, size_t num_even
 }
 
 /** @brief Samples all possible events and stores data into the Plugin_metrics
-*  @return 1 on success; 0 otherwise.
+* @return 1 on success; 0 otherwise.
 */
 int mf_CPU_temperature_sample(Plugin_metrics *data) {
 	int i;
@@ -163,7 +163,7 @@ int mf_CPU_temperature_sample(Plugin_metrics *data) {
 }
 
 /** @brief Formats the sampling data into a json string
-*  json string contains: plugin name, timestamps, metrics_name and metrics_value
+* json string contains: plugin name, timestamps, metrics_name and metrics_value
 */
 void mf_CPU_temperature_to_json(Plugin_metrics *data, char *json) {
 	struct timespec timestamp;
@@ -183,7 +183,7 @@ void mf_CPU_temperature_to_json(Plugin_metrics *data, char *json) {
 }
 
 /** @brief Stops the plugin
-*  This methods stops papi counters gracefully;
+* This methods stops papi counters gracefully;
 */
 void mf_CPU_temperature_shutdown() {
 	free(features_list->chip);

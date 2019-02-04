@@ -32,7 +32,11 @@ int EventSet = PAPI_NULL;
 int num_sockets = 0;
 double denominator = 1.0 ; /*according to different CPU models, DRAM energy scalings are different*/
 int rapl_is_available = 0;
-float epackage_before[4], edram_before[4], epackage_after[4], edram_after[4]; //max sockets number is 4
+#define max_supported_sockets 4
+float epackage_before[max_supported_sockets],
+	edram_before[max_supported_sockets],
+	epackage_after[max_supported_sockets],
+	edram_after[max_supported_sockets];
 
 /*******************************************************************************
 * Forward Declarations
@@ -218,6 +222,10 @@ int hardware_sockets_count(void) {
 		return 0;
 	}
 	skts_num = hwloc_get_nbobjs_by_depth(topology, depth);
+	if (skts_num >max_supported_sockets){
+		printf(" WARNING more than max_supported_sockets\n");
+		skts_num=max_supported_sockets;
+	}
 	return skts_num;
 }
 

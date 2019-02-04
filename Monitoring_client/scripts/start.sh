@@ -24,7 +24,6 @@ Usage: $0 [a:t:h]
 -t <TASK_ID>        sets a user-defined task (component) ID [optional]
 
 EOF
-
 }
 
 BASE_DIR=`pwd`/..
@@ -55,7 +54,7 @@ while getopts "a:t:h" opt; do
       exit 1
       ;;
   esac
-done
+done;
 
 # set environment variables
 libs=${LIB_DIR}
@@ -64,6 +63,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$libs
 # run agent with given parameters
 # nohup makes your process running even after you logout
 nohup ${DIST_BIN_DIR}/mf_client ${PARAMS} 2>&1&
-echo "mf_client started."
+echo "mf_client started.";
 
 # end
+

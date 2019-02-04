@@ -110,8 +110,12 @@ void Test_resources_monitor(const char* token) {
 	strcpy(my_app_report->my_thread_report[0]->taskid,"component_a");
 	strcpy(my_app_report->my_thread_report[1]->taskid,"component_b");
 	
-	char *datapath = mf_start(server,  "localhost:8600", platform_id, &m_resources,my_app_report, token);
+	const char exec_manager[] = "localhost:8700";
+	const char exec_id[]="exec_id";
+	const char resource_man[]="localhost:8600";
+	char *datapath = mf_start(server, exec_manager , exec_id, resource_man, platform_id, &m_resources,my_app_report, token);
 	printf("datapath is :%s\n", datapath);
+	free(datapath);
 	sleep(5);
 	
 	/*do dummy things*/
@@ -164,8 +168,13 @@ void Test_disk_monitor(const char* token) {
 	strcpy(my_app_report->my_thread_report[0]->taskid,"component_a");
 	strcpy(my_app_report->my_thread_report[1]->taskid,"component_b");
 	
-	char *datapath = mf_start(server,  "localhost:8600", platform_id, &m_resources,my_app_report, token);
+	
+	const char exec_manager[] = "localhost:8700";
+	const char exec_id[]="exec_id";
+	const char resource_man[]="localhost:8600";
+	char *datapath = mf_start(server, exec_manager , exec_id, resource_man, platform_id, &m_resources,my_app_report, token);
 	printf("datapath is :%s\n", datapath);
+	free(datapath);	
 	sleep(5);
 	
 	//do dummy things
@@ -261,8 +270,12 @@ void Test_power_monitor(const char *token) {
 	strcpy(my_app_report->my_thread_report[0]->taskid,"component_a");
 	strcpy(my_app_report->my_thread_report[1]->taskid,"component_b");
 	
-	char *datapath = mf_start(server, "localhost:8600",  platform_id, &m_resources,my_app_report, token);
+	const char exec_manager[] = "localhost:8700";
+	const char exec_id[]="exec_id";
+	const char resource_man[]="localhost:8600";
+	char *datapath = mf_start(server, exec_manager , exec_id, resource_man, platform_id, &m_resources,my_app_report, token);
 	printf("datapath : %s\n", datapath);
+	free(datapath);
 	/*do dummy things*/
 	for(i = 0; i < 100; i++) {
 		dummy();
@@ -296,9 +309,12 @@ void Test_all(const char *token) {
 	strcpy(my_app_report->my_thread_report[0]->taskid,"component_a");
 	strcpy(my_app_report->my_thread_report[1]->taskid,"component_b");
 	
-	char *datapath = mf_start(server, "localhost:8600",  platform_id, &m_resources, my_app_report, token);
+	const char exec_manager[] = "localhost:8700";
+	const char exec_id[]="exec_id";
+	const char resource_man[]="localhost:8600";
+	char *datapath = mf_start(server, exec_manager , exec_id, resource_man, platform_id, &m_resources,my_app_report, token);
 	printf("datapath : %s\n", datapath);
-	
+	free(datapath);
 	/*do dummy things*/
 	for(i = 0; i < 30; i++) {
 		dummy();

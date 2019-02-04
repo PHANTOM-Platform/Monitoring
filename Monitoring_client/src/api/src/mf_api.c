@@ -178,7 +178,6 @@ int register_user_metric(struct Thread_report_t *my_thread_report, const char *t
 
 struct resources_stats_t *stat_resources=NULL;
 struct task_data_t *mmy_task_data_a =NULL;
- 
 
 /**
 * Query for a new Execution, return 400 if the execution is not registered yet.
@@ -252,7 +251,6 @@ void calculate_date(long long int current, struct Mydate *exampledate) {
 	exampledate->hour = current %24;
 	current = current /24;
 	exampledate->year=0;
-
 	exampledate->name_day = current % 7;
 	if(current > 365+365+366){
 		exampledate->year=3;

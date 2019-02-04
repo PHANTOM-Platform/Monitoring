@@ -28,8 +28,10 @@
 #define FAILURE 1
 
 #define CPU_STAT_FILE "/proc/stat"
+#define CPU_STAT_PID_FILE "/proc/%d/stat"
 #define RAM_STAT_FILE "/proc/meminfo"
-#define NET_STAT_FILE "/proc/net/dev"
+#define STATUS_FILE "/proc/%d/status"
+#define NET_STAT_FILE "/proc/%d/net/dev"
 #define IO_STAT_FILE "/proc/%d/io"
 
 #define RESOURCES_EVENTS_NUM 5
@@ -83,20 +85,18 @@ int flag_init(char **events, size_t num_events) {
 int CPU_stat_read(struct resources_stats_t *stats_now){
 	FILE *fp;
 	char line[1024];
-	unsigned long long tmp;
-	unsigned long long cpu_user=0, cpu_sys=0;
-	stats_now->total_cpu_time=0;
+	unsigned long long user, nice, system, idle, iowait, irq, softirq;
 	fp = fopen(CPU_STAT_FILE, "r");
 	if(fp == NULL) {
 		printf("ERROR: Could not open file %s\n", CPU_STAT_FILE);
 		exit(0);
 	}
 	if(fgets(line, 1024, fp) != NULL) {
-		sscanf(line+5, "%llu %llu %llu %llu %llu %llu %llu %llu",
-			&cpu_user, &tmp, &cpu_sys, &tmp, &tmp, &tmp, &tmp, &tmp);
+		sscanf(line+5, "%llu %llu %llu %llu %llu %llu %llu",
+			&user, &nice, &system, &idle, &iowait, &irq, &softirq);
 	}
 	stats_now->before_total_cpu_time=stats_now->total_cpu_time;
-	stats_now->total_cpu_time = cpu_user + cpu_sys;
+	stats_now->total_cpu_time = user + nice + system + idle + iowait + irq + softirq;
 	fclose(fp);
 	return SUCCESS;
 }
@@ -109,9 +109,8 @@ int CPU_stat_process_read(int pid, struct resources_stats_t *stats_now) {
 	unsigned long long tmp;
 	char pid_cpu_file[128] = {'\0'};
 	unsigned long long pid_utime, pid_stime;
-	sprintf(pid_cpu_file, "/proc/%d/stat", pid);
+	sprintf(pid_cpu_file, CPU_STAT_PID_FILE, pid);
 	fp = fopen(pid_cpu_file, "r");
-	stats_now->process_CPU_time = 0;
 	if(fp == NULL) {
 		printf("ERROR: Could not open file %s\n", pid_cpu_file);
 		exit(0);
@@ -119,10 +118,10 @@ int CPU_stat_process_read(int pid, struct resources_stats_t *stats_now) {
 	char tmp_str[32];
 	char tmp_char;
 	if(fgets(line, 1024, fp) != NULL) {
-		sscanf(line, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu",
+		sscanf(line, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %llu %llu %llu",
 			(int *)&tmp, tmp_str, &tmp_char, (int *)&tmp, (int *)&tmp, (int *)&tmp, (int *)&tmp, (int *)&tmp,
 			(unsigned int *)&tmp, (unsigned long *)&tmp, (unsigned long *)&tmp, (unsigned long *)&tmp, 
-			(unsigned long *)&tmp, (unsigned long *)&pid_utime, (unsigned long *)&pid_stime);
+			(unsigned long long *)&tmp, (unsigned long long*)&pid_utime, (unsigned long long *)&pid_stime);
 	}
 	stats_now->before_process_CPU_time = stats_now->process_CPU_time;
 	stats_now->process_CPU_time = pid_utime + pid_stime;
@@ -151,9 +150,8 @@ int RAM_usage_rate_read(struct resources_stats_t *stats_now) {
 		if (!strncmp(line, "SwapTotal:", 10)) {
 			sscanf(line + 10, "%lu", &stats_now->SwapTotal);
 		}
-// 		if (!strncmp(line, "MemFree:", 8)) {
+// 		if (!strncmp(line, "MemFree:", 8))
 // 			sscanf(line + 8, "%d", &MemFree);
-// 		}
 // 		if ((MemTotal * MemFree) != 0) {
 // 			RAM_usage_rate = (MemTotal - MemFree) * 100.0 / MemTotal;
 // 			break;
@@ -165,13 +163,13 @@ int RAM_usage_rate_read(struct resources_stats_t *stats_now) {
 
 
 /** @brief read VmRSS and VmSwap from /proc/[pid]/status
- * collected metrics on MemTotal and MemFree
+ * collected metrics on VmRSS and VmSwap
  @return e */
 int RAM_process_usage_rate_read(const int pid, struct resources_stats_t *stats_now) {
 	FILE *fp;
 	char line[1024];
 	char pid_status_file[128] = {'\0'};
-	sprintf(pid_status_file, "/proc/%d/status", pid);
+	sprintf(pid_status_file, STATUS_FILE, pid);
 	fp = fopen(pid_status_file, "r");
 	if(fp == NULL) {
 		fprintf(stderr, "Error: Cannot open %s.\n", pid_status_file);
@@ -194,7 +192,7 @@ int io_stats_read(int pid, struct resources_stats_t *stats_now) {
 	stats_now->accum_read_bytes=0;
 	stats_now->accum_write_bytes=0;
 	char pid_io_file[128], line[1024];
-	sprintf(pid_io_file, "/proc/%d/io", pid);
+	sprintf(pid_io_file, IO_STAT_FILE, pid);
 	if ((fp = fopen(pid_io_file, "r")) == NULL) {
 		fprintf(stderr, "ERROR: Could not open file %s.\n", pid_io_file);
 		return FAILURE;
@@ -221,7 +219,7 @@ int network_stat_read(int pid, struct resources_stats_t *nets_info) {
 	nets_info->rcv_bytes = 0;
 	nets_info->send_bytes = 0;
 	char pid_net_file[128], line[1024];
-	sprintf(pid_net_file, "/proc/%d/net/dev", pid);//NET_STAT_FILE
+	sprintf(pid_net_file, NET_STAT_FILE, pid);//NET_STAT_FILE
 	if ((fp = fopen(pid_net_file, "r")) == NULL) {
 		fprintf(stderr, "Error: Cannot open %s.\n", pid_net_file);
 		return FAILURE;
@@ -262,7 +260,7 @@ int network_stat_read(int pid, struct resources_stats_t *nets_info) {
 * acquire the previous value and before timestamp
 * @return SUCCESS on success; FAILURE otherwise.
 */
-int linux_resources_init(int pid, char **events, size_t num_events, struct resources_stats_t stats_now) {
+int linux_resources_init(int pid, char **events, size_t num_events, struct resources_stats_t *stats_now) {
 	/* failed to initialize flag means that all events are invalid */
 	if(flag_init(events, num_events) == 0)
 		return FAILURE;
@@ -273,8 +271,8 @@ int linux_resources_init(int pid, char **events, size_t num_events, struct resou
 	/* initialize Plugin_metrics events' names according to flag */
 	int i = 0;
 	if(flag & HAS_CPU_STAT) {
-		CPU_stat_read(&stats_now);
-		CPU_stat_process_read(pid, &stats_now);
+		CPU_stat_read(stats_now);
+		CPU_stat_process_read(pid, stats_now);
 		i++;
 	}
 	if(flag & HAS_RAM_STAT) {
@@ -286,21 +284,21 @@ int linux_resources_init(int pid, char **events, size_t num_events, struct resou
 	}
 	if(flag & HAS_NET_STAT) {
 // 		/* read the current network rcv/send bytes */
-		network_stat_read(pid, &stats_now);
+		network_stat_read(pid, stats_now);
 	}
 	if((flag & HAS_RAM_STAT)|| (flag & HAS_SWAP_STAT)) {
-		RAM_process_usage_rate_read(pid, &stats_now);
-		RAM_usage_rate_read( &stats_now);
+		RAM_process_usage_rate_read(pid, stats_now);
+		RAM_usage_rate_read( stats_now);
 		/*calculate for the resources_stats */
-		stats_now.RAM_usage_rate = (stats_now.MemTotal==0) ? 0 : stats_now.pid_VmRSS * 100.0 /stats_now.MemTotal;
-		stats_now.swap_usage_rate = (stats_now.SwapTotal==0) ? 0 : stats_now.pid_VmSwap * 100.0 /stats_now.SwapTotal;
+		stats_now->RAM_usage_rate = (stats_now->MemTotal==0) ? 0 : stats_now->pid_VmRSS * 100.0 /stats_now->MemTotal;
+		stats_now->swap_usage_rate = (stats_now->SwapTotal==0) ? 0 : stats_now->pid_VmSwap * 100.0 /stats_now->SwapTotal;
 	}
 	if(flag & HAS_IO_STAT) {
 // 		/* read the current io read/write bytes for all processes */
 		/*initialize the values in result */
-		stats_now.before_accum_read_bytes = stats_now.accum_read_bytes;
-		stats_now.before_accum_write_bytes = stats_now.accum_write_bytes;
-		io_stats_read(pid, &stats_now);
+		stats_now->before_accum_read_bytes = stats_now->accum_read_bytes;
+		stats_now->before_accum_write_bytes = stats_now->accum_write_bytes;
+		io_stats_read(pid, stats_now);
 		i++;
 	}
 	return SUCCESS;
@@ -309,7 +307,7 @@ int linux_resources_init(int pid, char **events, size_t num_events, struct resou
 /** @brief Samples all possible events and stores data into the Plugin_metrics
 * @return SUCCESS on success; FAILURE otherwise.
 */
-int linux_resources_sample(const int pid, struct resources_stats_t stat_after ) {
+int linux_resources_sample(const int pid, struct resources_stats_t *stat_after ) {
 	/* get current timestamp in second */
 	struct timespec timestamp;
 	int i;
@@ -318,45 +316,45 @@ int linux_resources_sample(const int pid, struct resources_stats_t stat_after ) 
 // 	double time_interval = after_time - before_time;
 	i = 0;
 	if(flag & HAS_CPU_STAT) {
-		CPU_stat_read(&stat_after);
-		CPU_stat_process_read(pid, &stat_after);
-		if(stat_after.total_cpu_time > stat_after.before_total_cpu_time) {
+		CPU_stat_read(stat_after);
+		CPU_stat_process_read(pid, stat_after);
+// 		if(stat_after.total_cpu_time < stat_after.before_total_cpu_time) {
 // 			data->values[i] = ((stat_after.total_cpu_time - stat_after.before_total_cpu_time) - (stat_after.total_idle_time - stat_before.total_idle_time)) * 100.0 /
 // 					(stat_after.total_cpu_time - stat_after.before_total_cpu_time);
 			/* update the stat_before values by the current values */
-			stat_after.before_total_cpu_time = stat_after.total_cpu_time;
+// 			stat_after.before_total_cpu_time = stat_after.total_cpu_time;
 // 			stat_before.total_idle_time = stat_after.total_idle_time;
-		}
-		if((stat_after.process_CPU_time <= stat_after.before_process_CPU_time)
-			|| (stat_after.total_cpu_time <= stat_after.before_total_cpu_time)) {
-			stat_after.CPU_usage_rate = 0.0;
+// 		}
+		if((stat_after->process_CPU_time <= stat_after->before_process_CPU_time)
+			|| (stat_after->total_cpu_time <= stat_after->before_total_cpu_time)) {
+			stat_after->CPU_usage_rate = 0.0;
 		} else {
-			stat_after.CPU_usage_rate = (stat_after.process_CPU_time - stat_after.before_process_CPU_time) * 100.0 / 
-				(stat_after.total_cpu_time - stat_after.before_total_cpu_time);
+			stat_after->CPU_usage_rate = (stat_after->process_CPU_time - stat_after->before_process_CPU_time) * 100.0 / 
+				(stat_after->total_cpu_time - stat_after->before_total_cpu_time);
 		}
 		i++;
 	}
 	if((flag & HAS_RAM_STAT)|| (flag & HAS_SWAP_STAT)) {
-		RAM_process_usage_rate_read(pid, &stat_after);
-		RAM_usage_rate_read( &stat_after);
+		RAM_process_usage_rate_read(pid, stat_after);
+		RAM_usage_rate_read( stat_after);
 		/*calculate for the resources_stats */
-		stat_after.RAM_usage_rate = (stat_after.MemTotal==0) ? 0 : stat_after.pid_VmRSS * 100.0 /stat_after.MemTotal;
-		stat_after.swap_usage_rate = (stat_after.SwapTotal==0) ? 0 : stat_after.pid_VmSwap * 100.0 /stat_after.SwapTotal;
+		stat_after->RAM_usage_rate = (stat_after->MemTotal==0) ? 0 : stat_after->pid_VmRSS * 100.0 /stat_after->MemTotal;
+		stat_after->swap_usage_rate = (stat_after->SwapTotal==0) ? 0 : stat_after->pid_VmSwap * 100.0 /stat_after->SwapTotal;
 		i++;
 	}
 	if(flag & HAS_NET_STAT) {
-		network_stat_read(pid, &stat_after);
-		unsigned long long total_bytes = (stat_after.rcv_bytes - stat_after.rcv_bytes) 
-			+ (stat_after.send_bytes - stat_after.send_bytes);
+		network_stat_read(pid, stat_after);
+		unsigned long long total_bytes = (stat_after->rcv_bytes - stat_after->rcv_bytes) 
+			+ (stat_after->send_bytes - stat_after->send_bytes);
 		if(total_bytes > 0.0) {
 			/* update the stat_after values by the current values */
-			stat_after.rcv_bytes = stat_after.rcv_bytes;
-			stat_after.send_bytes = stat_after.send_bytes;
+			stat_after->rcv_bytes = stat_after->rcv_bytes;
+			stat_after->send_bytes = stat_after->send_bytes;
 		}
 		i++;
 	}
 	if(flag & HAS_IO_STAT) {
-		io_stats_read(pid, &stat_after);
+		io_stats_read(pid, stat_after);
 // 		stat_after.total_io_bytes = (stat_after.accum_read_bytes - stat_after.before_accum_read_bytes)
 // 			+ (stat_after.accum_write_bytes - stat_after.before_accum_write_bytes);
 // 		if(total_bytes > 0.0) {
@@ -432,11 +430,11 @@ char *save_stats_resources( struct resources_stats_t *stat, int pretty, int tabs
 	sprintf(tempstr, ",\"sum\":\"%lli\"}", stats->accum_send_bytes);concat_and_free(&msg, tempstr);
 //		nets_info->rcv_bytes += temp_rcv_bytes;
 //		nets_info->send_bytes += temp_send_bytes;
-	if(pretty==0) concat_and_free(&msg,  "\n");
+	if(pretty==0) concat_and_free(&msg, "\n");
 	return msg;
 }
 
-char *save_stats_resources_comp( struct  sub_task_data *subtask, int pretty, int tabs){
+char *save_stats_resources_comp(struct sub_task_data *subtask, int pretty, int tabs){
 	int i;
 	char tempstr[2048]={'\0'};
 	char *msg=NULL;
@@ -495,7 +493,7 @@ char *save_stats_resources_comp( struct  sub_task_data *subtask, int pretty, int
 	sprintf(tempstr, ",\"sum\":\"%lli\"}", subtask->accum_send_bytes);concat_and_free(&msg, tempstr);
 //		nets_info->rcv_bytes += temp_rcv_bytes;
 //		nets_info->send_bytes += temp_send_bytes;
-	if(pretty==0) concat_and_free(&msg,  "\n");
+	if(pretty==0) concat_and_free(&msg, "\n");
 	return msg;
 }
 
@@ -562,7 +560,7 @@ int printf_stats_resources(FILE *fp, struct resources_stats_t *stat, int pretty,
 	return 0;
 }*/
 /*
-int printf_stats_resources_comp(FILE *fp, struct  sub_task_data *subtask, int pretty, int tabs){
+int printf_stats_resources_comp(FILE *fp, struct sub_task_data *subtask, int pretty, int tabs){
 	int i;
 	if (fp==NULL || stats ==NULL) return 0;
 // 	----------------------CPU
@@ -654,7 +652,7 @@ struct resources_stats_t *linux_resources(const int pid, char *DataPath, long sa
 	stats->swap_usage_rate = 0.0;
 	stats->send_bytes=0;
 	stats->rcv_bytes=0;
-	linux_resources_init(pid, events, num_events, *stats);
+	linux_resources_init(pid, events, num_events, stats);
 // 	for the case of being uninitialized
 	stats->before_total_cpu_time=stats->total_cpu_time;
 	stats->before_process_CPU_time=stats->process_CPU_time;
@@ -688,8 +686,7 @@ struct resources_stats_t *linux_resources(const int pid, char *DataPath, long sa
 	/*in a loop do data sampling and write into the file*/
 	while(running) {
 		usleep(sampling_interval * 1000);
-		linux_resources_sample(pid, *stats);
-
+		linux_resources_sample(pid, stats);
 		/*get current timestamp in ms*/
 		clock_gettime(CLOCK_REALTIME, &timestamp);
 		timestamp_ms = timestamp.tv_sec * 1000.0 + (double)(timestamp.tv_nsec / 1.0e6);
@@ -748,8 +745,8 @@ struct resources_stats_t *linux_resources(const int pid, char *DataPath, long sa
 // 	concat_and_free(&msg, msgb);
 	fprintf(fp,"%s",msgb); free(msgb);
 // 	printf_stats_resources(fp, stats,0,2);
+// 	free(stats);	
 	fclose(fp);
-// 	free(stats);
 	for(i=0;i<num_events;i++)
 		free(events[i]);
 	free(events);
@@ -801,9 +798,9 @@ int remove_str(int start, char source[], const char cadenaBuscar[]){
 	int longsource=strlen(source);
 	int longcad=strlen(cadenaBuscar);
 	if (longsource>=longcad){
-		int i=find_str(start,source, cadenaBuscar);
+		int i=find_str(start, source, cadenaBuscar);
 		if (i+longcad<=longsource) { // Encontramos la cadena 1 y empieza en i1
-			for (int j=i;j<=longsource;j++) 
+			for (int j=i;j<=longsource;j++)
 				source[j]=source[j+longcad];
 			return(true);
 		//}else{
@@ -830,7 +827,7 @@ unsigned int process_str(char *input, char *output, unsigned const int start){
 
 /*
 * copy from position "start" of the string "input" into the string "output"
-* until find end of string or end of line 
+* until find end of string or end of line
 */
 unsigned int getline_str(char *input, char *output, unsigned const int start){
 	unsigned int j=0;
@@ -854,9 +851,8 @@ int find_llint_from_label(char *loadstr, const char *label, long long int *to_up
 		result[i]='\0';
 		*to_update=atoll(result);
 		return true;
-	}else{
-		return false;
 	}
+	return false;
 }
 
 
@@ -921,7 +917,7 @@ unsigned int print_stats(int searchprocess, task_data *my_task_data){
 }
 
 
-unsigned int save_stats(FILE *fp, int searchprocess, task_data *my_task_data ){
+unsigned int save_stats(FILE *fp, int searchprocess, task_data *my_task_data){
 	unsigned int i;
 	struct timespec timestamp;
 	double timestamp_ms;
@@ -1010,7 +1006,6 @@ size_t execute_command(char *command, char *comout, size_t *comalloc){
 	return comlen;
 }
 
-
 unsigned int procesa_pid_load(const unsigned int pid, task_data *my_task_data) {
 	unsigned int i,contador;
 	size_t comalloc = 8256;
@@ -1048,7 +1043,7 @@ unsigned int procesa_pid_load(const unsigned int pid, task_data *my_task_data) {
 						currentcore=atoi(loadstr);
 					}else if(contador==4){
 						pcpu=atof(loadstr);
-						if( pcpu>100.0)
+						if(pcpu>100.0)
 							 pcpu=100.0;//evaluated cases shows few glitches when start running a program. 
 					}else if(contador==5){
 						pmem=atof(loadstr);
@@ -1077,52 +1072,48 @@ unsigned int procesa_pid_load(const unsigned int pid, task_data *my_task_data) {
 							my_task_data->subtask[j]->read_bytes=0;
 							my_task_data->subtask[j]->write_bytes=0;
 							my_task_data->subtask[j]->cancelled_write_bytes=0;
-							
-							
 
+						my_task_data->subtask[j]->accum_read_bytes =0;
+						my_task_data->subtask[j]->accum_write_bytes =0;
+						my_task_data->subtask[j]->before_accum_read_bytes = my_task_data->subtask[j]->accum_read_bytes;
+						my_task_data->subtask[j]->before_accum_write_bytes = my_task_data->subtask[j]->accum_write_bytes;
+						my_task_data->subtask[j]->counter=1;
+					
+						my_task_data->subtask[j]->CPU_usage_rate = 0.0;
+						my_task_data->subtask[j]->RAM_usage_rate = 0.0;
+						my_task_data->subtask[j]->swap_usage_rate = 0.0;
+						my_task_data->subtask[j]->send_bytes=0;
+						my_task_data->subtask[j]->rcv_bytes=0;
+					// 	for the case of being uninitialized
+						my_task_data->subtask[j]->before_total_cpu_time=my_task_data->subtask[j]->total_cpu_time;
+						my_task_data->subtask[j]->before_process_CPU_time=my_task_data->subtask[j]->process_CPU_time;
 
- 	my_task_data->subtask[j]->accum_read_bytes =0;
-	my_task_data->subtask[j]->accum_write_bytes =0;
-	my_task_data->subtask[j]->before_accum_read_bytes = my_task_data->subtask[j]->accum_read_bytes;
-	my_task_data->subtask[j]->before_accum_write_bytes = my_task_data->subtask[j]->accum_write_bytes;
-	my_task_data->subtask[j]->counter=1;
- 
-	my_task_data->subtask[j]->CPU_usage_rate = 0.0;
-	my_task_data->subtask[j]->RAM_usage_rate = 0.0;
-	my_task_data->subtask[j]->swap_usage_rate = 0.0;
-	my_task_data->subtask[j]->send_bytes=0;
-	my_task_data->subtask[j]->rcv_bytes=0;
-// 	for the case of being uninitialized
-	my_task_data->subtask[j]->before_total_cpu_time=my_task_data->subtask[j]->total_cpu_time;
-	my_task_data->subtask[j]->before_process_CPU_time=my_task_data->subtask[j]->process_CPU_time;
+						my_task_data->subtask[j]->min_CPU_usage_rate = 0;
+						my_task_data->subtask[j]->max_CPU_usage_rate = 0;
 
-	my_task_data->subtask[j]->min_CPU_usage_rate = 0;
-	my_task_data->subtask[j]->max_CPU_usage_rate = 0;
+						my_task_data->subtask[j]->min_RAM_usage_rate = 0;
+						my_task_data->subtask[j]->max_RAM_usage_rate = 0;
 
-	my_task_data->subtask[j]->min_RAM_usage_rate = 0;
-	my_task_data->subtask[j]->max_RAM_usage_rate = 0;
+						my_task_data->subtask[j]->min_swap_usage_rate = 0;
+						my_task_data->subtask[j]->max_swap_usage_rate = 0;
 
-	my_task_data->subtask[j]->min_swap_usage_rate = 0;
-	my_task_data->subtask[j]->max_swap_usage_rate = 0;
+						my_task_data->subtask[j]->accum_CPU_usage_rate = 0;
+						my_task_data->subtask[j]->accum_RAM_usage_rate = 0;
+						my_task_data->subtask[j]->accum_swap_usage_rate = 0;
+						
+						my_task_data->subtask[j]->min_write_bytes = 0;
+						my_task_data->subtask[j]->max_write_bytes = 0;
 
-	my_task_data->subtask[j]->accum_CPU_usage_rate = 0;
-	my_task_data->subtask[j]->accum_RAM_usage_rate = 0;
-	my_task_data->subtask[j]->accum_swap_usage_rate = 0;
-	
-	my_task_data->subtask[j]->min_write_bytes = 0;
-	my_task_data->subtask[j]->max_write_bytes = 0;
+						my_task_data->subtask[j]->min_read_bytes = 0;
+						my_task_data->subtask[j]->max_read_bytes = 0;
 
-	my_task_data->subtask[j]->min_read_bytes = 0;
-	my_task_data->subtask[j]->max_read_bytes = 0;
+						my_task_data->subtask[j]->min_read_bytes = 0;
+						my_task_data->subtask[j]->max_read_bytes = 0;
+						
+						my_task_data->subtask[j]->min_send_bytes = 0;
+						my_task_data->subtask[j]->max_send_bytes = 0;
+						my_task_data->subtask[j]->accum_send_bytes = 0;
 
-	my_task_data->subtask[j]->min_read_bytes = 0;
-	my_task_data->subtask[j]->max_read_bytes = 0;
-	
-	my_task_data->subtask[j]->min_send_bytes = 0;
-	my_task_data->subtask[j]->max_send_bytes = 0;
-	my_task_data->subtask[j]->accum_send_bytes = 0;
-							
-							
 							if(j==0)
 								my_task_data->first_start=actual_time;
 							found=true;
@@ -1175,7 +1166,7 @@ void procesa_task_io(task_data *my_task_data ) {
 		if(my_task_data->subtask[subtask]->updated==true){
 			if(my_task_data->subtask[subtask]->pstid==my_task_data->subtask[subtask]->pspid){
 				int i=0; 
-				sprintf(command, "if [ -e /proc/%i/io ]; then cat /proc/%i/io; fi;",my_task_data->subtask[subtask]->pstid,my_task_data->subtask[subtask]->pstid);
+				sprintf(command, "if [ -e "IO_STAT_FILE" ]; then cat "IO_STAT_FILE"; fi;",my_task_data->subtask[subtask]->pstid,my_task_data->subtask[subtask]->pstid);
 				execute_command(command,comout, &comalloc);
 // 				printf("pstid %i: comout is %s\n",my_task_data->subtask[subtask]->pstid,comout);
 				if(comout[0]!='\0'){
@@ -1190,19 +1181,18 @@ void procesa_task_io(task_data *my_task_data ) {
 						find_llint_from_label(loadstr, "write_bytes: ", &my_task_data->subtask[subtask]->write_bytes);
 						find_llint_from_label(loadstr, "cancelled_write_bytes: ", &my_task_data->subtask[subtask]->cancelled_write_bytes);
 					} //end while
-			}
-		}}//end if
+				}
+		}	}//end if
 	}//end for i
 	free(comout);
 }
-
 
 void free_mem_report(struct task_data_t *my_task_data_a){
 	for(int i=0;i<my_task_data_a->maxprocesses;i++){
 		free(my_task_data_a->subtask[i]);
 		free(my_task_data_a->task_def[i]);
 	}
-	free(my_task_data_a->subtask );
+	free(my_task_data_a->subtask);
 	free(my_task_data_a->task_def);
 }
 
@@ -1224,7 +1214,6 @@ void init_stats(task_data *my_task_data_a){
 		my_task_data_a->subtask[i]->totaltime=0; // collected metrics
 }
 
- 
 void stats_sample(const unsigned int pids, task_data *my_task_data) {
 	procesa_pid_load(pids, my_task_data);
 	procesa_task_io(my_task_data);

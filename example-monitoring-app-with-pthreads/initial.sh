@@ -58,5 +58,5 @@ port="3033"
 register_device ${server} ${port} ${regplatformid};
 
 register_workflow ${server} ${port} main ${appid} ${task};
-register_workflow ${server} ${port} update_ship_report  ${appid} ${task};
-
+register_workflow ${server} ${port} update_ship_report ${appid} ${task};
+# curl -s -XPOST http://${server}:${es_port}/mf/_flush > /dev/null;

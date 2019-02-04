@@ -69,7 +69,6 @@ int mf_CPU_perf_init(Plugin_metrics *data, char **events, size_t num_events, int
 			fprintf(stderr, "PAPI_assign_eventset_component for core %d failed.\n", i);
 			return FAILURE;
 		}
-
 		PAPI_domain_option_t domain_opt;
 		domain_opt.def_cidx = DEFAULT_CPU_COMPONENT;
 		domain_opt.eventset = EventSet[i];
@@ -117,10 +116,8 @@ int mf_CPU_perf_init(Plugin_metrics *data, char **events, size_t num_events, int
 			return FAILURE;
 		}
 	}
-	
-// 	for(i = 0; i < num_cores; i++) {
+// 	for(i = 0; i < num_cores; i++)
 // 		PAPI_reset(EventSet[i]);
-// 	}	
 	return SUCCESS;
 }
 
@@ -232,7 +229,7 @@ static int load_papi_library(int *num_cores) {
 /* Checks if all events are not valid; return 1 when all events are not valid; 0 otherwise. */
 int events_are_all_not_valid(char **events, size_t num_events) {
 	int i, ii, counter;
-	counter = 0; 
+	counter = 0;
 	for (i=0; i < num_events; i++) {
 		for (ii = 0; ii < PAPI_EVENTS_NUM; ii++) {
 			/* if events name matches, counter is incremented by 1 */
@@ -243,7 +240,7 @@ int events_are_all_not_valid(char **events, size_t num_events) {
 	}
 	if (counter == 0) {
 		fprintf(stderr, "Wrong given metrics.\nPlease given metrics MFLIPS, MFLOPS, or MIPS\n");
-		return 1;
+		return FAILURE;
 	}
-	return 0;
+	return SUCCESS;
 }

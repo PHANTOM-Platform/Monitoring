@@ -34,7 +34,7 @@
 
 #define POWER_EVENTS_NUM 5
 #define HAS_CPU_STAT 0x01
-#define HAS_NET_STAT 0x02 
+#define HAS_NET_STAT 0x02
 #define HAS_RAM_STAT 0x04
 #define HAS_IO_STAT 0x08
 #define HAS_ALL 0x10
@@ -400,26 +400,26 @@ int mf_Linux_sys_power_init(Plugin_metrics *data, char **events, size_t num_even
 
 		/* data->events create if other metrics are required */
 		if(flag & HAS_CPU_STAT) {
-			data->events[i] = malloc(MAX_EVENTS_LEN * sizeof(char));	
+			data->events[i] = malloc(MAX_EVENTS_LEN * sizeof(char));
 			strcpy(data->events[i], "estimated_CPU_power");
 			i++;
 		}
 		if(flag & HAS_NET_STAT) {
-			data->events[i] = malloc(MAX_EVENTS_LEN * sizeof(char));	
+			data->events[i] = malloc(MAX_EVENTS_LEN * sizeof(char));
 			strcpy(data->events[i], "estimated_wifi_power");
 			i++;
 		}
 		if((flag & HAS_RAM_STAT) || (flag & HAS_IO_STAT)) {
-			data->events[i] = malloc(MAX_EVENTS_LEN * sizeof(char));	
+			data->events[i] = malloc(MAX_EVENTS_LEN * sizeof(char));
 			strcpy(data->events[i], "estimated_memory_power");
 			i++;
-			data->events[i] = malloc(MAX_EVENTS_LEN * sizeof(char));	
+			data->events[i] = malloc(MAX_EVENTS_LEN * sizeof(char));
 			strcpy(data->events[i], "estimated_disk_power");
 			i++;
 		}
 	} else {
 		if(flag & HAS_CPU_STAT) {
-			data->events[i] = malloc(MAX_EVENTS_LEN * sizeof(char));	
+			data->events[i] = malloc(MAX_EVENTS_LEN * sizeof(char));
 			strcpy(data->events[i], "estimated_CPU_power");
 			i++;
 			 
@@ -428,14 +428,14 @@ int mf_Linux_sys_power_init(Plugin_metrics *data, char **events, size_t num_even
 			CPU_energy_before = CPU_energy_read(supported);
 		}
 		if(flag & HAS_NET_STAT) {
-			data->events[i] = malloc(MAX_EVENTS_LEN * sizeof(char));	
+			data->events[i] = malloc(MAX_EVENTS_LEN * sizeof(char));
 			strcpy(data->events[i], "estimated_wifi_power");
 			i++;
 			/* read the current network rcv/send bytes */
 			NET_stat_read(&net_stat_before);
 		}
 		if((flag & HAS_RAM_STAT) || (flag & HAS_IO_STAT)) {
-			data->events[i] = malloc(MAX_EVENTS_LEN * sizeof(char));	
+			data->events[i] = malloc(MAX_EVENTS_LEN * sizeof(char));
 			strcpy(data->events[i], "estimated_memory_power");
 			i++;
 			/* init perf counter and read the current memory access times */
@@ -471,7 +471,7 @@ int mf_Linux_sys_power_sample(Plugin_metrics *data , int *supported) {
 	if(flag & HAS_ALL) { 
 		/* get current CPU energy (unit in milliJoule) */
 		if(*supported==1)
-		CPU_energy_after = CPU_energy_read( supported); 
+		CPU_energy_after = CPU_energy_read( supported);
 		
 		/* get current memory access counter value */
 		memaccess_after = memory_counter_read();
@@ -529,7 +529,7 @@ int mf_Linux_sys_power_sample(Plugin_metrics *data , int *supported) {
 		if(flag & HAS_NET_STAT) {
 			/* get net energy (unit in milliJoule) */
 			NET_stat_read(&net_stat_after);
-			enet = sys_net_energy(&net_stat_before, &net_stat_after);			
+			enet = sys_net_energy(&net_stat_before, &net_stat_after);
 			data->values[i] = enet / time_interval;
 			i++;
 		}
@@ -537,7 +537,7 @@ int mf_Linux_sys_power_sample(Plugin_metrics *data , int *supported) {
 			memaccess_after = memory_counter_read();
 			sys_IO_stat_read(&io_stat_after);
 
-			emem = ((io_stat_after.read_bytes + io_stat_after.write_bytes - io_stat_before.read_bytes - io_stat_before.write_bytes) 
+			emem = ((io_stat_after.read_bytes + io_stat_after.write_bytes - io_stat_before.read_bytes - io_stat_before.write_bytes)
 						/ L2CACHE_LINE_SIZE + (memaccess_after - memaccess_before)) *
 						L2CACHE_MISS_LATENCY * MEMORY_POWER * 1.0e-6;
 			memaccess_before = memaccess_after;

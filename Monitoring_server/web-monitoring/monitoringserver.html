@@ -12,46 +12,28 @@
 	<meta name="robots" content="noindex">
 	<meta name="googlebot" content="noindex">
 	<meta charset="utf-8">
-	<title>PHANTOM RESOURCE-MANAGER</title>
+	<title>PHANTOM MONITORING-SERVER</title>
 	<link rel="stylesheet" type="text/css" href="phantom.css">
 	<script src="monitoringserver.js"></script>
 </head>
 
-<body onload="start_page_new()">
-	<div id="menu_phantom"></div>
-	
-	<div id="menu_login" style="display:none"></div>
-
-	<div id="phantom_operation">
-		<h1><b>LIST OF Registered DEVICEs</b></h1>
-		<h2><b> Online formular: Retrieve List of DEVICEs</b></h2>
-		<form
-			id='queryForm'
-			method='get'
-			name="myForm">
-		<!-- 	encType="multipart/form-data"> this is only for post requests-->
-			<div class="center">
-				Experiment id (optional): <input type="text" name="expid" id="expid" value=""> leave empty if not wish to filter<br>
-				<input type="hidden" name="pretty" value="true">
-				<!-- upload button-->
-				<input type="submit" onclick="return list_exps(4,document.getElementById('appname').value)" value="ONLY list the name of the Experiments" />
-				<input type="submit" onclick="return list_exps(1,document.getElementById('appname').value)" value="Show results in Table" />
-<!-- 				<input type="submit" onclick="return list_devices(2,document.getElementById('appname').value)" value="Show results as JSON" /> -->
-<!-- 				<input type="submit" onclick="return list_devices(3,document.getElementById('appname').value)" value="Show raw reply from server" /> -->
-			</div>
-		</form>
-	</div>
-	
 	<!--<b>Tested command line example with curl:</b>
 	<p style="color:DodgerBlue;">
 	curl -XGET 'query_metadata?Path=mypath%2F&filename=main.c'
 	</p>-->
 
-	<div id="debug_phantom">
-		<p id="demoreplaceb"></p>
-	</div>
+<body > <!--there is not login and not token !!! then NOT run => onload="start_page_login()"> -->
 
+	<div id="menu_phantom"></div>
+
+	<div id="menu_login" style="display:none"></div>
+	
+	<div id="debug_phantom" style="display:none">
+		<hr><p id="demoreplaceb"></p>
+	</div>
+	
 	<div id="foot_phantom"></div>
-	<script> rm_load_header_footer(); </script>
+
+<script> mf_load_header_footer(); </script>
 </body>
 </html>

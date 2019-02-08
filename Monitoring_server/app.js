@@ -76,7 +76,7 @@ function retrieve_file(filePath,res){
 			if(error.code == 'ENOENT'){
 				fs.readFile('./404.html', function(error, content) {
 					res.writeHead(404, { 'Content-Type': contentType });
-					res.end(content+ "../web-resourcemanager/phantom.css", 'utf-8');
+					res.end(content+ "..", 'utf-8');
 				});
 			} else {
 				res.writeHead(500);
@@ -95,6 +95,36 @@ app.get('/monitoringserver.html', function(req, res) {
 	var filePath = 'web-monitoring/monitoringserver.html';
 	retrieve_file(filePath,res);
 });
+app.get('/monitoringserver.js', function(req, res) {
+	var filePath = 'web-monitoring/monitoringserver.js';
+	retrieve_file(filePath,res);
+});
+
+//*******************************
+app.get('/favicon.ico', function(req, res) {
+	var filePath = 'web-monitoring/favicon.ico';
+	retrieve_file(filePath,res);
+});
+
+app.get('/phantom.css', function(req, res) {
+	var filePath = 'web-monitoring/phantom.css';
+	retrieve_file(filePath,res);
+});
+
+app.get('/phantom.gif', function(req, res) {
+	var filePath = 'web-monitoring/phantom.gif';
+	retrieve_file(filePath,res);
+});
+app.get('/javascript_howto.html', function(req, res) {
+	var filePath = 'web-monitoring/javascript_howto.html';
+	retrieve_file(filePath,res);
+});
+app.get('/PleaseEnableJavascript.html', function(req, res) {
+	var filePath = 'web-monitoring/PleaseEnableJavascript.html';
+	retrieve_file(filePath,res);
+});
+
+
 
 //app.use(logger('combined', {
 //	skip: function (req, res) { return res.statusCode < 400; }
@@ -128,6 +158,8 @@ app.use('/v1/phantom_rm/configs', configs);
 
 /* catch 404 and forward to error handler */
 app.use(function(req, res, next) {
+// const util = require('util');
+// console.log(`post/${util.inspect(req.body,false,null)}`);
 	var err = new Error('Not Found');
 	next(err);
 });

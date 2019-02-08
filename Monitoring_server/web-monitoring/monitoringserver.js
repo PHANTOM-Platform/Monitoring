@@ -217,6 +217,14 @@ function start_page_new() {
 	return false;
 }
 
+function mf_logout() {
+	sessionStorage.setItem('token', '');
+	request_share_session_storage();
+// 	checktoken();
+	window.location = 'monitoringserver.html';
+	return false;
+}
+
 function rm_logout() {
 	sessionStorage.setItem('token', '');
 	request_share_session_storage();
@@ -275,6 +283,29 @@ function rm_load_menu_login(){
 		return false;
 	}
 }
+
+// function mf_load_menu_login(){
+// 	var menu_login = document.getElementById("menu_login");
+// 	if(menu_login){
+// 		var menuhtml="<H1 id=\"title_login\" style=\"overflow-wrap:break-word; max-width:80%; word-break:break-all;\"><b>LOGIN into MONITORING-SERVER</b></H1>";
+// 		menuhtml+="<form";
+// 		menuhtml+="	id='requestToken'";
+// 		menuhtml+="	method='get'";
+// 		menuhtml+="	name=\"myForm\" autocomplete=\"on\">";
+// 	// <!-- 		encType="multipart/form-data"> //for post not for get-->
+// 		menuhtml+="	<div class=\"center\">";
+// 		menuhtml+="		User: <input type=\"text\" name=\"user\" id=\"user\" value=\"\"><br>";
+// 		menuhtml+="		Password: <input type=\"password\" name=\"password\" id=\"password\" value=\"\" autocomplete=\"off\"> <br>";
+// 		menuhtml+="		<input type=\"hidden\" name=\"pretty\" value=\"true\" />";
+// 		menuhtml+="		<input type=\"submit\" onclick=\" mf_login(document.getElementById('user').value, document.getElementById('password').value); return false;\" value=\"LOGIN\" />";
+// 		menuhtml+="	</div>";
+// 		menuhtml+="</form>";
+// 		menu_login.innerHTML = menuhtml;
+// 		return true;
+// 	}else{
+// 		return false;
+// 	}
+// }
 
 function repo_load_menu_login(){
 	var menu_login = document.getElementById("menu_login");
@@ -373,6 +404,28 @@ function rm_load_header(){
 	}
 }
 
+function mf_load_header(){
+	var menu_phantom = document.getElementById("menu_phantom");
+	if(menu_phantom){
+	var menuhtml="<ul class=\"menuphantom\">";
+	menuhtml+="	<li class=\"menuphantom\"><font color=\"white\">here go the options</font></li>";
+// 	menuhtml+="	<li class=\"menuphantom\"><a href=\"app_list.html\">List of registered APPs</a></li>";
+// 	menuhtml+="	<li class=\"menuphantom\"><a href=\"app_new.html\">Register new APP</a></li>";
+// 	menuhtml+="	<li class=\"menuphantom\"><a href=\"app_update.html\">Update an APP</a></li>";
+// 	menuhtml+="	<li class=\"menuphantom\"><a href=\"app_update1.json\">Download JSON example 1</a></li>";
+// 	menuhtml+="	<li class=\"menuphantom\"><a href=\"app_update2.json\">Download JSON example 2</a></li>";
+// 	menuhtml+="	<li class=\"menuphantom\"><a href=\"app_update3.json\">Download JSON example 3</a></li>";
+// <!--<li class="menuphantom"><a href="query_metadata.html">Query metadata</a></li> -->
+	menuhtml+="	<li class=\"phantomlogo\" style=\"float:right\">";
+	menuhtml+="	<img src=\"phantom.gif\" alt=\"PHANTOM\" height=\"32\" style=\"background-color:white;\">";
+	menuhtml+="	</li>";
+// 	menuhtml+="	<li class=\"menuphantomR\">";
+// 	menuhtml+="		<p><a onClick=\"mf_logout();return false;\" href=\"PleaseEnableJavascript.html\">LogOut</a></p></li>";
+	menuhtml+="</ul>";
+	menu_phantom.innerHTML = menuhtml;
+	}
+}
+
 function app_load_header(){
 	var menu_phantom = document.getElementById("menu_phantom");
 	if(menu_phantom){
@@ -441,11 +494,18 @@ function load_footer(){
 	if(foot_phantom){
 	var menuhtml ="";
 	menuhtml+="<hr/>Web Interfaces of the PHANTOM SERVERS and MANAGERS<br>";
-	menuhtml+="<a href=\"http://localhost:8000/repository.html\">Repository</a>&nbsp;&nbsp;";
-	menuhtml+="<a href=\"http://localhost:8500/appmanager.html\">Application Manager</a>&nbsp;&nbsp;";
-	menuhtml+="<a href=\"http://localhost:8600/resourcemanager.html\">Resource Manager</a>&nbsp;&nbsp;";
-	menuhtml+="<a href=\"http://localhost:8700/executionmanager.html\">Execution Manager</a>&nbsp;&nbsp;";
-// 	menuhtml+="<a href=\"http://localhost:3033/monitorinserver.html\">Monitoring Server</a>";
+// 	menuhtml+="<a href=\"http://localhost:8000/repository.html\">Repository</a>&nbsp;&nbsp;";
+// 	menuhtml+="<a href=\"http://localhost:8500/appmanager.html\">Application Manager</a>&nbsp;&nbsp;";
+// 	menuhtml+="<a href=\"http://localhost:8600/resourcemanager.html\">Resource Manager</a>&nbsp;&nbsp;";
+// 	menuhtml+="<a href=\"http://localhost:8700/executionmanager.html\">Execution Manager</a>&nbsp;&nbsp;";
+// 	menuhtml+="<a href=\"http://localhost:3033/monitoringserver.html\">Monitoring Server</a>";
+
+	menuhtml+="<a href=\"http://141.58.0.8:2777/repository.html\">Repository</a>&nbsp;&nbsp;";
+	menuhtml+="<a href=\"http://141.58.0.8:2778/appmanager.html\">Application Manager</a>&nbsp;&nbsp;";
+	menuhtml+="<a href=\"http://141.58.0.8:2780/resourcemanager.html\">Resource Manager</a>&nbsp;&nbsp;";
+	menuhtml+="<a href=\"http://141.58.0.8:2781/executionmanager.html\">Execution Manager</a>&nbsp;&nbsp;";
+	menuhtml+="<a href=\"http://141.58.0.8:2779/monitoringserver.html\">Monitoring Server</a>";
+
 	menuhtml+="<hr/><div class=\"greyfont\">PHANTOM project: 2019<br />";
 	menuhtml+="	Licensed under the Apache License, Version 2.0<br />";
 	menuhtml+="	You may obtain a copy of the License at:<br />";
@@ -468,6 +528,14 @@ function rm_load_header_footer(){
 	rm_load_menu_login();
 	load_footer();
 	checktoken();
+}
+
+function mf_load_header_footer(){
+	mf_load_header();
+// 	mf_load_menu_login(); //not implemented login in the mf server
+	mf_login("dummy","dummy");
+	load_footer();
+// 	checktoken();
 }
 
 function app_load_header_footer(){
@@ -536,6 +604,41 @@ function rm_login(user,password){
 		}
 	};
 	xhr.send(null);
+	return false;
+}
+
+
+function mf_login(user,password){
+	var demoreplaceb = document.getElementById("demoreplaceb");
+	var debug_phantom = document.getElementById("debug_phantom");
+	var menu_login = document.getElementById("menu_login");
+	var menu_phantom = document.getElementById("menu_phantom"); //top menu
+	
+//not implemented login in the MF_server
+	
+// 	var url=build_resource_path()+"/login?email="+user+"\&pw="+password+"";//?pretty='true'";
+// 	var xhr = new XMLHttpRequest();
+// 	xhr.open("GET", url, true);
+// 	xhr.onreadystatechange = function() {
+// 		if (xhr.status == 200) {
+// 			var serverResponse = xhr.responseText;
+// 			savetoken(serverResponse);
+// 			checktoken();
+			var menuhtml="<H1 style=\"overflow-wrap:break-word; max-width:80%; word-break:break-all;\"><b>Choose one option from the top menu</b></H1>";
+			if(menu_login) menu_login.innerHTML = menuhtml;
+			if(menu_login) menu_login.style.display = "block";
+// 		}else{
+// 			mf_logout();
+// // 			checktoken();
+// 			mf_load_menu_login();
+// 			if(menu_login) menu_login.style.display = "block";
+// 			var serverResponse = xhr.responseText;
+// 			if(menu_phantom) menu_phantom.style.display = "none";
+// 			if(demoreplaceb) demoreplaceb.innerHTML = "<pre>Error: "+ serverResponse+ "</pre>";
+// 			if(debug_phantom) debug_phantom.style.display = "block";
+// 		}
+// 	};
+// 	xhr.send(null);
 	return false;
 }
 
@@ -835,27 +938,26 @@ function upload_with_token( UploadJSON, url ) {
 	return false;
 }
 
-
 function str2bytes (str) {
-   var bytes = new Uint8Array(str.length);
-   for (var i=0; i<str.length; i++) {
-      bytes[i] = str.charCodeAt(i);
-    }
-    return bytes;
+	var bytes = new Uint8Array(str.length);
+	for (var i=0; i<str.length; i++) {
+		bytes[i] = str.charCodeAt(i);
+	}
+	return bytes;
 }
 
 function ab2str(buf) {
-  return String.fromCharCode.apply(null, new Uint16Array(buf));
-}
-function str2ab(str) {
-  var buf = new ArrayBuffer(str.length*2); // 2 bytes for each char
-  var bufView = new Uint16Array(buf);
-  for (var i=0, strLen=str.length; i < strLen; i++) {
-    bufView[i] = str.charCodeAt(i);
-  }
-  return buf;
+	return String.fromCharCode.apply(null, new Uint16Array(buf));
 }
 
+function str2ab(str) {
+	var buf = new ArrayBuffer(str.length*2); // 2 bytes for each char
+	var bufView = new Uint16Array(buf);
+	for (var i=0, strLen=str.length; i < strLen; i++) {
+		bufView[i] = str.charCodeAt(i);
+	}
+	return buf;
+}
 
 function download_file(content, fileName, contentType) {
 // 	var file = new Blob([str2bytes(content)], {type: contentType});
@@ -969,7 +1071,7 @@ function list_results(mytype,url,fields_toshow,filtered_fields){
 					html += "<pre>"+ JSON.stringify(myjson)+ "</pre>";
 				}
 			}
-			if (demoreplaceb) demoreplaceb.innerHTML =  html; //+responseObject + " status: " +xhr.status;
+			if (demoreplaceb) demoreplaceb.innerHTML = html; //+responseObject + " status: " +xhr.status;
 			if (debug_phantom) debug_phantom.style.display = "block";
 			//demoreplaceb.innerHTML = JSON.stringify(myjson) + "<br>" + html;// myjson[0].project;
 		}
@@ -1080,8 +1182,8 @@ function list_mf_config_devices(mytype,devicename){
 }
 
 /**
- * @return a file with the server response if a outputfilename is provided
- * */
+* @return a file with the server response if a outputfilename is provided
+* */
 function submitform(url, operation, outputfile) {
 	var demoreplaceb = document.getElementById("demoreplaceb");
 	var debug_phantom = document.getElementById("debug_phantom");
@@ -1160,7 +1262,7 @@ function download_file_repo(project, source,filepath, filename){
 	return false;
 }
 
-function download_metadata_repo(project,source,filepath,  filename){
+function download_metadata_repo(project,source,filepath, filename){
 	var url = build_repo_path() + "/query_metadata?project=\""+project+"\"\&source=\""+source+"\"\&filepath=\""+filepath+"\"\&filename=\""+filename+"\"";//?pretty='true'";
 	request_download(url, "", 'text/plain');
 	return false;

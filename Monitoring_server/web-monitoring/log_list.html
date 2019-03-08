@@ -1,0 +1,53 @@
+<!DOCTYPE HTML>
+<html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta charset="utf-8">
+	<meta name="description" content="Lists the logs registered in the PHANTOM MONITORING-Manager">
+	<meta name="keywords" content="HTML,CSS,JavaScript">
+	<meta name="author" content="Jose Miguel Montañana, hpcjmont@hlrs.de">
+	<meta name="reply-to" content="hpcjmont@hlrs.de">
+	<meta name="copyright" content="Copyright (C) 2018 University of Stuttgart">
+	<meta name="language" content="EN">
+	<meta name="revised" content="July 4, 2018" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="robots" content="noindex">
+	<meta name="googlebot" content="noindex">
+	<title>PHANTOM MONITORING-SERVER</title>
+	<link rel="stylesheet" type="text/css" href="phantom.css">
+	<script src="monitoringserver.js"></script>
+</head>
+
+<body > <!--onload="start_page_new()"> not defined token yet-->
+	<div id="menu_phantom"></div>
+	
+	<div id="menu_login" style="display:none"></div>
+
+	<div id="phantom_operation">
+	<h1><b>LIST OF LOGs</b></h1>
+
+	<h2><b> Online formular: Retrieve List of LOGs</b></h2>
+		<form
+		id='queryForm'
+		method='get'
+		name="myForm"
+		encType="multipart/form-data">
+		<div class="center">
+		User name (optional): <input type="text" name="username" id="username" value=""> leave empty if not wish to filter by name<br>
+		<input type="hidden" name="pretty" value="true">
+		<!-- upload button-->
+		<input type="submit" onclick="return list_exec_logs(23,document.getElementById('username').value)" value="Show LOGs in compact Table" />
+		<input type="submit" onclick="return list_exec_logs(1,document.getElementById('username').value)" value="Show LOGs in Table"/>
+		<input type="submit" onclick="return list_exec_logs(2,document.getElementById('username').value)" value="Show LOGs as JSON"/>
+		<input type="submit" onclick="return list_exec_logs(3,document.getElementById('username').value)" value="Show raw reply from server"/>
+		</div>
+	</form>
+	</div>
+
+	<div id="debug_phantom">
+		<hr><p id="demoreplaceb"></p>
+	</div>
+
+	<div id="foot_phantom"></div>
+	<script> mf_load_header_footer(); </script>
+</body>
+</html>

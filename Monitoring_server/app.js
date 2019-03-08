@@ -11,6 +11,12 @@ var elastic = new elasticsearch.Client({
 	log: 'error'
 });
 
+var es_servername = "localhost";
+var es_port = "9400";
+var SERVERDB = "mf";
+const contentType_text_plain = 'text/plain';
+
+
 /* monitoring routes */
 var servername      = require('./routes/v1/servername');
 var routes      = require('./routes/v1/index');
@@ -42,6 +48,115 @@ hostname = os.hostname();
 app.set('mf_server', 'http://' + hostname + ':' + port + '/v1');
 //app.set('pwm_idx', 'power_dreamcloud');
 
+//****************************************************
+function find_param(body, query){
+	try{
+		if (body != undefined){ //if defined as -F parameter
+			return body;
+		}else if (query != undefined){ //if defined as ? parameter
+			return query;
+		}
+	}catch(e){
+		if (query != undefined){ //if defined as ? parameter
+			return query;
+		}
+	}
+	return undefined;
+}
+//This function is used to confirm that an user exists or not in the DataBase.
+function query_count_logs(es_server, my_index, user){
+	var my_type = 'logs';
+	return new Promise( (resolve,reject) => {
+		var elasticsearch = require('elasticsearch');
+		var client = new elasticsearch.Client({
+			host: es_server,
+			log: 'error'
+		});
+		user="";
+// 		if(user==undefined){
+// 			user="";
+// 		}
+		if(user.length==0){
+			client.count({
+				index: my_index,
+				type: my_type,
+				body:{"query":{"match_all": {} }, "sort": { "date": { "order": "desc" }}}
+			}, function(error, response) {
+				if (error) {
+					reject (error);
+				}else if (response.count !== undefined) {
+// 					console.log("response.count is "+response.count+"\n");
+					resolve (response.count);//size
+				}else{
+					resolve (0);//size
+				}
+			});
+		}else{
+			client.count({
+				index: my_index,
+				type: my_type,
+				body: {
+					"query":{"bool":{"must":[
+						{"match_phrase":{"user": user }}
+					]}}
+				}
+			}, function(error, response) {
+				if (error) {
+					reject (error);
+				}else if (response.count !== undefined) {
+					resolve (response.count);//size
+				}else{
+					resolve (0);//size
+				}
+			});
+		}
+	});
+}//end query_count_project
+//****************************************************
+//This function is used to confirm that a project exists or not in the DataBase.
+//We first counted if existence is >0
+function find_logs(es_server, my_index, user){
+	var my_type = 'logs';
+	return new Promise( (resolve,reject) => {
+		var elasticsearch = require('elasticsearch');
+		var client = new elasticsearch.Client({
+			host: es_server,
+			log: 'error'
+		});
+		user="";
+		if(user.length==0){
+			client.search({
+				index: my_index,
+				type: my_type,
+				size: 1000,
+				body:{"query":{"match_all": {} }, "sort": { "date": { "order": "desc" }}}
+			}, function(error, response) {
+				if (error) {
+					reject("error: "+error);
+				}else{
+					resolve( (JSON.stringify(response.hits.hits)));
+				}
+			});
+		}else{
+			client.search({
+				index: my_index,
+				type: my_type,
+				size: 1000,
+				body: {
+					"query":{"bool":{"must":[
+						{"match_phrase":{"user": user }}
+					]}}
+				}
+			}, function(error, response) {
+				if (error) {
+					reject("error: "+error);
+				}else{
+					resolve( (JSON.stringify(response.hits.hits)));
+				}
+			});
+		}
+	});
+}
 //*********************************************************
 function retrieve_file(filePath,res){
 	var fs = require('fs');
@@ -51,7 +166,7 @@ function retrieve_file(filePath,res){
 	switch (extname) {
 		case '.html':
 			contentType = 'text/html';
-			break;			
+			break;
 		case '.js':
 			contentType = 'text/javascript';
 			break;
@@ -89,6 +204,70 @@ function retrieve_file(filePath,res){
 		}
 	});
 }
+
+
+app.post('/new_log', function(req, res) {
+	"use strict";
+// 	var currentdate = dateFormat(new Date(), "yyyy-mm-dd'T'HH:MM:ss.l");
+// 	var pretty		= find_param(req.body.pretty, req.query.pretty);
+	var log_code	= find_param(req.body.code, req.query.code);
+	var log_user	= find_param(req.body.user, req.query.user);
+	var log_ip		= find_param(req.body.ip, req.query.ip);
+	var log_message	= find_param(req.body.message, req.query.message);
+	if(log_code==undefined) log_code="";
+	if(log_user==undefined) log_user="";
+	if(log_ip==undefined) log_ip="";
+	if(log_message==undefined) log_message="";
+	var resultlog = register_log(es_servername + ":" + es_port, SERVERDB, log_code, log_ip, log_message, currentdate, log_user);
+	resultlog.then((resolve_result) => {
+		res.writeHead(200, {"Content-Type": contentType_text_plain});
+		res.end("registered log\n", 'utf-8');
+		return;
+	},(reject_result)=> {
+		res.writeHead(reject_result.code, {"Content-Type": contentType_text_plain});
+		res.end(reject_result.text+": ERROR register_log\n", 'utf-8');
+		return;
+	});
+});
+
+app.get('/get_log_list', function(req, res) {
+	"use strict";
+// 	var currentdate = dateFormat(new Date(), "yyyy-mm-dd'T'HH:MM:ss.l");  need define datetime
+// 	var pretty		= find_param(req.body.pretty, req.query.pretty);
+// 	var projectname	= CommonModule.remove_quotation_marks(find_param(req.body.project, req.query.project));
+// 	if (projectname==undefined) projectname="";
+//LogsModule
+	var result_count = query_count_logs(es_servername + ":" + es_port,SERVERDB, res.user);
+	result_count.then((resultResolve) => {
+		if(resultResolve!=0){//new entry (2) we resister new entry
+			//LogsModule
+			var result_id = find_logs(es_servername + ":" + es_port,SERVERDB, res.user,"false");
+			result_id.then((result_json) => {
+				res.writeHead(200, {"Content-Type": contentType_text_plain});
+				res.end(result_json);
+				return;
+			},(result_idReject)=> {
+				res.writeHead(408, {"Content-Type": contentType_text_plain});
+				res.end("error requesting list of logs", 'utf-8');
+				return;
+			});
+		}else{
+			res.writeHead(430, {"Content-Type": contentType_text_plain});	//not put 200 then webpage works
+// 			if(projectname.length==0){
+				res.end("Empty list of logs" );
+// 			}else{
+// 				res.end("App \""+projectname+"\" not found");
+// 			}
+			return;
+		}
+	},(resultReject)=> {
+		res.writeHead(402, {"Content-Type": contentType_text_plain});
+		res.end(resultReject + "\n", 'utf-8'); //error counting projects in the DB
+// 		var resultlog = LogsModule.register_log(es_servername + ":" + es_port,SERVERDB,400,req.connection.remoteAddress,"ERROR on requesting list of logs",currentdate,res.user);
+		return;
+	});
+});
+
 //**********************************************************
 
 app.get('/monitoringserver.html', function(req, res) {
@@ -125,6 +304,10 @@ app.get('/PleaseEnableJavascript.html', function(req, res) {
 });
 
 
+app.get('/log_list.html', function(req, res) {
+	var filePath = 'web-monitoring/log_list.html';
+	retrieve_file(filePath,res);
+});
 
 //app.use(logger('combined', {
 //	skip: function (req, res) { return res.statusCode < 400; }

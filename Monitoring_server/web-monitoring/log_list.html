@@ -17,7 +17,13 @@
 	<script src="monitoringserver.js"></script>
 </head>
 
-<body > <!--onload="start_page_new()"> not defined token yet-->
+<body id="body" ><!--class="light-mode"-->  <!--there is not login and not token !!! then NOT run => onload="start_page_login()"> -->
+	<script>
+		var currentmode= localStorage.getItem('currentmode');
+		if(currentmode!=undefined)
+			body.className = currentmode;
+	</script>
+	
 	<div id="menu_phantom"></div>
 	
 	<div id="menu_login" style="display:none"></div>

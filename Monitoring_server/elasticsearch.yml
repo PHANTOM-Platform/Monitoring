@@ -51,11 +51,13 @@ index.number_of_replicas: 0
 # Path to log files:
 #
 # path.logs: /path/to/logs
-#
+# path.repo: /home/jmontana/backups/my_backup
+path.repo: ${path.home}/../../backups/my_backup
 # ----------------------------------- Memory -----------------------------------
 #
 # Lock the memory on startup:
 #
+bootstrap.memory_lock: true
 # bootstrap.mlockall: true
 #
 # Make sure that the `ES_HEAP_SIZE` environment variable is set to about half the memory
@@ -125,6 +127,8 @@ http.cors.allow-origin: "*"
 access-control-allow-headers: "client-security-token, Authorization, Origin, X-Requested-With, Content-Type, Content-Length, X-User, Accept"
 http.cors.allow-headers: "client-security-token, Authorization, Origin, X-Requested-With, Content-Type, Content-Length, X-User, Accept"
 http.cors.enabled: true
+#http.cors.allow-headers: "X-Requested-With, Content-Type, Content-Length, X-User"
 #For the websockets 
 changes.port: 9800
 #ATTENTION: The websockets plugin needs be added security permissions, please look at set-websockets.sh
+#es.logger.level: DEBUG

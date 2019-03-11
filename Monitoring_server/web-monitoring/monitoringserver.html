@@ -22,7 +22,12 @@
 	curl -XGET 'query_metadata?Path=mypath%2F&filename=main.c'
 	</p>-->
 
-<body > <!--there is not login and not token !!! then NOT run => onload="start_page_login()"> -->
+<body id="body" ><!--class="light-mode"-->  <!--there is not login and not token !!! then NOT run => onload="start_page_login()"> -->
+	<script>
+		var currentmode= localStorage.getItem('currentmode');
+		if(currentmode!=undefined)
+			body.className = currentmode;
+	</script>
 
 	<div id="menu_phantom"></div>
 

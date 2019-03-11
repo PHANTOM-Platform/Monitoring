@@ -1,17 +1,17 @@
 #!/bin/bash
-#  Copyright (C) 2016 University of Stuttgart
+# Copyright (C) 2016 University of Stuttgart
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 #GLOBAL VARIABLES
 	app=`basename $0`;
@@ -23,6 +23,12 @@
 	DIST_DIR=${SERVER_DIR}/dist;
 	monitoring_port=3033;
 # CHECK INSTALLATION 
+	if [ ! -d ${SERVER_DIR}/backups ]; then
+			mkdir ${SERVER_DIR}/backups;
+	fi;
+	if [ ! -d backups/my_backup ]; then
+			mkdir ${SERVER_DIR}/backups/my_backup;
+	fi;
 	echo "Checking ... > elasticsearch";
 	ES_HOME=${DIST_DIR}/elasticsearch;
 	ELASTICSEARCH_BIN=${ES_HOME}/bin/elasticsearch;
@@ -41,7 +47,7 @@
 	HTTP_STATUS=$(curl -s -w %{http_code} http://localhost:${elasticsearch_port});
 
 	while [[ ${HTTP_STATUS} != *"200"* ]] && [ ${j} -lt 30 ] ; do
-		echo -n "$j. "; let "j += 1 ";  sleep 1;
+		echo -n "$j. "; let "j += 1 "; sleep 1;
 		HTTP_STATUS=$(curl -s -w %{http_code} http://localhost:${elasticsearch_port});
 	done;
 	if [ ${j} -ge 30 ]; then 
@@ -82,7 +88,7 @@
 	let "j=0";
 	HTTP_STATUS=$(curl -s -w %{http_code} http://localhost:${monitoring_port})
 	while [[ ${HTTP_STATUS} != *"200"* ]] && [ ${j} -lt 30 ] ; do
-		echo -n "$j. "; let "j += 1 ";  sleep 1;
+		echo -n "$j. "; let "j += 1 "; sleep 1;
 		HTTP_STATUS=$(curl -s -w %{http_code} http://localhost:${monitoring_port})
 	done;
 	

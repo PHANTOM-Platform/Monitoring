@@ -3,6 +3,8 @@
 
 #define METRIC_NAME_3 "power"
 
+#include "linux_resources.h"
+
 /* CPU Specifications */
 /***********************************************************************
 CPU: in my laptop
@@ -31,26 +33,5 @@ Energy, in milliJoul, when read a kilobytes
 //#define E_DISK_R_PER_KB (0.02 * 2.78)
 //#define E_DISK_W_PER_KB (0.02 * 2.19)
 
-typedef struct pid_stats_info_t {
-	unsigned long long sys_itv;
-	unsigned long long sys_runtime;
-	unsigned long long pid_runtime;
-	unsigned long long pid_read_bytes;
-	unsigned long long pid_write_bytes;
-	unsigned long long pid_cancelled_writes;
-	unsigned long long pid_l2_cache_misses;
-	float sys_cpu_energy;
-} pid_stats_info;
-
 int power_monitor(int pid, char *DataPath, long sampling_interval);
-
-int create_perf_stat_counter(int pid);
-int read_and_check(int fd, int pid, pid_stats_info *info);
-int calculate_and_update(pid_stats_info *before, pid_stats_info *after, pid_stats_info *delta);
-int read_pid_time(int pid, pid_stats_info *info);
-int read_pid_io(int pid, pid_stats_info *info);
-int read_sys_time(pid_stats_info *info);
-int cpu_freq_stat(pid_stats_info *info);
-unsigned long long read_perf_counter(int fd);
-
 #endif

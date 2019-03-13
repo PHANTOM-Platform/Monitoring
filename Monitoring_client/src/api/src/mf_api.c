@@ -86,7 +86,7 @@ char parameters_name[9][32] = {"MAX_CPU_POWER", "MIN_CPU_POWER",
 	"MEMORY_POWER", "L2CACHE_MISS_LATENCY", "L2CACHE_LINE_SIZE",
 	"E_DISK_R_PER_KB", "E_DISK_W_PER_KB",
 	"E_NET_SND_PER_KB", "E_NET_RCV_PER_KB"};
-float parameters_value[9];
+// float parameters_value[9];
 
 char DataPath[256];
 pthread_t threads[MAX_NUM_METRICS];
@@ -187,17 +187,24 @@ struct task_data_t *mmy_task_data_a =NULL;
 * 
 * @return NULL if error
 */
-char* new_exec(const char *server, const char *filenamepath, char * token){
+char* update_exec(const char *server, const char *filenamepath, char * token){
 	char *URL = NULL;
+	char operation[]="POST";
 	struct url_data response;
 	response.size=0;
 	response.data=NULL;
 	response.headercode=NULL;
 	URL=concat_and_free(&URL, server);
 	URL=concat_and_free(&URL, "/update_exec");
-	char operation[]="POST";
+	
+// 	printf(" URL: %s\n", URL );
+// 	printf(" filenamepath: %s\n", filenamepath );
+// 	printf(" operation: %s\n", operation );
+// 	printf(" token: %s\n", token );
+
 	query_message_json(URL,NULL, filenamepath, &response, operation, token); //*****
 // 	printf(" response is %s\n",response.data);
+	
 	if(URL!=NULL) free(URL);
 	URL=NULL;
 	if(response.headercode!=NULL) free(response.headercode);
@@ -1220,7 +1227,7 @@ void monitoring_end(char *mf_server, char *exec_server, char *appid, char *exec_
 	/*close the file*/
 	fclose(fp);
 
-	char* resp= new_exec(exec_server, FileName, token);
+	char* resp= update_exec(exec_server, FileName, token);
 // 	printf("%s",json_msg);
 	free(resp);
 	free(json_msg);

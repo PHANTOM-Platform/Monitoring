@@ -53,7 +53,7 @@ unsigned int flag = 0;
 /*******************************************************************************
  * Implementaion
  ******************************************************************************/
- 
+
  /** @brief updates the global variable flag in function of events and num_events
  @return SUCCESS or otherwise FAILURE*/
 int flag_init(char **events, size_t num_events) {
@@ -79,30 +79,44 @@ int flag_init(char **events, size_t num_events) {
 }
 
 
+/* read the system itv and runtime from CPU_STAT_FILE */
 /** @brief Gets the current system clocks (cpu runtime, idle time, and so on)
  * collected metrics on stats_now->total_cpu_time
  @return SUCCESS or otherwise FAILURE*/
-int CPU_stat_read(struct resources_stats_t *stats_now){
+
+int CPU_stat_read(struct resources_stats_t *stats_now, const float ticksPerSecond){
 	FILE *fp;
 	char line[1024];
-	unsigned long long user, nice, system, idle, iowait, irq, softirq;
+	unsigned long long user, nice, system, idle, iowait, irq, softirq, cpu_steal;
 	fp = fopen(CPU_STAT_FILE, "r");
 	if(fp == NULL) {
 		printf("ERROR: Could not open file %s\n", CPU_STAT_FILE);
 		exit(0);
 	}
 	if(fgets(line, 1024, fp) != NULL) {
-		sscanf(line+5, "%llu %llu %llu %llu %llu %llu %llu",
-			&user, &nice, &system, &idle, &iowait, &irq, &softirq);
+		sscanf(line+5, "%llu %llu %llu %llu %llu %llu %llu %llu",
+			&user, &nice, &system, &idle, &iowait, &irq, &softirq, &cpu_steal);
 	}
 	stats_now->before_total_cpu_time=stats_now->total_cpu_time;
 	stats_now->total_cpu_time = user + nice + system + idle + iowait + irq + softirq;
+
+	stats_now->before_accum_sys_itv = stats_now->accum_sys_itv;
+	stats_now->accum_sys_itv = stats_now->total_cpu_time + cpu_steal;
+// 	if(after->accum_sys_itv <= before->before_accum_sys_itv) return FAILURE;
+	stats_now->sys_itv = stats_now->accum_sys_itv - stats_now->before_accum_sys_itv;
+
+	stats_now->before_accum_sys_runtime = stats_now->accum_sys_runtime;//units in USER_HZ (1/100ths of a second on most cases, use sysconf(_SC_CLK_TCK) to obtain the value)
+
+
+	stats_now->accum_sys_runtime =  (float)(user + system)/ticksPerSecond;
+// 	if(after->accum_sys_runtime <= before->before_accum_sys_runtime) return FAILURE;
+// 	printf(" user %llu system %llu\n",user,system);
+	stats_now->sys_runtime = stats_now->accum_sys_runtime - stats_now->before_accum_sys_runtime;//unit in seconds
 	fclose(fp);
 	return SUCCESS;
 }
 
-/*read cpu user time and system time from /proc/[pid]/stat */
-/*read cpu user time and system time from CPU_STAT_FILE=/proc/stat */
+/*read cpu user time and system time from CPU_STAT_PID_FILE */
 int CPU_stat_process_read(int pid, struct resources_stats_t *stats_now) {
 	FILE *fp;
 	char line[1024];
@@ -120,11 +134,13 @@ int CPU_stat_process_read(int pid, struct resources_stats_t *stats_now) {
 	if(fgets(line, 1024, fp) != NULL) {
 		sscanf(line, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %llu %llu %llu",
 			(int *)&tmp, tmp_str, &tmp_char, (int *)&tmp, (int *)&tmp, (int *)&tmp, (int *)&tmp, (int *)&tmp,
-			(unsigned int *)&tmp, (unsigned long *)&tmp, (unsigned long *)&tmp, (unsigned long *)&tmp, 
+			(unsigned int *)&tmp, (unsigned long *)&tmp, (unsigned long *)&tmp, (unsigned long *)&tmp,
 			(unsigned long long *)&tmp, (unsigned long long*)&pid_utime, (unsigned long long *)&pid_stime);
 	}
-	stats_now->before_process_CPU_time = stats_now->process_CPU_time;
-	stats_now->process_CPU_time = pid_utime + pid_stime;
+	stats_now->before_accum_pid_runtime = stats_now->accum_pid_runtime;
+	stats_now->accum_pid_runtime = pid_utime + pid_stime;
+// 	if(after->accum_pid_runtime <= before->before_accum_pid_runtime) return FAILURE;
+	stats_now->pid_runtime = stats_now->accum_pid_runtime - stats_now->before_accum_pid_runtime;
 	fclose(fp);
 	return SUCCESS;
 }
@@ -187,10 +203,16 @@ int RAM_process_usage_rate_read(const int pid, struct resources_stats_t *stats_n
 	return SUCCESS;
 }
 
+/* read the process read_bytes, write_bytes, and cancelled_writes from IO_STAT_FILE */
 int io_stats_read(int pid, struct resources_stats_t *stats_now) {
 	FILE *fp;
+	stats_now->before_accum_read_bytes = stats_now->accum_read_bytes;
+	stats_now->before_accum_write_bytes = stats_now->accum_write_bytes;
+	stats_now->before_accum_cancelled_writes = stats_now->accum_cancelled_writes;
+
 	stats_now->accum_read_bytes=0;
 	stats_now->accum_write_bytes=0;
+	stats_now->accum_cancelled_writes=0;
 	char pid_io_file[128], line[1024];
 	sprintf(pid_io_file, IO_STAT_FILE, pid);
 	if ((fp = fopen(pid_io_file, "r")) == NULL) {
@@ -202,7 +224,18 @@ int io_stats_read(int pid, struct resources_stats_t *stats_now) {
 			sscanf(line + 12, "%llu", &stats_now->accum_read_bytes);
 		if (!strncmp(line, "write_bytes:", 12))
 			sscanf(line + 13, "%llu", &stats_now->accum_write_bytes);
+		if(!strncmp(line, "cancelled_write_bytes:", 22))
+			sscanf(line + 23, "%llu", &stats_now->accum_cancelled_writes);
 	}
+	/*calculate the values for disk stats */
+	stats_now->read_bytes = stats_now->accum_read_bytes - stats_now->before_accum_read_bytes;
+	stats_now->write_bytes = stats_now->accum_write_bytes - stats_now->before_accum_write_bytes;
+	stats_now->accum_cancelled_writes = stats_now->accum_cancelled_writes - stats_now->before_accum_cancelled_writes;
+// 	stats_now->throughput = (stats_now->read_bytes + stats_now->write_bytes) / sampling_interval; //in bytes/s
+	if(stats_now->min_write_bytes > stats_now->write_bytes) stats_now->min_write_bytes = stats_now->write_bytes;
+	if(stats_now->max_write_bytes < stats_now->write_bytes) stats_now->max_write_bytes = stats_now->write_bytes;
+	if(stats_now->min_read_bytes > stats_now->read_bytes) stats_now->min_read_bytes = stats_now->read_bytes;
+	if(stats_now->max_read_bytes < stats_now->read_bytes) stats_now->max_read_bytes = stats_now->read_bytes;
 	fclose(fp);
 	return SUCCESS;
 }
@@ -219,7 +252,7 @@ int network_stat_read(int pid, struct resources_stats_t *nets_info) {
 	nets_info->rcv_bytes = 0;
 	nets_info->send_bytes = 0;
 	char pid_net_file[128], line[1024];
-	sprintf(pid_net_file, NET_STAT_FILE, pid);//NET_STAT_FILE
+	sprintf(pid_net_file, NET_STAT_FILE, pid);
 	if ((fp = fopen(pid_net_file, "r")) == NULL) {
 		fprintf(stderr, "Error: Cannot open %s.\n", pid_net_file);
 		return FAILURE;
@@ -227,7 +260,7 @@ int network_stat_read(int pid, struct resources_stats_t *nets_info) {
 	while(fgets(line, 1024, fp) != NULL) {
 		char *sub_line_eth = strstr(line, "eth");
 		if (sub_line_eth != NULL) {
-			sscanf(sub_line_eth + 5, "%llu%u%u%u%u%u%u%u%llu", 
+			sscanf(sub_line_eth + 5, "%llu%u%u%u%u%u%u%u%llu",
 				&temp_rcv_bytes, &temp, &temp, &temp, &temp, &temp, &temp, &temp,
 				&temp_send_bytes);
 			nets_info->rcv_bytes += temp_rcv_bytes;
@@ -235,7 +268,7 @@ int network_stat_read(int pid, struct resources_stats_t *nets_info) {
 		}
 		char *sub_line_wlan = strstr(line, "wlan");
 		if (sub_line_wlan != NULL) {
-			sscanf(sub_line_wlan + 6, "%llu%u%u%u%u%u%u%u%llu", 
+			sscanf(sub_line_wlan + 6, "%llu%u%u%u%u%u%u%u%llu",
 				&temp_rcv_bytes, &temp, &temp, &temp, &temp, &temp, &temp, &temp,
 				&temp_send_bytes);
 			nets_info->rcv_bytes += temp_rcv_bytes;
@@ -269,18 +302,10 @@ int linux_resources_init(int pid, char **events, size_t num_events, struct resou
 	clock_gettime(CLOCK_REALTIME, &timestamp);
 // 	before_time = timestamp.tv_sec * 1.0 + (double)(timestamp.tv_nsec / 1.0e9);
 	/* initialize Plugin_metrics events' names according to flag */
-	int i = 0;
 	if(flag & HAS_CPU_STAT) {
-		CPU_stat_read(stats_now);
+		float ticksPerSecond=sysconf(_SC_CLK_TCK); // ticks per sec
+		CPU_stat_read(stats_now,ticksPerSecond);
 		CPU_stat_process_read(pid, stats_now);
-		i++;
-	}
-	if(flag & HAS_RAM_STAT) {
-		//
-		
-	}
-	if(flag & HAS_SWAP_STAT) {
-		//ggg
 	}
 	if(flag & HAS_NET_STAT) {
 // 		/* read the current network rcv/send bytes */
@@ -296,10 +321,7 @@ int linux_resources_init(int pid, char **events, size_t num_events, struct resou
 	if(flag & HAS_IO_STAT) {
 // 		/* read the current io read/write bytes for all processes */
 		/*initialize the values in result */
-		stats_now->before_accum_read_bytes = stats_now->accum_read_bytes;
-		stats_now->before_accum_write_bytes = stats_now->accum_write_bytes;
 		io_stats_read(pid, stats_now);
-		i++;
 	}
 	return SUCCESS;
 }
@@ -315,8 +337,9 @@ int linux_resources_sample(const int pid, struct resources_stats_t *stat_after )
 // 	after_time = timestamp.tv_sec * 1.0 + (double)(timestamp.tv_nsec / 1.0e9);
 // 	double time_interval = after_time - before_time;
 	i = 0;
+	float ticksPerSecond=sysconf(_SC_CLK_TCK); // ticks per sec
 	if(flag & HAS_CPU_STAT) {
-		CPU_stat_read(stat_after);
+		CPU_stat_read(stat_after,ticksPerSecond);
 		CPU_stat_process_read(pid, stat_after);
 // 		if(stat_after.total_cpu_time < stat_after.before_total_cpu_time) {
 // 			data->values[i] = ((stat_after.total_cpu_time - stat_after.before_total_cpu_time) - (stat_after.total_idle_time - stat_before.total_idle_time)) * 100.0 /
@@ -325,11 +348,11 @@ int linux_resources_sample(const int pid, struct resources_stats_t *stat_after )
 // 			stat_after.before_total_cpu_time = stat_after.total_cpu_time;
 // 			stat_before.total_idle_time = stat_after.total_idle_time;
 // 		}
-		if((stat_after->process_CPU_time <= stat_after->before_process_CPU_time)
+		if((stat_after->accum_pid_runtime <= stat_after->before_accum_pid_runtime)
 			|| (stat_after->total_cpu_time <= stat_after->before_total_cpu_time)) {
 			stat_after->CPU_usage_rate = 0.0;
 		} else {
-			stat_after->CPU_usage_rate = (stat_after->process_CPU_time - stat_after->before_process_CPU_time) * 100.0 / 
+			stat_after->CPU_usage_rate = (stat_after->accum_pid_runtime - stat_after->before_accum_pid_runtime) * 100.0 / 
 				(stat_after->total_cpu_time - stat_after->before_total_cpu_time);
 		}
 		i++;
@@ -344,7 +367,7 @@ int linux_resources_sample(const int pid, struct resources_stats_t *stat_after )
 	}
 	if(flag & HAS_NET_STAT) {
 		network_stat_read(pid, stat_after);
-		unsigned long long total_bytes = (stat_after->rcv_bytes - stat_after->rcv_bytes) 
+		unsigned long long total_bytes = (stat_after->rcv_bytes - stat_after->rcv_bytes)
 			+ (stat_after->send_bytes - stat_after->send_bytes);
 		if(total_bytes > 0.0) {
 			/* update the stat_after values by the current values */
@@ -370,8 +393,7 @@ int linux_resources_sample(const int pid, struct resources_stats_t *stat_after )
 struct resources_stats_t *stats=NULL;
 
 
-
-char *save_stats_resources( struct resources_stats_t *stat, int pretty, int tabs){
+char *save_stats_resources(struct resources_stats_t *stat, int pretty, int tabs){
 	int i;
 	char tempstr[2048]={'\0'};
 	char *msg=NULL;
@@ -497,128 +519,19 @@ char *save_stats_resources_comp(struct sub_task_data *subtask, int pretty, int t
 	return msg;
 }
 
-/*
-int printf_stats_resources(FILE *fp, struct resources_stats_t *stat, int pretty, int tabs){
-	int i;
+/* int printf_stats_resources(FILE *fp, struct resources_stats_t *stat, int pretty, int tabs){
 	if (fp==NULL || stats ==NULL) return 0;
-// 	----------------------CPU
-	if(pretty==1) for(i=0;i<tabs;i++) fprintf(fp,"\t");
-	fprintf(fp, "\"%s\":{", "stats_cpu_usage_rate" );
-	fprintf(fp, "\"count\":\"%li\"", stats->counter);
-	fprintf(fp, ",\"min\":\"%.2f\"", stats->min_CPU_usage_rate);
-	fprintf(fp, ",\"max\":\"%.2f\"", stats->max_CPU_usage_rate);
-	fprintf(fp, ",\"avg\":\"%.2f\"", (float) stats->accum_CPU_usage_rate/ (float)stats->counter);
-	fprintf(fp, ",\"sum\":\"%lli\"},", stats->accum_CPU_usage_rate);
-// 	----------------------RAM
-	if (pretty==1) fprintf(fp,"\n");
-	if(pretty==1) for(i=0;i<tabs;i++) fprintf(fp,"\t");
-	fprintf(fp, "\"%s\":{", "stats_ram_usage_rate");
-	fprintf(fp, "\"count\":\"%li\"", stats->counter);
-	fprintf(fp, ",\"min\":\"%.2f\"", stats->min_RAM_usage_rate);
-	fprintf(fp, ",\"max\":\"%.2f\"", stats->max_RAM_usage_rate);
-	fprintf(fp, ",\"avg\":\"%.2f\"", (float)stats->accum_RAM_usage_rate/(float)stats->counter);
-	fprintf(fp, ",\"sum\":\"%lli\"},", stats->accum_RAM_usage_rate);
-// 	----------------------SWAP
-	if (pretty==1) fprintf(fp,"\n");
-	if(pretty==1) for(i=0;i<tabs;i++) fprintf(fp,"\t");
-	fprintf(fp, "\"%s\":{", "stats_swap_usage_rate");
-	fprintf(fp, "\"count\":\"%li\"", stats->counter);
-	fprintf(fp, ",\"min\":\"%.2f\"", stats->min_swap_usage_rate);
-	fprintf(fp, ",\"max\":\"%.2f\"", stats->max_swap_usage_rate);
-	fprintf(fp, ",\"avg\":\"%.2f\"", (float)stats->accum_swap_usage_rate/(float)stats->counter);
-	fprintf(fp, ",\"sum\":\"%lli\"},", stats->accum_swap_usage_rate);
-// 	---------------------- IO
-	if (pretty==1) fprintf(fp,"\n");
-	if(pretty==1) for(i=0;i<tabs;i++) fprintf(fp,"\t");
-	fprintf(fp, "\"%s\":{", "stats_write_bytes");
-	fprintf(fp, "\"count\":\"%li\"", stats->counter);
-	fprintf(fp, ",\"min\":\"%lli\"", stats->min_write_bytes);
-	fprintf(fp, ",\"max\":\"%lli\"", stats->max_write_bytes);
-	fprintf(fp, ",\"avg\":\"%lli\"", stats->accum_write_bytes/stats->counter);
-	fprintf(fp, ",\"sum\":\"%lli\"},", stats->accum_write_bytes);
-// ------------------------ IO
-	if (pretty==1) fprintf(fp,"\n");
-	if(pretty==1) for(i=0;i<tabs;i++) fprintf(fp,"\t");
-	fprintf(fp, "\"%s\":{", "stats_read_bytes");
-	fprintf(fp, "\"count\":\"%li\"", stats->counter);
-	fprintf(fp, ",\"min\":\"%lli\"", stats->min_read_bytes);
-	fprintf(fp, ",\"max\":\"%lli\"", stats->max_read_bytes);
-	fprintf(fp, ",\"avg\":\"%lli\"", stats->accum_read_bytes/stats->counter);
-	fprintf(fp, ",\"sum\":\"%lli\"},", stats->accum_read_bytes);
-// -------------------------NET
-	if (pretty==1) fprintf(fp,"\n");
-	if(pretty==1) for(i=0;i<tabs;i++) fprintf(fp,"\t");
-	fprintf(fp, "\"%s\":{", "stats_send_bytes");
-	fprintf(fp, "\"count\":\"%li\"", stats->counter);
-	fprintf(fp, ",\"min\":\"%lli\"", stats->min_send_bytes);
-	fprintf(fp, ",\"max\":\"%lli\"", stats->max_send_bytes);
-	fprintf(fp, ",\"avg\":\"%lli\"", stats->accum_send_bytes/stats->counter);
-	fprintf(fp, ",\"sum\":\"%lli\"}", stats->accum_send_bytes);
-//		nets_info->rcv_bytes += temp_rcv_bytes;
-//		nets_info->send_bytes += temp_send_bytes;
-	if(pretty==0) fprintf(fp, "\n");
+	char *msg=save_stats_resources( stat, pretty, tabs);
+	fprintf(fp, "%s", msg);
+	free(msg);
 	return 0;
 }*/
-/*
-int printf_stats_resources_comp(FILE *fp, struct sub_task_data *subtask, int pretty, int tabs){
-	int i;
-	if (fp==NULL || stats ==NULL) return 0;
-// 	----------------------CPU
-	if(pretty==1) for(i=0;i<tabs;i++) fprintf(fp,"\t");
-	fprintf(fp, "\"%s\":{", "stats_cpu_usage_rate" );
-	fprintf(fp, "\"count\":\"%li\"", subtask->counter);
-	fprintf(fp, ",\"min\":\"%.2f\"", subtask->min_CPU_usage_rate);
-	fprintf(fp, ",\"max\":\"%.2f\"", subtask->max_CPU_usage_rate);
-	fprintf(fp, ",\"avg\":\"%.2f\"", (float) subtask->accum_CPU_usage_rate/ (float)subtask->counter);
-	fprintf(fp, ",\"sum\":\"%lli\"},", subtask->accum_CPU_usage_rate);
-// 	----------------------RAM
-	if (pretty==1) fprintf(fp,"\n");
-	if(pretty==1) for(i=0;i<tabs;i++) fprintf(fp,"\t");
-	fprintf(fp, "\"%s\":{", "stats_ram_usage_rate");
-	fprintf(fp, "\"count\":\"%li\"", subtask->counter);
-	fprintf(fp, ",\"min\":\"%.2f\"", subtask->min_RAM_usage_rate);
-	fprintf(fp, ",\"max\":\"%.2f\"", subtask->max_RAM_usage_rate);
-	fprintf(fp, ",\"avg\":\"%.2f\"", (float)subtask->accum_RAM_usage_rate/(float)subtask->counter);
-	fprintf(fp, ",\"sum\":\"%lli\"},", subtask->accum_RAM_usage_rate);
-// 	----------------------SWAP
-	if (pretty==1) fprintf(fp,"\n");
-	if(pretty==1) for(i=0;i<tabs;i++) fprintf(fp,"\t");
-	fprintf(fp, "\"%s\":{", "stats_swap_usage_rate");
-	fprintf(fp, "\"count\":\"%li\"", subtask->counter);
-	fprintf(fp, ",\"min\":\"%.2f\"", subtask->min_swap_usage_rate);
-	fprintf(fp, ",\"max\":\"%.2f\"", subtask->max_swap_usage_rate);
-	fprintf(fp, ",\"avg\":\"%.2f\"", (float)subtask->accum_swap_usage_rate/(float)subtask->counter);
-	fprintf(fp, ",\"sum\":\"%lli\"},", subtask->accum_swap_usage_rate);
-// 	---------------------- IO
-	if (pretty==1) fprintf(fp,"\n");
-	if(pretty==1) for(i=0;i<tabs;i++) fprintf(fp,"\t");
-	fprintf(fp, "\"%s\":{", "stats_write_bytes");
-	fprintf(fp, "\"count\":\"%li\"", subtask->counter);
-	fprintf(fp, ",\"min\":\"%lli\"", subtask->min_write_bytes);
-	fprintf(fp, ",\"max\":\"%lli\"", subtask->max_write_bytes);
-	fprintf(fp, ",\"avg\":\"%lli\"", subtask->accum_write_bytes/subtask->counter);
-	fprintf(fp, ",\"sum\":\"%lli\"},", subtask->accum_write_bytes);
-// ------------------------ IO
-	if (pretty==1) fprintf(fp,"\n");
-	if(pretty==1) for(i=0;i<tabs;i++) fprintf(fp,"\t");
-	fprintf(fp, "\"%s\":{", "stats_read_bytes");
-	fprintf(fp, "\"count\":\"%li\"", subtask->counter);
-	fprintf(fp, ",\"min\":\"%lli\"", subtask->min_read_bytes);
-	fprintf(fp, ",\"max\":\"%lli\"", subtask->max_read_bytes);
-	fprintf(fp, ",\"avg\":\"%lli\"", subtask->accum_read_bytes/subtask->counter);
-	fprintf(fp, ",\"sum\":\"%lli\"},", subtask->accum_read_bytes);
-// -------------------------NET
-	if (pretty==1) fprintf(fp,"\n");
-	if(pretty==1) for(i=0;i<tabs;i++) fprintf(fp,"\t");
-	fprintf(fp, "\"%s\":{", "stats_send_bytes");
-	fprintf(fp, "\"count\":\"%li\"", subtask->counter);
-	fprintf(fp, ",\"min\":\"%lli\"", subtask->min_send_bytes);
-	fprintf(fp, ",\"max\":\"%lli\"", subtask->max_send_bytes);
-	fprintf(fp, ",\"avg\":\"%lli\"", subtask->accum_send_bytes/subtask->counter);
-	fprintf(fp, ",\"sum\":\"%lli\"}", subtask->accum_send_bytes);
-//		nets_info->rcv_bytes += temp_rcv_bytes;
-//		nets_info->send_bytes += temp_send_bytes;
-	if(pretty==0) fprintf(fp, "\n");
+
+/* int printf_stats_resources_comp(FILE *fp, struct sub_task_data *subtask, int pretty, int tabs){
+	if (fp==NULL || subtask ==NULL) return 0;
+	char *msg=save_stats_resources_comp(subtask, pretty, tabs);
+	fprintf(fp, "%s", msg);
+	free(msg);
 	return 0;
 }*/
 
@@ -631,8 +544,8 @@ struct resources_stats_t *linux_resources(const int pid, char *DataPath, long sa
 	stats =(struct resources_stats_t *) malloc((num_events)* sizeof(struct resources_stats_t ));
 	stats->accum_read_bytes =0;
 	stats->accum_write_bytes =0;
-	stats->before_accum_read_bytes = stats->accum_read_bytes;
-	stats->before_accum_write_bytes = stats->accum_write_bytes;
+	stats->before_accum_read_bytes = 0;
+	stats->before_accum_write_bytes = 0;
 	stats->counter=1;
 	char **events;
 	events= (char **) malloc((num_events)* sizeof(char *));
@@ -655,7 +568,7 @@ struct resources_stats_t *linux_resources(const int pid, char *DataPath, long sa
 	linux_resources_init(pid, events, num_events, stats);
 // 	for the case of being uninitialized
 	stats->before_total_cpu_time=stats->total_cpu_time;
-	stats->before_process_CPU_time=stats->process_CPU_time;
+	stats->before_accum_pid_runtime=stats->accum_pid_runtime;
 
 	stats->min_CPU_usage_rate = stats->CPU_usage_rate;
 	stats->max_CPU_usage_rate = stats->CPU_usage_rate;
@@ -678,15 +591,15 @@ struct resources_stats_t *linux_resources(const int pid, char *DataPath, long sa
 
 	stats->min_read_bytes = stats->accum_read_bytes;
 	stats->max_read_bytes = stats->accum_read_bytes;
-	
+
 	stats->min_send_bytes = stats->send_bytes;
 	stats->max_send_bytes = stats->send_bytes;
 	stats->accum_send_bytes = stats->send_bytes;
-	
 	/*in a loop do data sampling and write into the file*/
 	while(running) {
 		usleep(sampling_interval * 1000);
 		linux_resources_sample(pid, stats);
+		stats->throughput = (stats->read_bytes + stats->write_bytes) / sampling_interval; //in bytes/s, must be after linux_resources_sample
 		/*get current timestamp in ms*/
 		clock_gettime(CLOCK_REALTIME, &timestamp);
 		timestamp_ms = timestamp.tv_sec * 1000.0 + (double)(timestamp.tv_nsec / 1.0e6);
@@ -701,14 +614,6 @@ struct resources_stats_t *linux_resources(const int pid, char *DataPath, long sa
 			fprintf(fp, ", \"%s\":%.3f", "swap_usage_rate", stats->swap_usage_rate);
 		}
 		if(flag & HAS_IO_STAT) {
-			/*calculate the values for disk stats */
-			stats->read_bytes = stats->accum_read_bytes - stats->before_accum_read_bytes;
-			stats->write_bytes = stats->accum_write_bytes - stats->before_accum_write_bytes;
-			stats->throughput = (stats->read_bytes + stats->write_bytes) * 1000.0 / sampling_interval; //in bytes/s
-			if(stats->min_write_bytes > stats->write_bytes) stats->min_write_bytes = stats->write_bytes;
-			if(stats->max_write_bytes < stats->write_bytes) stats->max_write_bytes = stats->write_bytes;
-			if(stats->min_read_bytes > stats->read_bytes) stats->min_read_bytes = stats->read_bytes;
-			if(stats->max_read_bytes < stats->read_bytes) stats->max_read_bytes = stats->read_bytes;
 			fprintf(fp, ", \"%s\":%llu","disk_read", stats->read_bytes);
 			fprintf(fp,", \"%s\":%llu", "disk_write", stats->write_bytes);
 			fprintf(fp,", \"%s\":%.3f","disk_throughput", stats->throughput);
@@ -740,12 +645,11 @@ struct resources_stats_t *linux_resources(const int pid, char *DataPath, long sa
 		return NULL;
 	}
 	fprintf(fp, "\"local_timestamp\":\"%.1f\",", timestamp_ms);
-	
-	char *msgb=save_stats_resources( stats,0,2);
+	char *msgb=save_stats_resources(stats,0,2);
 // 	concat_and_free(&msg, msgb);
 	fprintf(fp,"%s",msgb); free(msgb);
 // 	printf_stats_resources(fp, stats,0,2);
-// 	free(stats);	
+// 	free(stats);
 	fclose(fp);
 	for(i=0;i<num_events;i++)
 		free(events[i]);
@@ -954,19 +858,19 @@ unsigned int save_stats(FILE *fp, int searchprocess, task_data *my_task_data){
 				//printf(" %s%9Li us",NO_COLOUR,my_task_data->subtask[i]->starttime);
 			}
 		}
-	// 	if(flag & HAS_IO_STAT) {
+		if(flag & HAS_IO_STAT) {
 			/*calculate the values for disk stats */
 	// 		my_task_data->subtask[i]->throughput = (my_task_data->subtask[i]->rchar + my_task_data->subtask[i]->wchar) * 1000.0 / sampling_interval; //in bytes/s
 			if(my_task_data->subtask[i]->min_write_bytes > my_task_data->subtask[i]->wchar) my_task_data->subtask[i]->min_write_bytes = my_task_data->subtask[i]->wchar;
 			if(my_task_data->subtask[i]->max_write_bytes < my_task_data->subtask[i]->wchar) my_task_data->subtask[i]->max_write_bytes = my_task_data->subtask[i]->wchar;
 			if(my_task_data->subtask[i]->min_read_bytes > my_task_data->subtask[i]->rchar) my_task_data->subtask[i]->min_read_bytes = my_task_data->subtask[i]->rchar;
 			if(my_task_data->subtask[i]->max_read_bytes < my_task_data->subtask[i]->rchar) my_task_data->subtask[i]->max_read_bytes = my_task_data->subtask[i]->rchar;
-	// 	}
-	// 	if(flag & HAS_NET_STAT) {
-	// 		if(my_task_data->subtask[i]->min_send_bytes > stats->send_bytes) stats->min_send_bytes = stats->send_bytes;
-	// 		if(my_task_data->subtask[i]->max_send_bytes < stats->send_bytes) stats->max_send_bytes = stats->send_bytes;
-	// 		my_task_data->subtask[i]->accum_send_bytes += stats->send_bytes;
-	// 	}
+		}
+		if(flag & HAS_NET_STAT) {
+			if(my_task_data->subtask[i]->min_send_bytes > my_task_data->subtask[i]->send_bytes) my_task_data->subtask[i]->min_send_bytes = my_task_data->subtask[i]->send_bytes;
+			if(my_task_data->subtask[i]->max_send_bytes < my_task_data->subtask[i]->send_bytes) my_task_data->subtask[i]->max_send_bytes = my_task_data->subtask[i]->send_bytes;
+	// 		my_task_data->subtask[i]->accum_send_bytes += my_task_data->subtask[i]->send_bytes;
+		}
 		if(my_task_data->subtask[i]->min_CPU_usage_rate > my_task_data->subtask[i]->pcpu) my_task_data->subtask[i]->min_CPU_usage_rate = my_task_data->subtask[i]->pcpu;
 		if(my_task_data->subtask[i]->max_CPU_usage_rate < my_task_data->subtask[i]->pcpu) my_task_data->subtask[i]->max_CPU_usage_rate = my_task_data->subtask[i]->pcpu;
 		if(my_task_data->subtask[i]->min_RAM_usage_rate > my_task_data->subtask[i]->pmem) my_task_data->subtask[i]->min_RAM_usage_rate = my_task_data->subtask[i]->pmem;
@@ -1086,7 +990,7 @@ unsigned int procesa_pid_load(const unsigned int pid, task_data *my_task_data) {
 						my_task_data->subtask[j]->rcv_bytes=0;
 					// 	for the case of being uninitialized
 						my_task_data->subtask[j]->before_total_cpu_time=my_task_data->subtask[j]->total_cpu_time;
-						my_task_data->subtask[j]->before_process_CPU_time=my_task_data->subtask[j]->process_CPU_time;
+// 						my_task_data->subtask[j]->before_accum_pid_runtime=my_task_data->subtask[j]->accum_pid_runtime;
 
 						my_task_data->subtask[j]->min_CPU_usage_rate = 0;
 						my_task_data->subtask[j]->max_CPU_usage_rate = 0;
@@ -1107,9 +1011,6 @@ unsigned int procesa_pid_load(const unsigned int pid, task_data *my_task_data) {
 						my_task_data->subtask[j]->min_read_bytes = 0;
 						my_task_data->subtask[j]->max_read_bytes = 0;
 
-						my_task_data->subtask[j]->min_read_bytes = 0;
-						my_task_data->subtask[j]->max_read_bytes = 0;
-						
 						my_task_data->subtask[j]->min_send_bytes = 0;
 						my_task_data->subtask[j]->max_send_bytes = 0;
 						my_task_data->subtask[j]->accum_send_bytes = 0;
@@ -1139,7 +1040,7 @@ unsigned int procesa_pid_load(const unsigned int pid, task_data *my_task_data) {
 	int count_active_tasks=0;
 	int finishing_tasks=0;
 	for(i=0;i<my_task_data->totaltid;i++){
-		if(my_task_data->subtask[i]->updated==true){ 
+		if(my_task_data->subtask[i]->updated==true){
 			count_active_tasks++;
 		}else if(my_task_data->subtask[i]->totaltime==0){
 			finishing_tasks++;
@@ -1148,7 +1049,7 @@ unsigned int procesa_pid_load(const unsigned int pid, task_data *my_task_data) {
 			my_task_data->subtask[i]->pcpu=0.0;
 			my_task_data->subtask[i]->pmem=0.0;
 		}
-	}	
+	}
 	if((count_active_tasks==0)&&(finishing_tasks>0))
 		my_task_data->last_end=actual_time;
 	if(my_task_data->totaltid>my_task_data->maxtotaltid) my_task_data->maxtotaltid=my_task_data->totaltid;

@@ -28,6 +28,29 @@ Before you can proceed, please clone the repository:
 ```bash
 svn export https://github.com/PHANTOM-Platform/Monitoring.git/trunk/Monitoring_client Monitoring_client
 ```
+<b>IMPORTANT:</b>
+In  order to allow users to monitor the performnace of the CPU it is needed to permissons to collect data, by running:
+
+```bash
+sudo sh -c 'echo 1 >/proc/sys/kernel/perf_event_paranoid'
+```
+
+This change is nor persistent between reboots, please consider to set it appropiately depending on your Linux distribution.
+Some may make it persist across reboots with:
+
+```bash
+sudo sh -c 'echo kernel.perf_event_paranoid=1 >> /etc/sysctl.d/local.conf'
+```
+
+or
+
+
+```bash
+sudo sh -c 'echo kernel.perf_event_paranoid=1 >> /etc/sysctl.conf'
+```
+
+
+
 
 ### Dependencies
 This project requires the following dependencies to be installed:

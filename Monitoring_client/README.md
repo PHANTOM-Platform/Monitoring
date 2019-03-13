@@ -29,8 +29,14 @@ Before you can proceed, please clone the repository:
 svn export https://github.com/PHANTOM-Platform/Monitoring.git/trunk/Monitoring_client Monitoring_client
 ```
 <b>IMPORTANT:</b>
-In  order to allow users to monitor the performnace of the CPU it is needed to permissons to collect data, by running:
+In  order to allow users to monitor the performnace of the CPU it is needed to have installed the Perf tool and provide to the users permissons to collect data, by running:
 
+Installation:
+```bash
+sudo apt-get install linux-tools-common linux-tools-generic linux-tools-`uname -r`
+```
+
+Grant of permission:
 ```bash
 sudo sh -c 'echo 1 >/proc/sys/kernel/perf_event_paranoid'
 ```
@@ -50,14 +56,18 @@ sudo sh -c 'echo kernel.perf_event_paranoid=1 >> /etc/sysctl.d/local.conf'
 ```
 
 
+You can easy test if you got persmissons by running the next command, and looking if you get an permission-error or you get some statistics:
 
-
+```bash
+perf stat ls
+```
 
 ### Dependencies
 This project requires the following dependencies to be installed:
 
 | Component         | Homepage                                          | Version   |
 |------------------ |-------------------------------------------------  |---------  |
+| Perf              | 
 | PAPI-C            | http://icl.cs.utk.edu/papi/                       | 5.4.0     |
 | CURL              | http://curl.haxx.se/download/                     | 7.37.0    |  
 | Apache APR        | https://apr.apache.org/                           | 1.6.3     |

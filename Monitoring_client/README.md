@@ -36,18 +36,19 @@ sudo sh -c 'echo 1 >/proc/sys/kernel/perf_event_paranoid'
 ```
 
 This change is nor persistent between reboots, please consider to set it appropiately depending on your Linux distribution.
-Some may make it persist across reboots with:
-
-```bash
-sudo sh -c 'echo kernel.perf_event_paranoid=1 >> /etc/sysctl.d/local.conf'
-```
-
-or
+Some Linux Distributions can make it persist across reboots with one of the next commands:
 
 
 ```bash
 sudo sh -c 'echo kernel.perf_event_paranoid=1 >> /etc/sysctl.conf'
 ```
+
+or
+
+```bash
+sudo sh -c 'echo kernel.perf_event_paranoid=1 >> /etc/sysctl.d/local.conf'
+```
+
 
 
 

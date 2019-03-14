@@ -95,9 +95,7 @@ This section assumes that you've successfully installed all required dependencie
 
 
 ` `**`make clean-all;`**` `
-
 ` `**`make all;`**` `
-
 ` `**`make install;`**` `
 
 

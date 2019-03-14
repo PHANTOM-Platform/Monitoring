@@ -97,7 +97,7 @@ This section assumes that you've successfully installed all required dependencie
 `print "`**`make clean-all`**`";`
 
 ```bash
-print "`**`make clean-all`**`";
+print "```**```make clean-all```**```";
 ```
 
 ```bash

@@ -19,14 +19,14 @@ For code instrumentation and user-defined metrics collection, we provide a monit
 The monitoring client requires at first a running server and database. In order to install these requirements, please
 checkout the associated [PHANTOM monitoring server][server] and follow the setup instructions given in the repository `README.md` file. A successful setup process can be checked by the following command as testing whether the server is running in the specific url:
 ```bash
-curl http://localhost:3033
+curl http://localhost:3033;
 ```
 
 Please note that the installation and setup steps mentioned below assume that you are running a current Linux as operating system. We have tested the monitoring agent with Ubuntu 14.04 LTS as well as with Scientific Linux 6 (Carbon).
 
 Before you can proceed, please clone the repository:
 ```bash
-svn export https://github.com/PHANTOM-Platform/Monitoring.git/trunk/Monitoring_client Monitoring_client
+svn export https://github.com/PHANTOM-Platform/Monitoring.git/trunk/Monitoring_client Monitoring_client;
 ```
 <b>IMPORTANT:</b>
 In  order to allow users to monitor the performnace of the CPU, the Setup Scripts installs the Perf tool and provide to the users permissons to collect data persistently between reboots, by running:
@@ -42,13 +42,13 @@ In  order to allow users to monitor the performnace of the CPU, the Setup Script
 But notice that if that is not appropiate for your linux distrubution you may consider to set the appropiate path, or grant the permission in the running system with:
 
 ```bash
-sudo sh -c 'echo 1 >/proc/sys/kernel/perf_event_paranoid'
+sudo sh -c 'echo 1 >/proc/sys/kernel/perf_event_paranoid';
 ``` 
 
 You can easy test if you got persmissons by running the next command, and looking if you get an permission-error or you get some statistics:
 
 ```bash
-perf stat ls
+perf stat ls;
 ```
 
 ### Dependencies
@@ -79,12 +79,12 @@ To ease the process of setting up a development environment, we provide a basic 
 
 Executing the next script if your device has a 32 bits Operating System:
 ```bash
-./setup-client-32.sh
+./setup-client-32.sh;
 ```
 
 OR Executing the next script if your device has a 64 bits Operating System:
 ```bash
-./setup-client-64.sh
+./setup-client-64.sh;
 ```
 
 results (in any of these cases) in a new directory named `bin`, which holds the required dependencies for compiling the project.
@@ -94,8 +94,8 @@ results (in any of these cases) in a new directory named `bin`, which holds the 
 This section assumes that you've successfully installed all required dependencies as described in the previous paragraphs.
 
 
-` `**`make clean-all;
-make all;
+` `**`make clean-all;<br>
+make all;<br>
 make install;`**` `
 
 
@@ -105,13 +105,13 @@ The above commands clean, compile and install the monitoring agent into the dire
 ## Start monitoring
 If you haven't yet followed our guide to set up the associated monitoring server and database, please do so now before continuing. Next, start the monitoring client with a default set of plugins enabled to monitor as follows:
 ```bash
-cd scripts
-./start.sh
+cd scripts;
+./start.sh;
 ```
 
 You can learn more about various options passed to the monitoring client by calling
 ```bash
-./start.sh -h
+./start.sh -h;
 ```
 
 While the monitoring client is started and is collecting metric data, you can use the RESTful APIs provided by the monitoring server to retrieve run-time metrics and corresponding statistics.

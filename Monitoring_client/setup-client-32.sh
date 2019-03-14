@@ -33,19 +33,32 @@
 	INSTALL_PATH_SENSORS=`pwd`/${BINARY_FOLDER}/sensors;
 	INSTALL_PATH_EXCESS_QUEUE=`pwd`/ext/queue;
 	INSTALL_PATH_LIBIIO=`pwd`/${BINARY_FOLDER}/libiio;
+# ============================================================================#
+# INSTALLATION OF PERF                                                         #
+# ============================================================================ #
+	# In case that perf-tools are not installed, then please run this command:
+	sudo apt-get install linux-tools-common linux-tools-generic linux-tools-`uname -r`;
+# ============================================================================ #
+# PROVIDE PERMISSIONS TO USERS TO RUN PERF                                     #
+# ============================================================================ #
+	if [ -e /etc/sysctl.conf ]; then
+		sudo sh -c 'echo kernel.perf_event_paranoid=1 >> /etc/sysctl.conf';
+	elif [ -e /etc/sysctl.d/local.conf ]; then
+		sudo sh -c 'echo kernel.perf_event_paranoid=1 >> /etc/sysctl.d/local.conf';
+	fi;
 # ============================================================================ #
 # VERSIONS OF REQUIRED LIBRARIES                                               #
 # ============================================================================ #
 	PAPI="papi";
 	PAPI_VERSION="5.4.0";
 	CURL="curl";
-	CURL_VERSION="7.55.0"; # before was the 7.37.0
+	CURL_VERSION="7.55.0";
 	APR="apr";
-	APR_VERSION="1.6.5";  #before was 1.5.2
+	APR_VERSION="1.6.5";
 	APR_UTIL="apr-util";
-	APR_UTIL_VERSION="1.6.1";  #before was 1.5.4
+	APR_UTIL_VERSION="1.6.1";
 	EXCESS_QUEUE_VERSION=release/0.1.0;
-#Notice: to reduce expose to IPv6 connectivity issues, we force all wget commands to connect via IPv4 only, with the pareameter -4  or --inet4-only
+#Notice: to reduce expose to IPv6 connectivity issues, we force all wget commands to connect via IPv4 only, with the pareameter -4 or --inet4-only
 # ============================================================================ #
 # DOWNLOAD AND INSTALL HWLOC                                                   #
 # ============================================================================ #
@@ -78,7 +91,7 @@
 	cd ${PAPI}-${PAPI_VERSION}/src;
 	./configure --prefix=${INSTALL_PATH_PAPI} --with-components="rapl coretemp infiniband"
 	make
-	sudo make install all
+	make install all
 # ============================================================================ #
 # DOWNLOAD AND INSTALL CURL                                                    #
 # ============================================================================ #
@@ -158,10 +171,10 @@
 	if [ ! -f m4-1.4.17.tar.gz ]; then
 		wget --no-check-certificate -4 https://ftp.gnu.org/gnu/m4/m4-1.4.17.tar.gz;
 	fi;
-	if [ ! -f m4-1.4.17.tar.gz]; then
+	if [ ! -f m4-1.4.17.tar.gz ]; then
 		echo "[ERROR] File not found: " m4-1.4.17.tar.gz;
 		exit 1;
-	fi
+	fi;
 	tar zxvf m4-1.4.17.tar.gz
 	cd m4-1.4.17;
 	./configure --prefix=${INSTALL_PATH_M4}
@@ -169,7 +182,7 @@
 	make install
 	export PATH=${PATH}:${INSTALL_PATH_M4}/bin
 # ============================================================================ #
-# DOWNLOAD AND INSTALL bison                                            #
+# DOWNLOAD AND INSTALL bison                                                   #
 # ============================================================================ #
 	cd $ROOT
 	if [ ! -f bison-3.0.2.tar.gz ]; then
@@ -224,7 +237,8 @@
 # ============================================================================ #
 #
 # DEPENDENCIES: libxml2 libxml2-dev bison flex libcdk5-dev libavahi-client-dev cmake
-#
+# For Ubuntu machines we can install those packates, even you just prepared a specific version of bison and flex.
+	sudo apt-get install libxml2 libxml2-dev bison flex libcdk5-dev libavahi-client-dev cmake;
 	cd $ROOT;
 	if [ ! -f libiio.tgz ]; then
 		git clone https://github.com/analogdevicesinc/libiio.git
@@ -235,8 +249,8 @@
 	mkdir -p ${INSTALL_PATH_LIBIIO};
 	cmake -DCMAKE_INSTALL_PREFIX=${INSTALL_PATH_LIBIIO} ./
 	make all
-	sudo make install
-	find ./ -name "libiio.so*" -exec sudo mv {} ${INSTALL_PATH_LIBIIO}/lib/ \;
+	make install
+	find ./ -name "libiio.so*" -exec mv {} ${INSTALL_PATH_LIBIIO}/lib/ \;
 # ============================================================================ #
 # DOWNLOAD AND INSTALL EXCESS QUEUE LIBS                                                                                        #
 # https://github.com/excess-project/data-structures-library.git

@@ -107,8 +107,10 @@ typedef struct energy_model_t {
 	//CPU Energy Model:
 // 	float cpu_factor_c ;//= 11.2; // watts on idle state
 // 	float cpu_factor_k ;//= 50;  //= (Energy_2 -Energ_1)/(Freq_2^3 - Freq_1^3) = (90- 40)/(4^3-3^3)=50  <-- freq in GHz
-	float MAX_CPU_POWER;//24.5;//[0]
-	float MIN_CPU_POWER;//6.0;//[1] 
+	unsigned long long freq_min;//400000 KHz
+	unsigned long long freq_max;//2800000 KHz
+	float MAX_CPU_POWER;//24.5;//[0]<--- per core
+	float MIN_CPU_POWER;//6.0;//[1]  <--- per core
 	//MEM Energy Model:
 	float L2CACHE_LINE_SIZE;//=128;
 	float L2CACHE_MISS_LATENCY;//=59.80;

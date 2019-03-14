@@ -13,6 +13,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+
+// 1 Watt = 1 Joule/ 1 second.
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -35,7 +37,6 @@
 #define SUCCESS 0
 #define FAILURE 1
 
-
 /* init perf counter for hardware cache misses
 return the file descriptor for further read operations */
 int create_perf_stat_counter(int pid) {
@@ -49,15 +50,10 @@ int create_perf_stat_counter(int pid) {
 	attr.enable_on_exec = 1;
 	attr.size = sizeof(attr);
 
-
-// 	attr.disabled = 1;
-// 	attr.exclude_kernel = 1;
-// 	attr.exclude_hv = 1;
-// 	attr.exclude_callchain_kernel = 1;
 	/* This measures the specified process/thread on any CPU;
 	return the file descriptor for the counter */
 	// pid == -1 and cpu == -1 is an invalid option
-	// pid > 0 and cpu == -1  measures the specified process/thread on any CPU.
+	// pid > 0 and cpu == -1 measures the specified process/thread on any CPU.
 	//pid == -1 and cpu >= 0 measures all processes/threads on the specified CPU.
 	//               last one requires CAP_SYS_ADMIN capability or a
 	//               last one: /proc/sys/kernel/perf_event_paranoid value of less than 1.
@@ -66,13 +62,12 @@ int create_perf_stat_counter(int pid) {
 	const unsigned int mflags=0;
 	return syscall(__NR_perf_event_open, &attr, pid, mcpu, mgroup_fd, mflags);
 	
-// 	memset(&attr, 0, sizeof(attr));
 // #ifdef USERSPACE_ONLY
 // 	attr.exclude_kernel = 1;
 // 	attr.exclude_hv = 1;
 // 	attr.exclude_idle = 1;
+// 	attr.exclude_callchain_kernel = 1;
 // #endif
-// 	attr.disabled = 1;
 // 	attr.type = PERF_TYPE_HARDWARE;
 // 	attr.config = PERF_COUNT_HW_CPU_CYCLES;
 // 	cycles_fd = sys_perf_event_open(&attr, 0, -1, -1, 0);
@@ -160,7 +155,7 @@ int valid_cpu_freq_stat;
 // }//cpu_freq_stat_time_in_state
 
 
-//equation of the line:   Energy = (Energy_max- Energy_min)/(Freq_max - Freq_min)
+//equation of the line: Energy = (Energy_max- Energy_min)/(Freq_max - Freq_min)
 
 //The energy consumed is proportional to the cube of the frequency
 //Calculation of the function Energy = k*Freq^3 + c
@@ -178,10 +173,10 @@ int cpu_freq_stat(resources_stats *info, energy_model param_energy) {
 	char *cpu_freq_file = NULL;
 	unsigned long long freqs;
 	const char filenametest[]="/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq";
-	float energy_total = 0.0;//energy_each
+	float energy_total = 0.0; 
 // 	unsigned long long tmp;
 // 	unsigned long long freqs_states[16];
-	float temp_freq;
+// 	long int temp_freq;
 // 	info->sys_cpu_energy = energy_total;// TODO we need a default value in case can not collect data !!!
 	/* check if system support cpu freq counting */
 	if(access( filenametest, F_OK ) != -1 ) {
@@ -192,7 +187,7 @@ int cpu_freq_stat(resources_stats *info, energy_model param_energy) {
 		valid_cpu_freq_stat=0;
 		return FAILURE;
 	}
-	
+
 	float power_range = param_energy.MAX_CPU_POWER - param_energy.MIN_CPU_POWER;//for freq_min and freq_max
 	DIR *dir = opendir("/sys/devices/system/cpu");
 	if(!dir) {
@@ -218,24 +213,29 @@ int cpu_freq_stat(resources_stats *info, energy_model param_energy) {
 // 		for (i = 0; !feof(fp) && (i <= 15); i++) {// it was used for the time_in_state
 			if(fgets(line, 32, fp) == NULL)
 				break;
-			sscanf(line, "%llu", &freqs );//units are in KHz at scaling_cur_freq
+			sscanf(line, "%llu", &freqs);//units are in KHz at scaling_cur_freq
 // 			sscanf(line, "%llu %llu", &tmp, &freqs_states[i]);// it was used for the time_in_state
 			/* each line has a pair like "<frequency> <time>", which means this CPU spent <time> usertime at <frequency>.
 			unit of <time> is 10ms*/
 // 		}
 // 		max_i = i - 1;//that is the num of states// it was used for the time_in_state
 		fclose(fp);
-// 		for (i = 0; i <= max_i; i++) {// it was used for the time_in_state
-// 			energy_each = (parameters_value[0] - power_range * i / max_i) * freqs_states[i] * 10.0; // in milliJoule// it was used for the time_in_state
-// 			energy_total += energy_each;// it was used for the time_in_state
-// 		}
-		temp_freq=((float)freqs )/1000000.0;
-// 		energy_total += param_energy.cpu_factor_c + param_energy.cpu_factor_k * temp_freq*temp_freq*temp_freq ; // in milliJoule
-		energy_total += param_energy.MAX_CPU_POWER + power_range * temp_freq*10 ; // in milliJoule
+// 		for (i = 0; i <= max_i; i++) // it was used for the time_in_state
+// 			energy_total += (parameters_value[0] - power_range * i / max_i) * freqs_states[i] * 10.0; // in milliJoule// it was used for the time_in_state
+// 		temp_freq=((float)freqs )/1000000.0;
+// 		energy_total += param_energy.cpu_factor_c + param_energy.cpu_factor_k * temp_freq*temp_freq*temp_freq; // in milliJoule
+		energy_total += param_energy.MIN_CPU_POWER + power_range * (freqs-param_energy.freq_min)/(param_energy.freq_max-param_energy.freq_min); // in milliJoule
+// 		printf("  core num %i,  freq %llu Energy %.6f \n",count_cores, freqs, param_energy.MIN_CPU_POWER + power_range * (freqs-param_energy.freq_min)/(param_energy.freq_max-param_energy.freq_min));
+// 		printf("   ---> %.6f\n", energy_total);
 		count_cores++;
 	}
-	if(count_cores>0) energy_total = energy_total  / count_cores;
-	printf("freq %.2f  energy %.2f\n",temp_freq,energy_total);
+// 	printf("-----\n");
+// 	printf("count_cores %i\n",count_cores);
+// 	printf("  param_energy.MIN_CPU_POWER %.3f\n",param_energy.MIN_CPU_POWER);
+// 	printf("  param_energy.MAX_CPU_POWER %.3f\n",param_energy.MAX_CPU_POWER);
+// 	printf("  freq_max %llu freq_min %llu\n",param_energy.freq_max, param_energy.freq_min);
+	
+	printf("CPU energy_total  =%.6f Joules\n",energy_total);
 	if(cpu_freq_file!= NULL) free(cpu_freq_file);
 	closedir(dir);
 	info->sys_cpu_energy = energy_total;//in watts
@@ -250,9 +250,8 @@ unsigned long long read_perf_counter(int fd) {
 	if(fd <= 0)
 		return 0;
 	res = read(fd, single_count, 3 * sizeof(unsigned long long));
-	if(res == 3 * sizeof(unsigned long long)) {
+	if(res == 3 * sizeof(unsigned long long))
 		return single_count[0];
-	}
 	return 0;
 }
 
@@ -263,7 +262,7 @@ unsigned long long read_perf_counter(int fd) {
 * returns 0 if completed successfully all the functions
 */
 int read_and_check(int fd, int pid, resources_stats *info, energy_model param_energy ) {
-	//pending to replace with: int linux_resources_sample(const int pid, struct resources_stats_t *stat_after ) ;
+	//pending to replace with: int linux_resources_sample(const int pid, struct resources_stats_t *stat_after );
 	int value_to_return=0;
 	if(CPU_stat_process_read(pid, info) != SUCCESS)
 		value_to_return+=1;
@@ -276,7 +275,7 @@ int read_and_check(int fd, int pid, resources_stats *info, energy_model param_en
 		value_to_return+=4;
 	if(valid_cpu_freq_stat!=0)
 		if(cpu_freq_stat(info, param_energy ) != SUCCESS)
-			value_to_return+=8; 
+			value_to_return+=8;
 	info->before_pid_accum_l2_cache_misses = info->pid_accum_l2_cache_misses;
 	if(fd<=0){
 		info->pid_accum_l2_cache_misses = 0;
@@ -288,7 +287,7 @@ int read_and_check(int fd, int pid, resources_stats *info, energy_model param_en
 	return value_to_return;
 }
 // int oldread_and_check(int fd, int pid, resources_stats *info) {
-// 	printf("**** read_and_check  \n\n");
+// 	printf("**** read_and_check\n\n");
 // 	int value_to_return=0;
 // 	if(read_pid_time(pid, info) <= 0)
 // 		value_to_return+=1;
@@ -347,7 +346,7 @@ int calculate_and_update(resources_stats *before, resources_stats *after, resour
 // 	if(fgets(line, 1024, fp) != NULL) {
 // 		sscanf(line, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu",
 // 			(int *)&tmp, tmp_str, &tmp_char, (int *)&tmp, (int *)&tmp, (int *)&tmp, (int *)&tmp, (int *)&tmp,
-// 			(unsigned int *)&tmp, (unsigned long *)&tmp, (unsigned long *)&tmp, (unsigned long *)&tmp, 
+// 			(unsigned int *)&tmp, (unsigned long *)&tmp, (unsigned long *)&tmp, (unsigned long *)&tmp,
 // 			(unsigned long *)&tmp, (unsigned long *)&pid_utime, (unsigned long *)&pid_stime);
 // 	}
 // 	info->pid_runtime = pid_utime + pid_stime;
@@ -416,11 +415,14 @@ int calculate_and_update(resources_stats *before, resources_stats *after, resour
 
 
 int power_monitor(int pid, char *DataPath, long sampling_interval) {
-	energy_model param_energy ;
+	energy_model param_energy;
 // 	param_energy.cpu_factor_c = 15.2; // watts on idle state
-// 	param_energy.cpu_factor_k = 3.8;  //= (Energy_2 -Energ_1)/(Freq_2^3 - Freq_1^3) = (90- 40)/(2^3-1^3)=14  <-- freq in GHz
-	param_energy.MAX_CPU_POWER=24.5;//[0]
-	param_energy.MIN_CPU_POWER=6.0;//[1]
+// 	param_energy.cpu_factor_k = 3.8; //= (Energy_2 -Energ_1)/(Freq_2^3 - Freq_1^3) = (90- 40)/(2^3-1^3)=14 <-- freq in GHz
+	param_energy.freq_min=400000;
+	param_energy.freq_max=2800000;
+
+	param_energy.MAX_CPU_POWER=55.5/4.0;//[0] <--- per core
+	param_energy.MIN_CPU_POWER=11.0/4.0;//[1] <--- per core
 	param_energy.L2CACHE_LINE_SIZE=128;//[4]
 	param_energy.L2CACHE_MISS_LATENCY=59.80;//[3]
 	param_energy.MEMORY_POWER=2.016;//[2]
@@ -433,13 +435,13 @@ int power_monitor(int pid, char *DataPath, long sampling_interval) {
 	param_energy.E_DISK_W_PER_KB=0.0438;//[6]
 	param_energy.E_NET_SND_PER_KB=0.14256387;
 	param_energy.E_NET_RCV_PER_KB=0.24133936;
-	
+
 // char parameters_name[9][32] = {"MAX_CPU_POWER", "MIN_CPU_POWER",// fields [0] [1]
 // 	"MEMORY_POWER", "L2CACHE_MISS_LATENCY", "L2CACHE_LINE_SIZE",//fields [2] [3] [4]
 // 	"E_DISK_R_PER_KB", "E_DISK_W_PER_KB", //fields [5] [6]
 // 	"E_NET_SND_PER_KB", "E_NET_RCV_PER_KB"};
 // float parameters_value[9];
-	
+
 	valid_cpu_freq_stat=1;
 	/*create and open the file*/
 	printf("start power monitor\n");
@@ -483,7 +485,7 @@ int power_monitor(int pid, char *DataPath, long sampling_interval) {
 // 			if(FileName !=NULL) free(FileName);
 // 			return FAILURE;
 		}
-// 		printf(" delta->sys_runtime %llu  \n",delta.sys_runtime);
+// 		printf(" delta->sys_runtime %llu\n",delta.sys_runtime);
 // 		delta.throughput = (delta.read_bytes + delta.write_bytes) / sampling_interval; //in bytes/s, must be after linux_resources_sample or read_and_check
 
 		/*get after timestamp in ms*/
@@ -499,8 +501,8 @@ int power_monitor(int pid, char *DataPath, long sampling_interval) {
 		pid_cpu_power = (sys_cpu_power * delta.pid_runtime) / delta.sys_runtime;
 
 // 		printf("delta.sys_runtime %.6f\n",delta.sys_runtime);
-// 		printf("delta->sys_itv %llu  \n",delta.sys_itv);
-// 		printf("duration %.5f  \n",duration);
+// 		printf("delta->sys_itv %llu\n",delta.sys_itv);
+// 		printf("duration %.5f\n",duration);
 // 		printf("sys_cpu_power %.6f\n",sys_cpu_power);
 // 		printf("delta.sys_cpu_energy %.6f\n",delta.sys_cpu_energy);
 
@@ -510,7 +512,7 @@ int power_monitor(int pid, char *DataPath, long sampling_interval) {
 		/* pid-based disk access power in milliwatt */
 		pid_disk_power = (delta.read_bytes * param_energy.E_DISK_R_PER_KB + (delta.write_bytes - delta.cancelled_writes) * param_energy.E_DISK_W_PER_KB) / 
 						(1024 * duration);
-		timestamp_ms = timestamp_after.tv_sec * 1000.0  + (double)(timestamp_after.tv_nsec / 1.0e6);
+		timestamp_ms = timestamp_after.tv_sec * 1000.0 + (double)(timestamp_after.tv_nsec / 1.0e6);
 		if(fp==NULL){
 			printf("Error file handler not valid\n");
 			exit (1);

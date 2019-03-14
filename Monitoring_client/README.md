@@ -94,8 +94,8 @@ results (in any of these cases) in a new directory named `bin`, which holds the 
 This section assumes that you've successfully installed all required dependencies as described in the previous paragraphs.
 
 
-` `**`make clean-all;`**` `<br>
-` `**`make all;`**` `<br>
+` `**`make clean-all;`**` `<br style="line-height:0px;" />
+` `**`make all;`**` `<br style="line-height:0px;" />
 ` `**`make install;`**` `
 
 

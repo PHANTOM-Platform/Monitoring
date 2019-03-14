@@ -94,9 +94,11 @@ results (in any of these cases) in a new directory named `bin`, which holds the 
 This section assumes that you've successfully installed all required dependencies as described in the previous paragraphs.
 
 
-` `**`make clean-all;<br>
-make all;<br>
-make install;`**` `
+` `**`make clean-all;`**` `
+
+` `**`make all;`**` `
+
+` `**`make install;`**` `
 
 
 The above commands clean, compile and install the monitoring agent into the directory `dist` within the project's repository. The `dist` folder includes all required binaries, shared libraries, scripts, and configuration files to get you started. The Makefile has been tested with GNU compiler version 4.9.2.

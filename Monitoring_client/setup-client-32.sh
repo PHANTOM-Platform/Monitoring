@@ -220,15 +220,15 @@
 # DOWNLOAD AND INSTALL lm_sensors                                            #
 # ============================================================================ #
 	cd $ROOT;
-	if [ ! -f lm_sensors-3.4.0.tar.gz ]; then
-		wget --no-check-certificate -4 https://fossies.org/linux/misc/lm_sensors-3.4.0.tar.gz
+	if [ ! -f lm_sensors-3.5.0.tar.gz ]; then
+		wget --no-check-certificate -4 https://fossies.org/linux/misc/lm_sensors-3.5.0.tar.gz
 	fi;
-	if [ ! -f lm_sensors-3.4.0.tar.gz ]; then
-		echo "[ERROR] File not found: " lm_sensors-3.4.0.tar.gz;
+	if [ ! -f lm_sensors-3.5.0.tar.gz ]; then
+		echo "[ERROR] File not found: " lm_sensors-3.5.0.tar.gz;
 		exit 1;
 	fi;
-	tar zxvf lm_sensors-3.4.0.tar.gz;
-	cd lm_sensors-3.4.0
+	tar zxvf lm_sensors-3.5.0.tar.gz;
+	cd lm_sensors-3.5.0
 	make PREFIX=${INSTALL_PATH_SENSORS} all
 	make PREFIX=${INSTALL_PATH_SENSORS} install
 # ============================================================================ #

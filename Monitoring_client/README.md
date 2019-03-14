@@ -29,32 +29,21 @@ Before you can proceed, please clone the repository:
 svn export https://github.com/PHANTOM-Platform/Monitoring.git/trunk/Monitoring_client Monitoring_client
 ```
 <b>IMPORTANT:</b>
-In  order to allow users to monitor the performnace of the CPU it is needed to have installed the Perf tool and provide to the users permissons to collect data, by running:
+In  order to allow users to monitor the performnace of the CPU, the Setup Scripts installs the Perf tool and provide to the users permissons to collect data persistently between reboots, by running:
 
-Installation:
 ```bash
-sudo apt-get install linux-tools-common linux-tools-generic linux-tools-`uname -r`
+	if [ -e /etc/sysctl.conf ]; then
+		sudo sh -c 'echo kernel.perf_event_paranoid=1 >> /etc/sysctl.conf';
+	elif [ -e /etc/sysctl.d/local.conf ]; then
+		sudo sh -c 'echo kernel.perf_event_paranoid=1 >> /etc/sysctl.d/local.conf';
+	fi;
 ```
 
-Grant of permission:
+But notice that if that is not appropiate for your linux distrubution you may consider to set the appropiate path, or grant the permission in the running system with:
+
 ```bash
 sudo sh -c 'echo 1 >/proc/sys/kernel/perf_event_paranoid'
-```
-
-This change is nor persistent between reboots, please consider to set it appropiately depending on your Linux distribution.
-Some Linux Distributions can make it persist across reboots with one of the next commands:
-
-
-```bash
-sudo sh -c 'echo kernel.perf_event_paranoid=1 >> /etc/sysctl.conf'
-```
-
-or
-
-```bash
-sudo sh -c 'echo kernel.perf_event_paranoid=1 >> /etc/sysctl.d/local.conf'
-```
-
+``` 
 
 You can easy test if you got persmissons by running the next command, and looking if you get an permission-error or you get some statistics:
 

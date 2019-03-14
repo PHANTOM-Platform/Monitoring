@@ -93,6 +93,13 @@ results (in any of these cases) in a new directory named `bin`, which holds the 
 ## Installation
 This section assumes that you've successfully installed all required dependencies as described in the previous paragraphs.
 
+
+`print "`**`make clean-all`**`";`
+
+```bash
+print "`**`make clean-all`**`";
+```
+
 ```bash
 make clean-all
 make all

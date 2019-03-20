@@ -3,6 +3,15 @@
 
 #define METRIC_NAME_1 "resources_usage"
 
+struct cores_data {
+	float total_load_core;
+	float total_joules_core;
+	long long int time_of_last_measured;
+	long long int time_between_measures;
+	float total_watts_core;
+	long int core_freq;
+};
+
 typedef struct resources_stats_t {
 	unsigned long counter;
 	unsigned long MemTotal;
@@ -73,9 +82,6 @@ struct sub_task_data { // filled by stats_sample, procesa_pid_load, ...
 // 	unsigned long long total_net_bytes;
 };
 
-struct cores_data {
-	float total_load_core;
-};
 
 #define max_report_tids 10
 
@@ -93,6 +99,7 @@ typedef struct task_data_t {
 	float total_load_cpu, totalpmem;
 	long long int first_start,last_end;
 }task_data;
+
 
 struct disk_data{
 	char labelstr[250];
@@ -138,8 +145,8 @@ typedef struct energy_model_t {
 // 		3.5" Hard Disk Drive HDD 6.5 to 9 W
 	float E_DISK_R_PER_KB;//=0.0556;
 	float E_DISK_W_PER_KB;//=0.0438;
-	float E_NET_SND_PER_KB;//=0.14256387;
-	float E_NET_RCV_PER_KB;//=0.24133936;
+	float E_NET_SND_PER_MB;//=0.14256387;
+	float E_NET_RCV_PER_MB;//=0.24133936;
 
 	float motherboard_power;// = 40;
 // 		values are such:
@@ -168,5 +175,16 @@ unsigned int save_stats(FILE *fp, int searchprocess, task_data *my_task_data);
 int CPU_stat_process_read(int pid, struct resources_stats_t *stats_now);
 int io_stats_read(int pid, struct resources_stats_t *stats_now);
 int CPU_stat_read(struct resources_stats_t *stats_now, const float ticksPerSecond);
+
+unsigned int procesa_pid_load(int pid, unsigned int argmaxcores, struct task_data_t *my_task_data, energy_model param_energy);
+unsigned int procesa_pid_load_power(int pid, unsigned int argmaxcores, struct task_data_t *my_task_data, energy_model param_energy);
+void procesa_task_io(task_data *my_task_data );
+
+size_t execute_command(const char *command, char *comout, size_t *comalloc);
+unsigned int process_str(char *input, char *output, unsigned const int start, const unsigned int max_output_size);
+unsigned int getline_str(char *input, char *output, unsigned const int start);
+unsigned int find_str(int start, const char source[], const char cad1[]);
+int remove_str(int start ,char source[], const char cadenaBuscar[]);
+int find_llint_from_label(char *loadstr, const char *label, long long int *to_update);
 
 #endif

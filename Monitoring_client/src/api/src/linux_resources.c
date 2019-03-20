@@ -718,9 +718,9 @@ int remove_str(int start, char source[], const char cadenaBuscar[]){
 * copy from position "start" of the string "input" into the string "output"
 * until find end of string, end of line or a space character ' '
 */
-unsigned int process_str(char *input, char *output, unsigned const int start){
+unsigned int process_str(char *input, char *output, unsigned const int start, const unsigned int max_output_size){
 	unsigned int j=0;
-	while((input[j+start]!='\n')&&(input[j+start]!='\0')&&(input[j+start]!=' ')){
+	while((input[j+start]!='\n')&&(input[j+start]!='\0')&&(input[j+start]!=' ')&&(j+1<max_output_size) ){
 		output[j]=input[j+start];
 		j++;
 	}
@@ -887,7 +887,7 @@ unsigned int save_stats(FILE *fp, int searchprocess, task_data *my_task_data){
 }
 
 
-size_t execute_command(char *command, char *comout, size_t *comalloc){
+size_t execute_command(const char *command, char *comout, size_t *comalloc){
 	// Setup our pipe for reading and execute our command.
 	FILE *fd;
 	size_t comlen = 0;
@@ -910,11 +910,109 @@ size_t execute_command(char *command, char *comout, size_t *comalloc){
 	return comlen;
 }
 
-unsigned int procesa_pid_load(const unsigned int pid, task_data *my_task_data) {
+
+
+//it seems that /proc/stat updates every 10ms, duringh which period a task could run on different core, then there is a chance for an ocasional error on the statistics 
+//This function fix the statistics to reasonable values, such ocasinally modifing the core ids of some tasks
+//ejemplo: 2 cores y tareas 60 45 40 25 25, 
+//asignamos la tarea 60 al [0], y la 45 al [1]
+//si asignamos el 40 al [0] se pueden asignar las 2 utlimas tareas al [1]
+//si asignamos el 40 al [1] entonces no se pueden asignar las ultimas tareas.
+//algortimo: repartir de mayor a menor caraga entre el core que tienen asignado si esta completamente sin asignar tarea
+//           en otro caso buscamos el core con mas carga donde pueda alojarse
+void fix_Desynchronized_data(unsigned int maxcores, struct task_data_t *my_task_data){
+	int found=false;
+	int i,j,c=0;
+	unsigned int lista[my_task_data->maxprocesses];
+	float sorted_list_pcpu[my_task_data->maxprocesses];
+	int total_sorted=0;
+	for(i=0;i<my_task_data->maxcores;i++) 
+		my_task_data->cores[i].total_load_core =0.0;
+	for(j=0;j<my_task_data->totaltid;j++)	
+		my_task_data->cores[my_task_data->subtask[j]->currentcore].total_load_core = my_task_data->cores[my_task_data->subtask[j]->currentcore].total_load_core + my_task_data->subtask[j]->pcpu;
+	//existe el problema que algun core por encima del 100?
+	c=0;
+	while((c<maxcores)&&(found==false)){
+		if(my_task_data->cores[c].total_load_core>100.0)
+			found=true;
+		c++;
+	}
+	//if(found==false) return;//nothing to do
+	for(c=0;c<maxcores;c++)
+		my_task_data->cores[c].total_load_core=0.0;
+	//now we sort the list of tasks from higher to the lowest load
+	for(i=0;i<my_task_data->totaltid;i++){
+		//anadimos su carga a la lista
+		j=0;
+		while((j< total_sorted)&&(my_task_data->subtask[i]->pcpu < sorted_list_pcpu[j]))
+			j++;
+		//vamos en la posicion j, si no es el ultimo desplazamos los demas
+		if(total_sorted>0){
+			int k=total_sorted;
+			while((k>=j)&&(k>0)){
+				lista[k]=lista[k-1];
+				sorted_list_pcpu[k]= sorted_list_pcpu[k-1];
+				k--;
+			}
+		}
+		sorted_list_pcpu[j]=my_task_data->subtask[i]->pcpu;
+		lista[j]=i;
+		total_sorted++;
+	}
+	for(j=0;j<my_task_data->totaltid;j++){
+		int wishedcore=my_task_data->subtask[lista[j]]->currentcore;
+		if(my_task_data->cores[wishedcore].total_load_core==0.0){
+			my_task_data->cores[wishedcore].total_load_core= my_task_data->subtask[lista[j]]->pcpu;
+		}else{
+			found=0;
+			for(c=0;c<maxcores;c++){
+				if(my_task_data->cores[c].total_load_core>my_task_data->cores[found].total_load_core){
+					if( my_task_data->cores[c].total_load_core+sorted_list_pcpu[j]< 100.0)
+						found=c;
+				}else {
+					if( my_task_data->cores[found].total_load_core+sorted_list_pcpu[j]> 100.0)
+						found=c;
+				}
+			}
+			//the load of the task j has to be for core[c]
+			my_task_data->subtask[lista[j]]->currentcore=found;
+			my_task_data->cores[found].total_load_core+= my_task_data->subtask[lista[j]]->pcpu;
+			if(my_task_data->cores[found].total_load_core>100.0) my_task_data->cores[found].total_load_core=100.0;
+		}
+	}
+	//for(j=0;j<my_task_data->totaltid;j++)
+	//	printf(" core %i load %f ", my_task_data->subtask[j]->currentcore, my_task_data->subtask[j]->pcpu);
+	// printf("\n");
+	//printf("sorted list\n");
+	//for(j=0;j<my_task_data->totaltid;j++) 
+	//	printf("j%i core %i load %f ",lista[j], my_task_data->subtask[lista[j]]->currentcore, my_task_data->subtask[lista[j]].pcpu);
+	// printf("\n");
+	//for(c=0;c<maxcores;c++)
+	//	printf("TOTAL CORE %f ",my_task_data->cores[c].total_load_core);
+	// printf("\n");
+}
+
+
+
+// Example on myltithread pidof
+// 24243 24243   1  0.0  0.0 51176
+// 24243 24254   1  2.0  0.0 51176
+// 24243 24255   3  2.0  0.0 51176
+// 24243 24256   2  1.1  0.0 51176
+// 24243 24257   3  0.0  0.0 51176
+// 24243 24259   0 94.9  0.0 51176
+// unsigned int procesa_pid_load(const unsigned int pid, task_data *my_task_data) {
+unsigned int procesa_pid_load(int pid, unsigned int argmaxcores, struct task_data_t *my_task_data, energy_model param_energy) {
+	float power_range = param_energy.MAX_CPU_POWER - param_energy.MIN_CPU_POWER;//for freq_min and freq_max
+	unsigned int maxcores=argmaxcores;
+	my_task_data->totalpmem=0;
+	my_task_data->total_load_cpu=0.0;
+	//----------------------------------------------------------
 	unsigned int i,contador;
 	size_t comalloc = 8256;
 	char *comout = (char *) malloc(comalloc * sizeof(char));
-	char loadstr[40];
+	const int size_loadstr=40;
+	char loadstr[size_loadstr];
 	char command[120];
 	for(i=0;i<my_task_data->maxprocesses;i++)
 		my_task_data->subtask[i]->updated=false;
@@ -938,13 +1036,15 @@ unsigned int procesa_pid_load(const unsigned int pid, task_data *my_task_data) {
 					i++;
 				if(comout[i]!=' '){
 					contador++;
-					i=process_str(comout, loadstr, i);//loads into the string loadstr the next entry in the input line
+					i=process_str(comout, loadstr, i,size_loadstr);//loads into the string loadstr the next entry in the input line
 					if(contador==1){
 						pspid=atoi(loadstr);
 					}else if(contador==2) {
 						pstid=atoi(loadstr);
 					}else if(contador==3) {
 						currentcore=atoi(loadstr);
+						if((maxcores< currentcore+1)&&( currentcore+1<my_task_data->maxprocesses))
+							maxcores= currentcore+1;
 					}else if(contador==4){
 						pcpu=atof(loadstr);
 						if(pcpu>100.0)
@@ -968,15 +1068,7 @@ unsigned int procesa_pid_load(const unsigned int pid, task_data *my_task_data) {
 						if(pcpu>0.0){//if(pspid==pstid){
 							j=my_task_data->totaltid;
 							my_task_data->totaltid=my_task_data->totaltid+1;
-							my_task_data->subtask[j]->starttime=actual_time;
-							my_task_data->subtask[j]->rchar=0;
-							my_task_data->subtask[j]->wchar=0;
-							my_task_data->subtask[j]->syscr=0;
-							my_task_data->subtask[j]->syscw=0;
-							my_task_data->subtask[j]->read_bytes=0;
-							my_task_data->subtask[j]->write_bytes=0;
-							my_task_data->subtask[j]->cancelled_write_bytes=0;
-
+							my_task_data->subtask[j]->starttime=actual_time; 
 						my_task_data->subtask[j]->accum_read_bytes =0;
 						my_task_data->subtask[j]->accum_write_bytes =0;
 						my_task_data->subtask[j]->before_accum_read_bytes = my_task_data->subtask[j]->accum_read_bytes;
@@ -986,8 +1078,8 @@ unsigned int procesa_pid_load(const unsigned int pid, task_data *my_task_data) {
 						my_task_data->subtask[j]->CPU_usage_rate = 0.0;
 						my_task_data->subtask[j]->RAM_usage_rate = 0.0;
 						my_task_data->subtask[j]->swap_usage_rate = 0.0;
-						my_task_data->subtask[j]->send_bytes=0;
-						my_task_data->subtask[j]->rcv_bytes=0;
+// 						my_task_data->subtask[j]->send_bytes=0; aqui no
+// 						my_task_data->subtask[j]->rcv_bytes=0; aqui no, ya se inicia al princio, no resetear
 					// 	for the case of being uninitialized
 						my_task_data->subtask[j]->before_total_cpu_time=my_task_data->subtask[j]->total_cpu_time;
 // 						my_task_data->subtask[j]->before_accum_pid_runtime=my_task_data->subtask[j]->accum_pid_runtime;
@@ -1052,10 +1144,29 @@ unsigned int procesa_pid_load(const unsigned int pid, task_data *my_task_data) {
 	}
 	if((count_active_tasks==0)&&(finishing_tasks>0))
 		my_task_data->last_end=actual_time;
-	if(my_task_data->totaltid>my_task_data->maxtotaltid) my_task_data->maxtotaltid=my_task_data->totaltid;
+	if(my_task_data->totaltid>my_task_data->maxtotaltid)
+		my_task_data->maxtotaltid=my_task_data->totaltid;
+	//----------------------------------------------------------------------------------
+	fix_Desynchronized_data( maxcores, my_task_data);//updates currentcore and total_load_core
+	
+	for(i=0;i<maxcores;i++) {
+		my_task_data->total_load_cpu+=my_task_data->cores[i].total_load_core;
+		long int freqs=my_task_data->cores[i].core_freq;
+		my_task_data->cores[i].total_joules_core=
+			my_task_data->cores[i].total_load_core*(param_energy.MIN_CPU_POWER + power_range * (freqs-param_energy.freq_min)/(param_energy.freq_max-param_energy.freq_min))/100.0; // in milliJoule
+		if(my_task_data->cores[i].time_of_last_measured!=0){
+			long long int total_time = (actual_time - my_task_data->cores[i].time_of_last_measured);
+			my_task_data->cores[i].time_between_measures=total_time;
+			my_task_data->cores[i].total_watts_core+= my_task_data->cores[i].total_joules_core*(1.0e-9)*total_time;
+// 			fprintf(kkfp, "t=%lli %lli  %.2f %lli\n",  actual_time, my_task_data->cores[i].time_of_last_measured,  my_task_data->cores[i].total_joules_core, total_time);
+		}
+		my_task_data->cores[i].time_of_last_measured=actual_time;
+	}
 	free(comout);
-	return 0;
+	return maxcores;
 }
+ 
+
 
 void procesa_task_io(task_data *my_task_data ) {
 	char command[120];
@@ -1063,9 +1174,17 @@ void procesa_task_io(task_data *my_task_data ) {
 	char *comout = (char *) malloc(comalloc * sizeof(char));
 	int subtask=0;
 	char loadstr[250];
+// 	printf(" ptid %i\n",subtask< my_task_data->totaltid);
 	for(subtask=0;subtask< my_task_data->totaltid;subtask++){
-		if(my_task_data->subtask[subtask]->updated==true){
-			if(my_task_data->subtask[subtask]->pstid==my_task_data->subtask[subtask]->pspid){
+		my_task_data->subtask[subtask]->rchar=0;
+		my_task_data->subtask[subtask]->wchar=0;
+		my_task_data->subtask[subtask]->syscr=0;
+		my_task_data->subtask[subtask]->syscw=0;
+		my_task_data->subtask[subtask]->read_bytes=0;
+		my_task_data->subtask[subtask]->write_bytes=0;
+		my_task_data->subtask[subtask]->cancelled_write_bytes=0;
+// 		if(my_task_data->subtask[subtask]->updated==true){
+// 			if(my_task_data->subtask[subtask]->pstid==my_task_data->subtask[subtask]->pspid){
 				int i=0; 
 				sprintf(command, "if [ -e "IO_STAT_FILE" ]; then cat "IO_STAT_FILE"; fi;",my_task_data->subtask[subtask]->pstid,my_task_data->subtask[subtask]->pstid);
 				execute_command(command,comout, &comalloc);
@@ -1082,8 +1201,10 @@ void procesa_task_io(task_data *my_task_data ) {
 						find_llint_from_label(loadstr, "write_bytes: ", &my_task_data->subtask[subtask]->write_bytes);
 						find_llint_from_label(loadstr, "cancelled_write_bytes: ", &my_task_data->subtask[subtask]->cancelled_write_bytes);
 					} //end while
+// 					printf(" %i: %lli %lli ==== ", my_task_data->subtask[subtask]->pstid, my_task_data->subtask[subtask]->rchar, my_task_data->subtask[subtask]->wchar );
 				}
-		}	}//end if
+// 			}
+// 		}//end if
 	}//end for i
 	free(comout);
 }
@@ -1116,6 +1237,49 @@ void init_stats(task_data *my_task_data_a){
 }
 
 void stats_sample(const unsigned int pids, task_data *my_task_data) {
-	procesa_pid_load(pids, my_task_data);
+	energy_model param_energy;
+	param_energy.freq_min=400000;
+	param_energy.freq_max=2800000;
+
+	param_energy.MAX_CPU_POWER=55.5/4.0;//[0] <--- per core
+	param_energy.MIN_CPU_POWER=11.0/4.0;//[1] <--- per core
+	param_energy.L2CACHE_LINE_SIZE=128;//[4]
+	param_energy.L2CACHE_MISS_LATENCY=59.80;//[3]
+	param_energy.MEMORY_POWER=2.016;//[2]
+	param_energy.case_fan= 1;
+	param_energy.motherboard_power = 40;
+	
+	param_energy.sata_drive=15.0;
+
+	param_energy.hd_power = 8;
+// 	param_energy.E_DISK_R_PER_MB=0.0556;//[5]
+// 	param_energy.E_DISK_W_PER_MB=0.0438;//[6]
+	// Read/Write  6.00 Watts
+	// Idle        5.50 Watts
+	// Standby     0.80 Watts
+	// Sleep       0.80 Watts
+	
+// values from https://www.tomshardware.co.uk/desktop-hdd.15-st4000dm000-4tb,review-32729-6.html
+// 	WD RED WD30EFRX 3TB 5400 rpm  5.4W
+// 	Seagate Desktop HDD 15  4TB 5900 rpm 5.9W
+// 	Hitachi Deskstar 5K4000 4TB 5400 rpm 6.0 W
+// 	Hitachi Deskstar 5K3000 3TB 5400 rpm 6.4 W
+// 	WD Caviar Green WD30ERZRX 3TB 5400 rpm 7.0W
+// 	Seagate Barracuda 3TB 7200 rpm 7.9 W
+// 	Hitachi Deskstar 7K3000 3TB 7200 rom 8.6W
+// 	Hitachi Deskstar 7K4000 4TB 7200 rpm 8.7W
+// 	WD Black WD4001FAEX 4TB 7200 rpm 9.3 W
+// 	Seagate Barracuda XT 3TB 7200 rpm 9.5W
+	
+	param_energy.E_NET_SND_PER_MB=0.14256387;
+	param_energy.E_NET_RCV_PER_MB=0.24133936;
+
+// char parameters_name[9][32] = {"MAX_CPU_POWER", "MIN_CPU_POWER",// fields [0] [1]
+// 	"MEMORY_POWER", "L2CACHE_MISS_LATENCY", "L2CACHE_LINE_SIZE",//fields [2] [3] [4]
+// 	"E_DISK_R_PER_MB", "E_DISK_W_PER_MB", //fields [5] [6]
+// 	"E_NET_SND_PER_KB", "E_NET_RCV_PER_KB"};
+// float parameters_value[9];
+
+	procesa_pid_load(pids, my_task_data->maxcores, my_task_data, param_energy);
 	procesa_task_io(my_task_data);
 }

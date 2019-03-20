@@ -820,7 +820,7 @@ static void *MonitorStart(void *arg) {
 // 		printf("Starting monitoring modul %s\n",METRIC_NAME_2);
 		xlnx_monitor(DataPath, metric->sampling_interval);
 	} else if(strcmp(metric->metric_name, METRIC_NAME_3) == 0) {
-// 		printf("Starting monitoring modul %s\n",METRIC_NAME_3);
+//  		printf("Starting monitoring modul %s\n",METRIC_NAME_3);
 		power_monitor(pid, DataPath, metric->sampling_interval);
 #ifdef NVML
 #if NVML == yes

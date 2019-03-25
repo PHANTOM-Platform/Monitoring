@@ -271,21 +271,7 @@ int find_lint_from_label(char *loadstr, const char *label, long int *to_update){
 	}
 	return false;
 }
-
-// int find_llint_from_label(char *loadstr, const char *label, long long int *to_update){
-// 	char result[200];
-// 	if(remove_str(0,loadstr, label)==true){
-// 		int i=0;
-// 		while( (i<lengthstring(loadstr)) && ( ((loadstr[i]>47)&&(loadstr[i]<58)) || (loadstr[i]==' ') )){
-// 			result[i]=loadstr[i];
-// 			i++;
-// 		}
-// 		result[i]='\0';
-// 		*to_update=atoll(result);
-// 		return true;
-// 	}
-// 	return false;
-// }
+ 
 
 
 int longitud(const char cadena1[]){
@@ -744,16 +730,18 @@ int procesa_network_stat_read(char *comout, size_t *comalloc, struct task_data_t
 	unsigned long long temp_rcv_bytes, temp_send_bytes;
 	int subtask=0;
 	for(subtask=0;subtask< my_task_data->totaltid;subtask++){
-// 		if(my_task_data->subtask[subtask]->updated==true){
-// 			if(my_task_data->subtask[subtask]->pstid==my_task_data->subtask[subtask]->pspid){
-				int pstid=my_task_data->subtask[subtask]->pstid;
+		if(my_task_data->subtask[subtask]->updated==true){
+			if(my_task_data->subtask[subtask]->pstid==my_task_data->subtask[subtask]->pspid){
+// 				int pstid=my_task_data->subtask[subtask]->pstid;
+				int pspid=my_task_data->subtask[subtask]->pspid;
+				if(pspid!=0){
 				/* values reset to zeros */
-// 				my_task_data->subtask[subtask]->rcv_bytes = 0;
-// 				my_task_data->subtask[subtask]->send_bytes = 0;
+				my_task_data->subtask[subtask]->rcv_bytes = 0;
+				my_task_data->subtask[subtask]->send_bytes = 0;
 				char pid_net_file[128], line[1024];
-				sprintf(pid_net_file, NET_STAT_FILE, pstid);
+				sprintf(pid_net_file, NET_STAT_FILE, pspid);
 				if ((fp = fopen(pid_net_file, "r")) != NULL) {
-// 					fprintf(stderr, "Error: Cannot open %s.\n", pid_net_file);
+// 					printf( "Error: Cannot open %s.\n", pid_net_file);
 // 					return false;
 				while(fgets(line, 1024, fp) != NULL) {
 					char *sub_line_eth = strstr(line, "eth");
@@ -761,34 +749,35 @@ int procesa_network_stat_read(char *comout, size_t *comalloc, struct task_data_t
 						sscanf(sub_line_eth + 5, "%llu%u%u%u%u%u%u%u%llu",
 							&temp_rcv_bytes, &temp, &temp, &temp, &temp, &temp, &temp, &temp,
 							&temp_send_bytes);
-						my_task_data->subtask[subtask]->rcv_bytes = temp_rcv_bytes;
-						my_task_data->subtask[subtask]->send_bytes = temp_send_bytes;
+						my_task_data->subtask[subtask]->rcv_bytes += temp_rcv_bytes;
+						my_task_data->subtask[subtask]->send_bytes += temp_send_bytes;
 					}
 					char *sub_line_wlan = strstr(line, "wlan");
 					if (sub_line_wlan != NULL) {
 						sscanf(sub_line_wlan + 6, "%llu%u%u%u%u%u%u%u%llu",
 							&temp_rcv_bytes, &temp, &temp, &temp, &temp, &temp, &temp, &temp,
 							&temp_send_bytes);
-						my_task_data->subtask[subtask]->rcv_bytes = temp_rcv_bytes;
-						my_task_data->subtask[subtask]->send_bytes = temp_send_bytes;
+						my_task_data->subtask[subtask]->rcv_bytes += temp_rcv_bytes;
+						my_task_data->subtask[subtask]->send_bytes += temp_send_bytes;
 					}
 					char *sub_line_lo= strstr(line, "lo");
 					if (sub_line_lo != NULL) {
 						sscanf(sub_line_lo + 6, "%llu%u%u%u%u%u%u%u%llu",
 							&temp_rcv_bytes, &temp, &temp, &temp, &temp, &temp, &temp, &temp,
 							&temp_send_bytes);
-						my_task_data->subtask[subtask]->rcv_bytes = temp_rcv_bytes;
-						my_task_data->subtask[subtask]->send_bytes = temp_send_bytes;
+						my_task_data->subtask[subtask]->rcv_bytes += temp_rcv_bytes;
+						my_task_data->subtask[subtask]->send_bytes += temp_send_bytes;
 					}
 				}
 				fclose(fp);
 				}
-// 			}
-// 		}//end if
-	}//	
+				}
+			}
+		}//end if
+	}
 	return true;
 }
- 
+
 // cat /proc/cpuinfo | grep "MHz"
 //example
 // cpu MHz		: 400.040
@@ -825,10 +814,10 @@ void procesa_cpuinfo( char *comout, size_t *comalloc, unsigned int argmaxcores, 
 	}
 }
 
-int power_monitor(int pid, char *DataPath, long sampling_interval) {
+int power_monitor(int pid, char *DataPath, long sampling_interval,long long int start_app_time) {
 	int i;
 	size_t comalloc = 8256;
-	char *comout = (char *) malloc(comalloc * sizeof(char));	
+	char *comout = (char *) malloc(comalloc * sizeof(char));
 	unsigned int maxcores= numcores(comout, &comalloc);
 	struct task_data_t my_task_data_a;
 	my_task_data_a.maxprocesses =30;
@@ -837,7 +826,7 @@ int power_monitor(int pid, char *DataPath, long sampling_interval) {
 	for(i=0;i<my_task_data_a.maxprocesses;i++){
 		my_task_data_a.subtask[i] = (struct sub_task_data *) malloc(sizeof(struct sub_task_data ));
 		my_task_data_a.subtask[i]->rcv_bytes = 0;
-		my_task_data_a.subtask[i]->send_bytes = 0;		
+		my_task_data_a.subtask[i]->send_bytes = 0;
 	}
 	my_task_data_a.cores = (struct cores_data *) malloc( my_task_data_a.maxcores * sizeof(struct cores_data));
 	my_task_data_a.totaltid=0;
@@ -864,7 +853,7 @@ int power_monitor(int pid, char *DataPath, long sampling_interval) {
 	param_energy.MEMORY_POWER=2.016;//[2]
 	param_energy.case_fan= 1;
 	param_energy.motherboard_power = 40;
-	
+
 	param_energy.sata_drive=15.0;
 
 	param_energy.hd_power = 8;
@@ -1014,21 +1003,27 @@ int power_monitor(int pid, char *DataPath, long sampling_interval) {
 		pid_mem_power = ((read_bytes + write_bytes - cancelled_writes) / param_energy.L2CACHE_LINE_SIZE + pid_l2_cache_misses) * param_energy.L2CACHE_MISS_LATENCY * param_energy.MEMORY_POWER* 1.0e-9;// / duration;
 		pid_disk_power = param_energy.hd_power;
 		float total_hd_energy=0.0;
-		if (my_task_data_a.first_start!=0) total_hd_energy=pid_disk_power*(actual_time - my_task_data_a.first_start)/(1.0e9);
+// 		if (my_task_data_a.first_start!=0)
+			total_hd_energy=pid_disk_power*(actual_time - start_app_time)/(1.0e9); 
 		float total_watts= total_cpu_energy + total_hd_energy + pid_mem_power + pid_net_power;
-		fprintf(fp, "\"local_timestamp\":\"%.1f\",\"cpu_power\":\"%5.0f\",\"io_power\":\"%5.3f\",\"mem_power\":\"%5.3f\",\"net_power\":\"%5.3f\",\"total_watts\":\"%5.3f\",\"cost_power\":\"%5.6f\"\n",
-			timestamp_ms,
-			total_cpu_energy,
-			total_hd_energy, //lsat_end and first start are in ns 
-			pid_mem_power,
-			pid_net_power,
-			total_watts,
-			total_watts*0.25/(1000.0*3600.0)
-			);
+		fprintf(fp, "\"local_timestamp\":\"%.1f\",",timestamp_ms);
+		fprintf(fp, "\"cpu_power\":\"%5.3f\",",total_cpu_energy);
+		fprintf(fp, "\"io_power\":\"%5.3f\",",total_hd_energy); //last_end and first start are in ns 
+		fprintf(fp, "\"mem_power\":\"%5.3f\",",pid_mem_power);
+		fprintf(fp, "\"net_power\":\"%5.3f\",",pid_net_power);
+		fprintf(fp, "\"total_watts\":\"%5.3f\",",total_watts);
+		fprintf(fp, "\"cost_power\":\"%5.6f\"",total_watts*0.25/(1000.0*3600.0));
+		fprintf(fp, " pidpower %.3f J",pid_disk_power);
+		fprintf(fp, " time %.3f s\n", (actual_time - start_app_time)/(1.0e9) );
 		}
-	}
+	}//end while running
 	fclose(fp);
 	printf(" end power\n");
 	if(FileName !=NULL) free(FileName);
+	for(i=0;i<my_task_data_a.maxprocesses;i++)
+		free(my_task_data_a.subtask[i]);
+	free(my_task_data_a.cores);
+	free(my_task_data_a.subtask);
+	free(comout);
 	return SUCCESS;
 }

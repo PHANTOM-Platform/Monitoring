@@ -4,6 +4,9 @@
 #define MAX_NUM_METRICS     9
 #define NAME_LENGTH          32
 
+#define SUCCESS 0
+#define FAILED 1
+
 typedef struct metrics_t {
 	long sampling_interval[MAX_NUM_METRICS];	//in milliseconds
 	char metrics_names[MAX_NUM_METRICS][NAME_LENGTH];	//user defined metrics

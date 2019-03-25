@@ -33,5 +33,5 @@ Energy, in milliJoul, when read a kilobytes
 //#define E_DISK_R_PER_KB (0.02 * 2.78)
 //#define E_DISK_W_PER_KB (0.02 * 2.19)
 
-int power_monitor(int pid, char *DataPath, long sampling_interval);
+int power_monitor(int pid, char *DataPath, long sampling_interval, long long int start_app_time);
 #endif

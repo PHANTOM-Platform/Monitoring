@@ -232,8 +232,10 @@ int io_stats_read(int pid, struct resources_stats_t *stats_now) {
 	stats_now->write_bytes = stats_now->accum_write_bytes - stats_now->before_accum_write_bytes;
 	stats_now->accum_cancelled_writes = stats_now->accum_cancelled_writes - stats_now->before_accum_cancelled_writes;
 // 	stats_now->throughput = (stats_now->read_bytes + stats_now->write_bytes) / sampling_interval; //in bytes/s
-	if(stats_now->min_write_bytes > stats_now->write_bytes) stats_now->min_write_bytes = stats_now->write_bytes;
-	if(stats_now->max_write_bytes < stats_now->write_bytes) stats_now->max_write_bytes = stats_now->write_bytes;
+	if(stats_now->min_write_bytes > stats_now->write_bytes)
+		stats_now->min_write_bytes = stats_now->write_bytes;
+	if(stats_now->max_write_bytes < stats_now->write_bytes)
+		stats_now->max_write_bytes = stats_now->write_bytes;
 	if(stats_now->min_read_bytes > stats_now->read_bytes) stats_now->min_read_bytes = stats_now->read_bytes;
 	if(stats_now->max_read_bytes < stats_now->read_bytes) stats_now->max_read_bytes = stats_now->read_bytes;
 	fclose(fp);
@@ -565,11 +567,12 @@ struct resources_stats_t *linux_resources(const int pid, char *DataPath, long sa
 	stats->swap_usage_rate = 0.0;
 	stats->send_bytes=0;
 	stats->rcv_bytes=0;
+	stats->total_cpu_time=0;
+	stats->accum_pid_runtime=0;
 	linux_resources_init(pid, events, num_events, stats);
 // 	for the case of being uninitialized
 	stats->before_total_cpu_time=stats->total_cpu_time;
 	stats->before_accum_pid_runtime=stats->accum_pid_runtime;
-
 	stats->min_CPU_usage_rate = stats->CPU_usage_rate;
 	stats->max_CPU_usage_rate = stats->CPU_usage_rate;
 
@@ -596,6 +599,7 @@ struct resources_stats_t *linux_resources(const int pid, char *DataPath, long sa
 	stats->max_send_bytes = stats->send_bytes;
 	stats->accum_send_bytes = stats->send_bytes;
 	/*in a loop do data sampling and write into the file*/
+
 	while(running) {
 		usleep(sampling_interval * 1000);
 		linux_resources_sample(pid, stats);
@@ -867,8 +871,10 @@ unsigned int save_stats(FILE *fp, int searchprocess, task_data *my_task_data){
 			if(my_task_data->subtask[i]->max_read_bytes < my_task_data->subtask[i]->rchar) my_task_data->subtask[i]->max_read_bytes = my_task_data->subtask[i]->rchar;
 		}
 		if(flag & HAS_NET_STAT) {
-			if(my_task_data->subtask[i]->min_send_bytes > my_task_data->subtask[i]->send_bytes) my_task_data->subtask[i]->min_send_bytes = my_task_data->subtask[i]->send_bytes;
-			if(my_task_data->subtask[i]->max_send_bytes < my_task_data->subtask[i]->send_bytes) my_task_data->subtask[i]->max_send_bytes = my_task_data->subtask[i]->send_bytes;
+			if(my_task_data->subtask[i]->min_send_bytes > my_task_data->subtask[i]->send_bytes)
+				my_task_data->subtask[i]->min_send_bytes = my_task_data->subtask[i]->send_bytes;
+			if(my_task_data->subtask[i]->max_send_bytes < my_task_data->subtask[i]->send_bytes)
+				my_task_data->subtask[i]->max_send_bytes = my_task_data->subtask[i]->send_bytes;
 	// 		my_task_data->subtask[i]->accum_send_bytes += my_task_data->subtask[i]->send_bytes;
 		}
 		if(my_task_data->subtask[i]->min_CPU_usage_rate > my_task_data->subtask[i]->pcpu) my_task_data->subtask[i]->min_CPU_usage_rate = my_task_data->subtask[i]->pcpu;
@@ -1068,13 +1074,13 @@ unsigned int procesa_pid_load(int pid, unsigned int argmaxcores, struct task_dat
 						if(pcpu>0.0){//if(pspid==pstid){
 							j=my_task_data->totaltid;
 							my_task_data->totaltid=my_task_data->totaltid+1;
-							my_task_data->subtask[j]->starttime=actual_time; 
+							my_task_data->subtask[j]->starttime=actual_time;
 						my_task_data->subtask[j]->accum_read_bytes =0;
 						my_task_data->subtask[j]->accum_write_bytes =0;
 						my_task_data->subtask[j]->before_accum_read_bytes = my_task_data->subtask[j]->accum_read_bytes;
 						my_task_data->subtask[j]->before_accum_write_bytes = my_task_data->subtask[j]->accum_write_bytes;
 						my_task_data->subtask[j]->counter=1;
-					
+
 						my_task_data->subtask[j]->CPU_usage_rate = 0.0;
 						my_task_data->subtask[j]->RAM_usage_rate = 0.0;
 						my_task_data->subtask[j]->swap_usage_rate = 0.0;

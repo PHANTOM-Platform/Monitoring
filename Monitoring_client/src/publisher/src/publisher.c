@@ -214,6 +214,7 @@ int new_query_json(char *URL, struct url_data *response, char *operation, const 
 		log_error("ERROR query %s", error_msg);
 		free_data_struc(&data);
 		free_data_struc(&rescode);
+		curl_easy_cleanup(curl);//we should free the pointer.
 		return FAILED;
 	}
 
@@ -225,7 +226,7 @@ int new_query_json(char *URL, struct url_data *response, char *operation, const 
 		free_data_struc(&rescode);
 		return FAILED;
 	}
-	
+
 	if(response->data !=NULL) free(response->data);
 		response->data=NULL;
 	if(response->headercode !=NULL) free(response->headercode);
@@ -447,7 +448,6 @@ int query_message_json(char *URL, char *message,const char *filenamepath, struct
 		free_data_struc(&data);
 		return FAILED;
 	}
-
 	response->data=NULL;
 	if(check_URL(URL)!=SUCCESS) {
 		free(data.data); data.data=NULL;
@@ -485,7 +485,6 @@ int query_message_json(char *URL, char *message,const char *filenamepath, struct
 	}else{
 		init_curl(token);//this defined the headers
 	}
-
 	CURL *curl = NULL;
 	struct curl_httppost *formpost = NULL;
 	struct curl_httppost *lastptr = NULL;
@@ -509,14 +508,13 @@ int query_message_json(char *URL, char *message,const char *filenamepath, struct
 				CURLFORM_FILE, filenamepath,
 	// 			CURLFORM_CONTENTTYPE, "application/octet-stream",
 				CURLFORM_END);
-		}	
+		}
 		if(filenamepath!= NULL){
 	// 		curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);kaka
 			curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
 		}
-	}else{
+	}else
 		curl = prepare_publish(URL, message, NULL, operation, token);
-	}
 	if(curl == NULL) {
 		free(data.data); data.data=NULL;
 		free(data.headercode); data.headercode=NULL;
@@ -537,7 +535,6 @@ int query_message_json(char *URL, char *message,const char *filenamepath, struct
 // 	printf("\n data is %s\n", data.data);
 	free(rescode.data); rescode.data=NULL;
 	//curl_slist_free_all(headers);/* free the list again */
-
 	if(filenamepath!=NULL)
 		curl_formfree(formpost);
 	curl_easy_cleanup(curl);
@@ -552,7 +549,6 @@ int query_message_json(char *URL, char *message,const char *filenamepath, struct
 		return FAILED;
 	}
 	if (strcmp(rescode.headercode, "401") == 0) {
-// 		const char *error_msg = curl_easy_strerror(response_code);
 		log_error("ERROR unauthorized request, %s", data.data);
 		log_error("token is %s", token);
 		free(data.data); data.data=NULL;

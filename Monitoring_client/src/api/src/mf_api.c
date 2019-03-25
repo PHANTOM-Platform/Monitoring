@@ -78,6 +78,7 @@ char *mycurrenttime_str (void) {
 typedef struct each_metric_t {
 	long sampling_interval;				//in milliseconds
 	char metric_name[NAME_LENGTH];		//user defined metrics
+	long long int start_app_time;
 } each_metric;
 
 int running;
@@ -93,7 +94,7 @@ pthread_t threads[MAX_NUM_METRICS];
 int num_threads;
 int pid;
 
-FILE *logFile;
+FILE *logFile=NULL;
 
 /*******************************************************************************
 * Forward Declarations
@@ -209,7 +210,10 @@ char* update_exec(const char *server, const char *filenamepath, char * token){
 	URL=NULL;
 	if(response.headercode!=NULL) free(response.headercode);
 	response.headercode=NULL;
-	if(response.data[0] == '\0') {
+	if(response.data == NULL) {
+		printf("ERROR: Cannot register execution\n");
+		return NULL;
+	}else if(response.data[0] == '\0') {
 		printf("ERROR: Cannot register execution\n");
 		return NULL;
 	}
@@ -229,13 +233,15 @@ char* starting_exec(const char *server, const char *exec_id, const char * token)
 	URL=concat_and_free(&URL, exec_id);
 	URL=concat_and_free(&URL, "\"");
 	char operation[]="POST";
-	query_message_json(URL,NULL, NULL, &response, operation, token); //*****
-// 	printf(" response is %s\n",response.data);
+	int result=query_message_json(URL,NULL, NULL, &response, operation, token); //*****
 	if(URL!=NULL) free(URL);
 	URL=NULL;
 	if(response.headercode!=NULL) free(response.headercode);
 	response.headercode=NULL;
-	if(response.data[0] == '\0') {
+	if(result!=SUCCESS || response.data==NULL){
+		printf("ERROR: Cannot register execution\n");
+		return NULL;
+	}else if(response.data[0] == '\0') {
 		printf("ERROR: Cannot register execution\n");
 		return NULL;
 	}
@@ -490,6 +496,7 @@ struct each_metric_t **each_m=NULL;
 
 /** server consists on an address or ip with a port number like http://129.168.0.1:8600/ */
 char *mf_start(const char *server, const char *exec_server, const char *exec_id, const char* resource_manager, const char *platform_id, metrics *m,struct app_report_t *my_app_report, const char *token) {
+	long long int start_app_time = mycurrenttime();
 	char* resp= starting_exec(exec_server, exec_id, token);
 	free(resp);
 	/* get pid and setup the DataPath according to pid */
@@ -520,6 +527,7 @@ char *mf_start(const char *server, const char *exec_server, const char *exec_id,
 	keep_local_data_flag = m->local_data_storage;
 	for (t = 0; t < num_threads; t++) {
 		/*prepare the argument for the thread*/
+		each_m[t]->start_app_time=start_app_time;
 		each_m[t]->sampling_interval = m->sampling_interval[t];
 		strcpy(each_m[t]->metric_name, m->metrics_names[t]);
 		/*create the thread and pass associated arguments */
@@ -753,7 +761,7 @@ char* mf_send(const char *server,const char *application_id,const char *componen
 		}
 	}
 	closedir(dir);
-	
+
 	if(metric_URL!= NULL)
 		free(metric_URL);
 	metric_URL=NULL;
@@ -763,7 +771,7 @@ char* mf_send(const char *server,const char *application_id,const char *componen
 	if(filename!= NULL)
 		free(filename);
 	filename=NULL;
-	if(logFile != NULL) 
+	if(logFile != NULL)
 		fclose(logFile);
 	logFile=NULL;
 	/*remove the data directory if user unset keep_local_data_flag */
@@ -808,6 +816,8 @@ static int api_prepare(char *Data_path){
 	return pid;
 }
 
+ 
+
 
 
 static void *MonitorStart(void *arg) {
@@ -821,7 +831,7 @@ static void *MonitorStart(void *arg) {
 		xlnx_monitor(DataPath, metric->sampling_interval);
 	} else if(strcmp(metric->metric_name, METRIC_NAME_3) == 0) {
 //  		printf("Starting monitoring modul %s\n",METRIC_NAME_3);
-		power_monitor(pid, DataPath, metric->sampling_interval);
+		power_monitor(pid, DataPath, metric->sampling_interval,  metric->start_app_time );
 #ifdef NVML
 #if NVML == yes
 	} else if(strcmp(metric->metric_name, METRIC_NAME_4) == 0) {
@@ -1059,42 +1069,10 @@ void submit_metric_json(char *user_string){
 	printf("%s\n\n",user_string);
 }
 
-/**
-* Get the pid, and setup the DataPath for data storage
-*/
-static int api_prepare_loc(char *Data_path){
-	/*reset Data_path*/
-	size_t size = strlen(Data_path);
-	memset(Data_path, '\0', size);
-	/*get the pid*/
-	int pid = getpid();
-	/*get the pwd*/
-	char buf_1[256] = {'\0'};
-	char buf_2[256] = {'\0'};
-	int ret = readlink("/proc/self/exe", buf_1, 200);
-	if(ret == -1) {
-		printf("readlink /proc/self/exe failed.\n");
-		exit(0);
-	}
-	memcpy(buf_2, buf_1, strlen(buf_1) * sizeof(char));
-
-	/* extract path folder of executable from it's path */
-	char *lastslash = strrchr(buf_2, '/');
-	int ptr = lastslash - buf_2;
-	memcpy(Data_path, buf_2, ptr);
-
-	/*create the folder for collect the date of the pid-process*/
-	sprintf(Data_path + strlen(Data_path), "/%d", pid);
-	struct stat st = { 0 };
-	if (stat(Data_path, &st) == -1)
-	mkdir(Data_path, 0700);
-	return pid;
-}
-
 
 int mf_user_metric_loc_type(char *user_metrics, const char *datatype){
 	if(DataPath[0] == '\0')
-		pid = api_prepare_loc(DataPath);
+		pid = api_prepare(DataPath);
 	/*create and open the file*/
 	char FileName[256] = {'\0'};
 	sprintf(FileName, "%s/%s", DataPath, datatype);

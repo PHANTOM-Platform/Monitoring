@@ -73,9 +73,9 @@ void user_metrics_buffer(struct Thread_report_t single_thread_report);
 void register_end_component(
 char *currentid, struct Thread_report_t single_thread_report);
 
-void monitoring_end(char *server, char *exec_server, char *appid, char *execid, char *execfile, char *regplatformid, char *token, struct app_report_t *my_app_report);
+void monitoring_end(const char *server, const char *exec_server, const char *appid,const char *execid, const char *execfile, const char *regplatformid, const char *token, struct app_report_t *my_app_report);
 	
-int register_workflow(char *server, char *regplatformid, char *appid, char *execfile, char *token);
+int register_workflow(const char *server, const char *regplatformid, const char *appid, const char *execfile,const char *token);
 
 //for monitoring the threads
 int mf_start_tid(const unsigned int pid, const long unsigned int microsleep);
@@ -100,14 +100,14 @@ void mf_end(void);
 * Query for a workflow, return 400 if the workflow is not registered yet.
 * or 200 in other case.
 */
-char* mf_query_workflow(char *server, char *application_id );
+char* mf_query_workflow(const char *server, const char *application_id );
 
 /**
 * Register a new workflow.
 * @return the path to query the workflow.
 */
-char* mf_new_workflow(char *server, char *application_id, char *author_id,
-		char *optimization, char *tasks_desc, char *token);
+char* mf_new_workflow(const char *server, const char *application_id, const char *author_id,
+		const char *optimization, const char *tasks_desc, const char *token);
 
 /**
 * Generate the execution_id.

@@ -898,10 +898,10 @@ int power_monitor(int pid, char *DataPath, long sampling_interval,long long int 
 		if(FileName !=NULL) free(FileName);
 		return FAILURE;
 	}
-	struct timespec timestamp_before, timestamp_after;
+	struct timespec  timestamp_after;//timestamp_before,
 	double timestamp_ms;
 	float pid_mem_power, pid_disk_power;// pid_cpu_power,duration, sys_cpu_power,  
-	resources_stats before, after;//, delta;
+	resources_stats before;//, delta;, after
 	int fd_perf = create_perf_stat_counter(pid);
 	if(fd_perf <= 0){
 		printf("ERROR: create_perf_stat_counter: %s\n", FileName);

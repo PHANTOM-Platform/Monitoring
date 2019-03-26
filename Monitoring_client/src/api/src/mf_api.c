@@ -188,7 +188,7 @@ struct task_data_t *mmy_task_data_a =NULL;
 * 
 * @return NULL if error
 */
-char* update_exec(const char *server, const char *filenamepath, char * token){
+char* update_exec(const char *server, const char *filenamepath, const char * token){
 	char *URL = NULL;
 	char operation[]="POST";
 	struct url_data response;
@@ -289,7 +289,7 @@ void calculate_date(long long int current, struct Mydate *exampledate) {
 
 #define FLOAT_TO_LLINT(x) ((x)>=0?(long long int)((x)+0.5):(long long int)((x)-0.5))
 
-char *mf_exec_stats( struct app_report_t my_app_report, char *application_id, char *exec_id, char *platform_id ){
+char *mf_exec_stats( struct app_report_t my_app_report, const char *application_id, const char *exec_id, const char *platform_id ){
 	/*create and open the file*/
 	char *json_msg = NULL;
 	char tempstr[2560] = {'\0'};
@@ -311,7 +311,6 @@ char *mf_exec_stats( struct app_report_t my_app_report, char *application_id, ch
 	concat_and_free(&json_msg, "\t\"execution_id\":\"");
 	concat_and_free(&json_msg, exec_id);
 	concat_and_free(&json_msg, "\",\n");
-
 	concat_and_free(&json_msg, "\t\"start_timestamp\":\"");
 	// We convert Epoch into timestamp format, required by ElasticSearch:
 	calculate_date(FLOAT_TO_LLINT(my_app_report.timestamp_ms), &exampledate);
@@ -323,7 +322,7 @@ char *mf_exec_stats( struct app_report_t my_app_report, char *application_id, ch
 
 	// We convert Epoch into timestamp format, required by ElasticSearch:
 	calculate_date(FLOAT_TO_LLINT(timestamp_ms), &exampledate);
- 	sprintf(tempstr," %u-%02u-%02uT%02u:%02u:%02u.%03u",exampledate.year,exampledate.month,
+	sprintf(tempstr," %u-%02u-%02uT%02u:%02u:%02u.%03u",exampledate.year,exampledate.month,
 		exampledate.day, exampledate.hour, exampledate.min , exampledate.sec, exampledate.msec);
 	concat_and_free(&json_msg, tempstr);
 	concat_and_free(&json_msg, "\",\n");
@@ -591,7 +590,7 @@ void mf_end(void){
 * or 200 in other case.
 * @return NULL if error
 */
-char* mf_query_workflow(char *server, char *application_id ){
+char* mf_query_workflow(const char *server, const char *application_id ){
 	/* create an workflow */
 	char *URL = NULL;
 	struct url_data response;
@@ -632,8 +631,8 @@ char* mf_query_workflow(char *server, char *application_id ){
 * Register a new workflow.
 * @return the path to query the workflow.
 */
-char* mf_new_workflow(char *server, char *application_id, char *author_id,
-	char *optimization, char *tasks_desc, char *token) {
+char* mf_new_workflow(const char *server, const char *application_id, const char *author_id,
+		const char *optimization, const char *tasks_desc, const char *token) {
 	/* create an workflow */
 	char *URL = NULL;
 	struct url_data response;
@@ -1180,7 +1179,7 @@ void register_end_component(char *currentid, struct Thread_report_t single_threa
 }
 
 //it calls the mf_end and mf_send and frees memory, and closes logfile
-void monitoring_end(char *mf_server, char *exec_server, char *appid, char *exec_id, char *execfile, char *regplatformid, char *token, struct app_report_t *my_app_report){
+void monitoring_end(const char *mf_server, const char *exec_server, const char *appid, const char *exec_id, const char *execfile, const char *regplatformid, const char *token, struct app_report_t *my_app_report){
 	mf_end();
 	/* MONITORING SEND */
 	char *experiment_id = mf_send(mf_server, appid, execfile, regplatformid, token);
@@ -1191,7 +1190,6 @@ void monitoring_end(char *mf_server, char *exec_server, char *appid, char *exec_
 		printf("my_app_report NULL!!\n");
 		return;
 	}
-
 	char *json_msg=mf_exec_stats(*my_app_report, appid, exec_id, regplatformid);
 	//SAVE the FILE for forwarding it to the Execution Manager
 	char FileName[256] = {'\0'};
@@ -1209,7 +1207,6 @@ void monitoring_end(char *mf_server, char *exec_server, char *appid, char *exec_
 // 	printf("%s",json_msg);
 	free(resp);
 	free(json_msg);
-
 	for(int i=0;i<my_app_report->num_of_threads;i++){
 		printf(" Execution label of the workflow: \"%s\"\n", my_app_report->currentid);
 		printf("   THREAD num %i, name : %s\n",i, my_app_report->my_thread_report[i]->taskid);
@@ -1226,13 +1223,13 @@ void monitoring_end(char *mf_server, char *exec_server, char *appid, char *exec_
 /**
 * this function query for a workflow was registered or not
 * if the status code is 400 means that it was not registered before*/
-char* query_workflow(char *server, char *appid){
+char* query_workflow(const char *server, const char *appid){
 	char* response=response=mf_query_workflow( server, appid );
 	return response;
 }
 
 /** @return 0 if success*/
-int register_workflow( char *server, char *regplatformid, char *appid, char *execfile, char *token){
+int register_workflow(const char *server,const char *regplatformid,const  char *appid, const char *execfile, const char *token){
 	char author[]="new_user";
 	char optimization[]="Time";
 	char tasks_desc[]="[{\"device\":\"demo_desktop\", \"exec\":\"hello_world\", \"cores_nr\": \"2\"}]";

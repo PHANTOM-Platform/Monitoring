@@ -405,7 +405,11 @@ char *save_stats_resources(struct resources_stats_t *stat, int pretty, int tabs)
 	sprintf(tempstr, "\"count\":\"%li\"", stats->counter);concat_and_free(&msg, tempstr);
 	sprintf(tempstr, ",\"min\":\"%.2f\"", stats->min_CPU_usage_rate);concat_and_free(&msg, tempstr);
 	sprintf(tempstr, ",\"max\":\"%.2f\"", stats->max_CPU_usage_rate);concat_and_free(&msg, tempstr);
-	sprintf(tempstr, ",\"avg\":\"%.2f\"", (float) stats->accum_CPU_usage_rate/ (float)stats->counter);concat_and_free(&msg, tempstr);
+	if(stats->counter>1){//we not wish to divide by zero
+		 sprintf(tempstr, ",\"avg\":\"%.2f\"", (float) stats->accum_CPU_usage_rate/ (float)stats->counter);concat_and_free(&msg, tempstr);
+	}else{
+		 sprintf(tempstr, ",\"avg\":\"%.2f\"", (float) stats->accum_CPU_usage_rate );concat_and_free(&msg, tempstr);
+	}
 	sprintf(tempstr, ",\"sum\":\"%lli\"},", stats->accum_CPU_usage_rate);concat_and_free(&msg, tempstr);
 // 	----------------------RAM
 	if (pretty==1) concat_and_free(&msg, "\n");
@@ -414,7 +418,11 @@ char *save_stats_resources(struct resources_stats_t *stat, int pretty, int tabs)
 	sprintf(tempstr, "\"count\":\"%li\"", stats->counter);concat_and_free(&msg, tempstr);
 	sprintf(tempstr, ",\"min\":\"%.2f\"", stats->min_RAM_usage_rate);concat_and_free(&msg, tempstr);
 	sprintf(tempstr, ",\"max\":\"%.2f\"", stats->max_RAM_usage_rate);concat_and_free(&msg, tempstr);
-	sprintf(tempstr, ",\"avg\":\"%.2f\"", (float)stats->accum_RAM_usage_rate/(float)stats->counter);concat_and_free(&msg, tempstr);
+	if(stats->counter>1){//we not wish to divide by zero
+		 sprintf(tempstr, ",\"avg\":\"%.2f\"", (float)stats->accum_RAM_usage_rate/(float)stats->counter);concat_and_free(&msg, tempstr);
+	}else{
+		 sprintf(tempstr, ",\"avg\":\"%.2f\"", (float)stats->accum_RAM_usage_rate );concat_and_free(&msg, tempstr);
+	}
 	sprintf(tempstr, ",\"sum\":\"%lli\"},", stats->accum_RAM_usage_rate);concat_and_free(&msg, tempstr);
 // 	----------------------SWAP
 	if (pretty==1) concat_and_free(&msg, "\n");
@@ -423,7 +431,11 @@ char *save_stats_resources(struct resources_stats_t *stat, int pretty, int tabs)
 	sprintf(tempstr, "\"count\":\"%li\"", stats->counter);concat_and_free(&msg, tempstr);
 	sprintf(tempstr, ",\"min\":\"%.2f\"", stats->min_swap_usage_rate);concat_and_free(&msg, tempstr);
 	sprintf(tempstr, ",\"max\":\"%.2f\"", stats->max_swap_usage_rate);concat_and_free(&msg, tempstr);
-	sprintf(tempstr, ",\"avg\":\"%.2f\"", (float)stats->accum_swap_usage_rate/(float)stats->counter);concat_and_free(&msg, tempstr);
+	if(stats->counter>1){//we not wish to divide by zero
+		 sprintf(tempstr, ",\"avg\":\"%.2f\"", (float)stats->accum_swap_usage_rate/(float)stats->counter);concat_and_free(&msg, tempstr);
+	}else{
+		 sprintf(tempstr, ",\"avg\":\"%.2f\"", (float)stats->accum_swap_usage_rate );concat_and_free(&msg, tempstr);
+	}
 	sprintf(tempstr, ",\"sum\":\"%lli\"},", stats->accum_swap_usage_rate);concat_and_free(&msg, tempstr);
 // 	---------------------- IO
 	if (pretty==1) concat_and_free(&msg, "\n");
@@ -432,7 +444,11 @@ char *save_stats_resources(struct resources_stats_t *stat, int pretty, int tabs)
 	sprintf(tempstr, "\"count\":\"%li\"", stats->counter);concat_and_free(&msg, tempstr);
 	sprintf(tempstr, ",\"min\":\"%lli\"", stats->min_write_bytes);concat_and_free(&msg, tempstr);
 	sprintf(tempstr, ",\"max\":\"%lli\"", stats->max_write_bytes);concat_and_free(&msg, tempstr);
-	sprintf(tempstr, ",\"avg\":\"%lli\"", stats->accum_write_bytes/stats->counter);concat_and_free(&msg, tempstr);
+	if(stats->counter>1){//we not wish to divide by zero
+		 sprintf(tempstr, ",\"avg\":\"%lli\"", stats->accum_write_bytes/stats->counter);concat_and_free(&msg, tempstr);
+	}else{
+		 sprintf(tempstr, ",\"avg\":\"%lli\"", stats->accum_write_bytes );concat_and_free(&msg, tempstr);
+	}
 	sprintf(tempstr, ",\"sum\":\"%lli\"},", stats->accum_write_bytes);concat_and_free(&msg, tempstr);
 // ------------------------ IO
 	if (pretty==1) concat_and_free(&msg, "\n");
@@ -441,7 +457,11 @@ char *save_stats_resources(struct resources_stats_t *stat, int pretty, int tabs)
 	sprintf(tempstr, "\"count\":\"%li\"", stats->counter);concat_and_free(&msg, tempstr);
 	sprintf(tempstr, ",\"min\":\"%lli\"", stats->min_read_bytes);concat_and_free(&msg, tempstr);
 	sprintf(tempstr, ",\"max\":\"%lli\"", stats->max_read_bytes);concat_and_free(&msg, tempstr);
-	sprintf(tempstr, ",\"avg\":\"%lli\"", stats->accum_read_bytes/stats->counter);concat_and_free(&msg, tempstr);
+	if(stats->counter>1){//we not wish to divide by zero
+		 sprintf(tempstr, ",\"avg\":\"%lli\"", stats->accum_read_bytes/stats->counter);concat_and_free(&msg, tempstr);
+	}else{
+		 sprintf(tempstr, ",\"avg\":\"%lli\"", stats->accum_read_bytes );concat_and_free(&msg, tempstr);
+	}
 	sprintf(tempstr, ",\"sum\":\"%lli\"},", stats->accum_read_bytes);concat_and_free(&msg, tempstr);
 // -------------------------NET
 	if (pretty==1) concat_and_free(&msg, "\n");
@@ -450,7 +470,11 @@ char *save_stats_resources(struct resources_stats_t *stat, int pretty, int tabs)
 	sprintf(tempstr, "\"count\":\"%li\"", stats->counter);concat_and_free(&msg, tempstr);
 	sprintf(tempstr, ",\"min\":\"%lli\"", stats->min_send_bytes);concat_and_free(&msg, tempstr);
 	sprintf(tempstr, ",\"max\":\"%lli\"", stats->max_send_bytes);concat_and_free(&msg, tempstr);
-	sprintf(tempstr, ",\"avg\":\"%lli\"", stats->accum_send_bytes/stats->counter);concat_and_free(&msg, tempstr);
+	if(stats->counter>1){//we not wish to divide by zero
+		 sprintf(tempstr, ",\"avg\":\"%lli\"", stats->accum_send_bytes/stats->counter);concat_and_free(&msg, tempstr);
+	}else{
+		 sprintf(tempstr, ",\"avg\":\"%lli\"", stats->accum_send_bytes );concat_and_free(&msg, tempstr);
+	}
 	sprintf(tempstr, ",\"sum\":\"%lli\"}", stats->accum_send_bytes);concat_and_free(&msg, tempstr);
 //		nets_info->rcv_bytes += temp_rcv_bytes;
 //		nets_info->send_bytes += temp_send_bytes;
@@ -468,7 +492,11 @@ char *save_stats_resources_comp(struct sub_task_data *subtask, int pretty, int t
 	sprintf(tempstr, "\"count\":\"%li\"", subtask->counter);concat_and_free(&msg, tempstr);
 	sprintf(tempstr, ",\"min\":\"%.2f\"", subtask->min_CPU_usage_rate);concat_and_free(&msg, tempstr);
 	sprintf(tempstr, ",\"max\":\"%.2f\"", subtask->max_CPU_usage_rate);concat_and_free(&msg, tempstr);
-	sprintf(tempstr, ",\"avg\":\"%.2f\"", (float) subtask->accum_CPU_usage_rate/ (float)subtask->counter);concat_and_free(&msg, tempstr);
+	if(subtask->counter>1){//we not wish to divide by zero
+		sprintf(tempstr, ",\"avg\":\"%.2f\"", (float) subtask->accum_CPU_usage_rate/ (float)subtask->counter);concat_and_free(&msg, tempstr);
+	}else{
+		sprintf(tempstr, ",\"avg\":\"%.2f\"", (float) subtask->accum_CPU_usage_rate );concat_and_free(&msg, tempstr);
+	}
 	sprintf(tempstr, ",\"sum\":\"%lli\"},", subtask->accum_CPU_usage_rate);concat_and_free(&msg, tempstr);
 // 	----------------------RAM
 	if (pretty==1) concat_and_free(&msg, "\n");
@@ -477,7 +505,11 @@ char *save_stats_resources_comp(struct sub_task_data *subtask, int pretty, int t
 	sprintf(tempstr, "\"count\":\"%li\"", subtask->counter);concat_and_free(&msg, tempstr);
 	sprintf(tempstr, ",\"min\":\"%.2f\"", subtask->min_RAM_usage_rate);concat_and_free(&msg, tempstr);
 	sprintf(tempstr, ",\"max\":\"%.2f\"", subtask->max_RAM_usage_rate);concat_and_free(&msg, tempstr);
-	sprintf(tempstr, ",\"avg\":\"%.2f\"", (float)subtask->accum_RAM_usage_rate/(float)subtask->counter);concat_and_free(&msg, tempstr);
+	if(subtask->counter>1){//we not wish to divide by zero
+		 sprintf(tempstr, ",\"avg\":\"%.2f\"", (float)subtask->accum_RAM_usage_rate/(float)subtask->counter);concat_and_free(&msg, tempstr);
+	}else{
+		 sprintf(tempstr, ",\"avg\":\"%.2f\"", (float)subtask->accum_RAM_usage_rate );concat_and_free(&msg, tempstr);
+	}
 	sprintf(tempstr, ",\"sum\":\"%lli\"},", subtask->accum_RAM_usage_rate);concat_and_free(&msg, tempstr);
 // 	----------------------SWAP
 	if (pretty==1) concat_and_free(&msg, "\n");
@@ -486,7 +518,11 @@ char *save_stats_resources_comp(struct sub_task_data *subtask, int pretty, int t
 	sprintf(tempstr, "\"count\":\"%li\"", subtask->counter);concat_and_free(&msg, tempstr);
 	sprintf(tempstr, ",\"min\":\"%.2f\"", subtask->min_swap_usage_rate);concat_and_free(&msg, tempstr);
 	sprintf(tempstr, ",\"max\":\"%.2f\"", subtask->max_swap_usage_rate);concat_and_free(&msg, tempstr);
-	sprintf(tempstr, ",\"avg\":\"%.2f\"", (float)subtask->accum_swap_usage_rate/(float)subtask->counter);concat_and_free(&msg, tempstr);
+	if(subtask->counter>1){//we not wish to divide by zero
+		sprintf(tempstr, ",\"avg\":\"%.2f\"", (float)subtask->accum_swap_usage_rate/(float)subtask->counter);concat_and_free(&msg, tempstr);
+	}else{
+		sprintf(tempstr, ",\"avg\":\"%.2f\"", (float)subtask->accum_swap_usage_rate );concat_and_free(&msg, tempstr);
+	}
 	sprintf(tempstr, ",\"sum\":\"%lli\"},", subtask->accum_swap_usage_rate);concat_and_free(&msg, tempstr);
 // 	---------------------- IO
 	if (pretty==1) concat_and_free(&msg, "\n");
@@ -495,7 +531,11 @@ char *save_stats_resources_comp(struct sub_task_data *subtask, int pretty, int t
 	sprintf(tempstr, "\"count\":\"%li\"", subtask->counter);concat_and_free(&msg, tempstr);
 	sprintf(tempstr, ",\"min\":\"%lli\"", subtask->min_write_bytes);concat_and_free(&msg, tempstr);
 	sprintf(tempstr, ",\"max\":\"%lli\"", subtask->max_write_bytes);concat_and_free(&msg, tempstr);
-	sprintf(tempstr, ",\"avg\":\"%lli\"", subtask->accum_write_bytes/subtask->counter);concat_and_free(&msg, tempstr);
+	if(subtask->counter>1){//we not wish to divide by zero
+		sprintf(tempstr, ",\"avg\":\"%lli\"", subtask->accum_write_bytes/subtask->counter);concat_and_free(&msg, tempstr);
+	}else{
+		sprintf(tempstr, ",\"avg\":\"%lli\"", subtask->accum_write_bytes );concat_and_free(&msg, tempstr);
+	}
 	sprintf(tempstr, ",\"sum\":\"%lli\"},", subtask->accum_write_bytes);concat_and_free(&msg, tempstr);
 // ------------------------ IO
 	if (pretty==1) concat_and_free(&msg, "\n");
@@ -504,7 +544,11 @@ char *save_stats_resources_comp(struct sub_task_data *subtask, int pretty, int t
 	sprintf(tempstr, "\"count\":\"%li\"", subtask->counter);concat_and_free(&msg, tempstr);
 	sprintf(tempstr, ",\"min\":\"%lli\"", subtask->min_read_bytes);concat_and_free(&msg, tempstr);
 	sprintf(tempstr, ",\"max\":\"%lli\"", subtask->max_read_bytes);concat_and_free(&msg, tempstr);
-	sprintf(tempstr, ",\"avg\":\"%lli\"", subtask->accum_read_bytes/subtask->counter);concat_and_free(&msg, tempstr);
+	if(subtask->counter>1){//we not wish to divide by zero
+		sprintf(tempstr, ",\"avg\":\"%lli\"", subtask->accum_read_bytes/subtask->counter);concat_and_free(&msg, tempstr);
+	}else{
+		sprintf(tempstr, ",\"avg\":\"%lli\"", subtask->accum_read_bytes );concat_and_free(&msg, tempstr);
+	}
 	sprintf(tempstr, ",\"sum\":\"%lli\"},", subtask->accum_read_bytes);concat_and_free(&msg, tempstr);
 // -------------------------NET
 	if (pretty==1) concat_and_free(&msg, "\n");
@@ -513,7 +557,11 @@ char *save_stats_resources_comp(struct sub_task_data *subtask, int pretty, int t
 	sprintf(tempstr, "\"count\":\"%li\"", subtask->counter);concat_and_free(&msg, tempstr);
 	sprintf(tempstr, ",\"min\":\"%lli\"", subtask->min_send_bytes);concat_and_free(&msg, tempstr);
 	sprintf(tempstr, ",\"max\":\"%lli\"", subtask->max_send_bytes);concat_and_free(&msg, tempstr);
-	sprintf(tempstr, ",\"avg\":\"%lli\"", subtask->accum_send_bytes/subtask->counter);concat_and_free(&msg, tempstr);
+	if(subtask->counter>1){//we not wish to divide by zero
+		sprintf(tempstr, ",\"avg\":\"%lli\"", subtask->accum_send_bytes/subtask->counter);concat_and_free(&msg, tempstr);
+	}else{
+		sprintf(tempstr, ",\"avg\":\"%lli\"", subtask->accum_send_bytes);concat_and_free(&msg, tempstr);
+	}
 	sprintf(tempstr, ",\"sum\":\"%lli\"}", subtask->accum_send_bytes);concat_and_free(&msg, tempstr);
 //		nets_info->rcv_bytes += temp_rcv_bytes;
 //		nets_info->send_bytes += temp_send_bytes;

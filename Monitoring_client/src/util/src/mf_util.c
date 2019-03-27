@@ -40,7 +40,9 @@ char myfBuffer[255];
 * @return s1 <-- s1 + s2 */
 char* concat_and_free(char **s1, const char *s2){
 	char *result = NULL;
-	unsigned int new_lenght= strlen(s2)+1; //+1 for the null-terminator;
+	unsigned int new_lenght= 1;
+	if(s2 != NULL )
+		new_lenght+=strlen(s2); //+1 for the null-terminator;
 	if(*s1 != NULL){
 		new_lenght+= strlen(*s1);//current lenght
 		if(new_lenght> malloc_usable_size(*s1)){
@@ -62,7 +64,8 @@ char* concat_and_free(char **s1, const char *s2){
 		result[0]='\0';
 	}
 	*s1 = result;
-	strcat(result, s2);
+	if(s2 != NULL )
+		strcat(result, s2);
 	return result;
 }
 

@@ -114,9 +114,9 @@ struct app_report_t *reserve_app_report(const unsigned int num_of_threads, const
 	my_reservation->my_thread_report = (struct Thread_report_t **) malloc(num_of_threads * sizeof(struct Thread_report_t *));
 	for (int i=0;i<num_of_threads;i++){
 		my_reservation->my_thread_report[i] = (struct Thread_report_t *) malloc(sizeof(struct Thread_report_t));
-		my_app_report->my_thread_report[i]->user_label=NULL;
-		my_app_report->my_thread_report[i]->user_value=NULL;
-		my_app_report->my_thread_report[i]->metric_time=NULL;
+		my_reservation->my_thread_report[i]->user_label=NULL;
+		my_reservation->my_thread_report[i]->user_value=NULL;
+		my_reservation->my_thread_report[i]->metric_time=NULL;
 		strcpy(my_reservation->my_thread_report[i]->currentid,currentid);
 		my_reservation->my_thread_report[i]->total_metrics=0;
 	}

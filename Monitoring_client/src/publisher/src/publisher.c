@@ -51,7 +51,7 @@ int check_URL(const char *URL);
 int check_message(const char *message);
 void init_curl(const char *token);
 CURL *prepare_publish(char *URL, char *message, FILE *send_fp, char *operation, const char *token);
-CURL *prepare_query(char* URL, char *operation, const char *token);
+CURL *prepare_query(char* URL, const char *operation, const char *token);
 // static size_t get_stream_data(void *buffer, size_t size, size_t nmemb, char *stream);
 
 /** Callback function for writing with libcurl */
@@ -174,23 +174,27 @@ int reserve_data_struc(struct url_data *data){
 /** send query to the given URL, read back the response string
 * @return 1 on success; otherwise return 0
 * if the token is NULL or empty string, will procedd as not token provided or required*/
-int new_query_json(char *URL, struct url_data *response, char *operation, const char *token) {
+int new_query_json(char *URL, struct url_data *response, const char *operation, const char *token) {
 	struct url_data data;
 	struct url_data rescode;
 	response->size=0;
 	response->data = NULL;
 	response->headercode = NULL;
 
-	if(check_URL(URL)!=SUCCESS)
+	if(check_URL(URL)!=SUCCESS){
+		printf("check_URL Failed.\n");
 		return FAILED;
+	}
 
 	if(reserve_data_struc(&data) == FAILED) {
 		fprintf(stderr, "Failed to allocate memory.\n");
+		printf("Failed to allocate memory (1).\n");
 		return FAILED;
 	}
 	if(reserve_data_struc(&rescode) == FAILED) { //***********************************************************
 		fprintf(stderr, "Failed to allocate memory.\n");
 		free_data_struc(&data);
+		printf("Failed to allocate memory (2).\n");
 		return FAILED;
 	}
 
@@ -199,6 +203,7 @@ int new_query_json(char *URL, struct url_data *response, char *operation, const 
 		free_data_struc(&data);
 		free_data_struc(&rescode);
 		fprintf(stderr, "Failed to allocate memory.\n");
+		printf("Failed to allocate memory (3).\n");
 		return FAILED;
 	}
 
@@ -520,6 +525,7 @@ int query_message_json(char *URL, char *message,const char *filenamepath, struct
 		free(data.headercode); data.headercode=NULL;
 		free(rescode.data); rescode.data=NULL;
 		free(rescode.headercode); rescode.headercode=NULL;
+		if(headers!=NULL) free(headers);
 		return FAILED;
 	}
 
@@ -546,6 +552,7 @@ int query_message_json(char *URL, char *message,const char *filenamepath, struct
 		free(data.headercode); data.headercode=NULL;
 		free(rescode.data); rescode.data=NULL;
 		free(rescode.headercode); rescode.headercode=NULL;
+		if(headers!=NULL) free(headers);
 		return FAILED;
 	}
 	if (strcmp(rescode.headercode, "401") == 0) {
@@ -555,6 +562,7 @@ int query_message_json(char *URL, char *message,const char *filenamepath, struct
 		free(data.headercode); data.headercode=NULL;
 		free(rescode.data); rescode.data=NULL;
 		free(rescode.headercode); rescode.headercode=NULL;
+		if(headers!=NULL) free(headers);
 		return FAILED;
 	}
 
@@ -564,6 +572,7 @@ int query_message_json(char *URL, char *message,const char *filenamepath, struct
 		free(data.headercode); data.headercode=NULL;
 		free(rescode.data); rescode.data=NULL;
 		free(rescode.headercode); rescode.headercode=NULL;
+		if(headers!=NULL) free(headers);
 		return FAILED;
 	}
 	if(response->data !=NULL) free(response->data);
@@ -573,6 +582,7 @@ int query_message_json(char *URL, char *message,const char *filenamepath, struct
 
 	free(data.headercode); data.headercode=NULL;
 	free(rescode.data); rescode.data=NULL;
+	if(headers!=NULL) free(headers);
 	if(response->data == NULL)
 		return FAILED;
 	return SUCCESS;
@@ -782,7 +792,7 @@ CURL *prepare_publish(char *URL, char *message, FILE *send_fp, char *operation, 
 
 /** Prepare for using libcurl without message
 * Leave the token as NULL or empty string if not using tokens*/
-CURL *prepare_query(char* URL, char *operation, const char *token) {
+CURL *prepare_query(char* URL, const char *operation, const char *token) {
 	CURL *curl = curl_easy_init();
 	if(curl) {
 		init_curl(token);//this defined the headers

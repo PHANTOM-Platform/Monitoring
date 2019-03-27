@@ -107,7 +107,7 @@ int get_config_parameters(const char *server,const char *platform_id,const char 
 * Function Definitions
 ******************************************************************************/
 
-struct app_report_t *reserve_app_report(const unsigned int num_of_threads,const char *currentid){
+struct app_report_t *reserve_app_report(const unsigned int num_of_threads, const char *currentid){
 	struct app_report_t *my_reservation = (struct app_report_t *)malloc(2*sizeof(struct app_report_t));
 	my_reservation->num_of_threads=num_of_threads;
 	strcpy(my_reservation->currentid,currentid);
@@ -127,17 +127,35 @@ struct app_report_t *reserve_app_report(const unsigned int num_of_threads,const 
 int free_app_report(struct app_report_t *my_app_report){
 	for (int i=0;i<my_app_report->num_of_threads;i++){
 		for (int j=0;j<my_app_report->my_thread_report[i]->total_metrics;j++){
-			free(my_app_report->my_thread_report[i]->user_label[j]);
-			free(my_app_report->my_thread_report[i]->user_value[j]);
-			free(my_app_report->my_thread_report[i]->metric_time[j]);
+			if(my_app_report->my_thread_report[i]->user_label[j]!=NULL)
+				free(my_app_report->my_thread_report[i]->user_label[j]);
+			my_app_report->my_thread_report[i]->user_label[j]=NULL;
+			if(my_app_report->my_thread_report[i]->user_value[j]!=NULL)
+				free(my_app_report->my_thread_report[i]->user_value[j]);
+			my_app_report->my_thread_report[i]->user_value[j]=NULL;
+			if(my_app_report->my_thread_report[i]->metric_time[j]!=NULL)
+				free(my_app_report->my_thread_report[i]->metric_time[j]);
+			my_app_report->my_thread_report[i]->metric_time[j]=NULL;
 		}
-		free(my_app_report->my_thread_report[i]->user_label);
-		free(my_app_report->my_thread_report[i]->user_value);
-		free(my_app_report->my_thread_report[i]->metric_time);
-		free(my_app_report->my_thread_report[i]);
+		if(my_app_report->my_thread_report[i]->user_label!=NULL)
+			free(my_app_report->my_thread_report[i]->user_label);
+		my_app_report->my_thread_report[i]->user_label=NULL;
+		if(my_app_report->my_thread_report[i]->user_value!=NULL)
+			free(my_app_report->my_thread_report[i]->user_value);
+		my_app_report->my_thread_report[i]->user_value=NULL;
+		if(my_app_report->my_thread_report[i]->metric_time!=NULL)
+			free(my_app_report->my_thread_report[i]->metric_time);
+		my_app_report->my_thread_report[i]->metric_time=NULL;
+		if(my_app_report->my_thread_report[i]!=NULL)
+			free(my_app_report->my_thread_report[i]);
+		my_app_report->my_thread_report[i]=NULL;
 	}
-	free(my_app_report->my_thread_report);
-	free(my_app_report);
+	if(my_app_report->my_thread_report!=NULL)
+		free(my_app_report->my_thread_report);
+	my_app_report->my_thread_report=NULL;
+	if(my_app_report!=NULL)
+		free(my_app_report);
+	my_app_report=NULL;
 	return 0;
 }
 
@@ -195,7 +213,11 @@ char* update_exec(const char *server, const char *filenamepath, const char * tok
 	response.size=0;
 	response.data=NULL;
 	response.headercode=NULL;
-	URL=concat_and_free(&URL, server);
+	if(server!=NULL){
+		URL=concat_and_free(&URL, server);
+	}else{
+		printf(" update_exec server is NULL\n");return NULL;
+	}
 	URL=concat_and_free(&URL, "/update_exec");
 
 // 	printf(" URL: %s\n", URL );
@@ -203,7 +225,7 @@ char* update_exec(const char *server, const char *filenamepath, const char * tok
 // 	printf(" operation: %s\n", operation );
 // 	printf(" token: %s\n", token );
 
-	query_message_json(URL,NULL, filenamepath, &response, operation, token); //*****
+	query_message_json(URL, NULL, filenamepath, &response, operation, token); //*****
 // 	printf(" response is %s\n",response.data);
 
 	if(URL!=NULL) free(URL);
@@ -211,10 +233,10 @@ char* update_exec(const char *server, const char *filenamepath, const char * tok
 	if(response.headercode!=NULL) free(response.headercode);
 	response.headercode=NULL;
 	if(response.data == NULL) {
-		printf("ERROR: Cannot register execution\n");
+		printf("ERROR: Cannot register execution ..\n");
 		return NULL;
 	}else if(response.data[0] == '\0') {
-		printf("ERROR: Cannot register execution\n");
+		printf("ERROR: Cannot register execution .\n");
 		return NULL;
 	}
 	char* p= response.data;
@@ -229,8 +251,17 @@ char* starting_exec(const char *server, const char *exec_id, const char * token)
 	response.data=NULL;
 	response.headercode=NULL;
 	URL=concat_and_free(&URL, server);
+	if(server!=NULL){
+		URL=concat_and_free(&URL, server);return NULL;
+	}else{
+		printf(" starting_exec server is NULL\n");
+	}
 	URL=concat_and_free(&URL, "/started_exec?exec_id=\"");
-	URL=concat_and_free(&URL, exec_id);
+	if(exec_id!=NULL){
+		URL=concat_and_free(&URL, exec_id);
+	}else{
+		printf(" starting_exec exec_id is NULL\n");
+	}
 	URL=concat_and_free(&URL, "\"");
 	char operation[]="POST";
 	int result=query_message_json(URL,NULL, NULL, &response, operation, token); //*****
@@ -239,7 +270,7 @@ char* starting_exec(const char *server, const char *exec_id, const char * token)
 	if(response.headercode!=NULL) free(response.headercode);
 	response.headercode=NULL;
 	if(result!=SUCCESS || response.data==NULL){
-		printf("ERROR: Cannot register execution\n");
+		printf("ERROR: Cannot register execution ...\n");
 		return NULL;
 	}else if(response.data[0] == '\0') {
 		printf("ERROR: Cannot register execution\n");
@@ -302,7 +333,11 @@ char *mf_exec_stats( struct app_report_t my_app_report, const char *application_
 	double timestamp_ms = timestamp.tv_sec * 1000.0 + (double)(timestamp.tv_nsec / 1.0e6);
 // 	concat_and_free(&json_msg, "\"local_timestamp\":\"%.1f\"", timestamp_ms);
 	concat_and_free(&json_msg, "{\n\t\"app\":\"");
-	concat_and_free(&json_msg, application_id);
+	if(application_id!=NULL){
+		concat_and_free(&json_msg, application_id);
+	}else{
+		printf(" mf_exec_stats application_id is NULL\n");
+	}
 	concat_and_free(&json_msg, "\",\n");
 	concat_and_free(&json_msg, "\t\"device\":\"");
 	concat_and_free(&json_msg, platform_id);
@@ -597,14 +632,23 @@ char* mf_query_workflow(const char *server, const char *application_id ){
 	response.size=0;
 	response.data=NULL;
 	response.headercode=NULL;
-	URL=concat_and_free(&URL, server);
+	if(server!=NULL){
+		URL=concat_and_free(&URL, server);
+	}else{
+		printf(" mf_query_workflow server is NULL\n");return NULL;
+	}
 	URL=concat_and_free(&URL, "/v1/phantom_mf/workflows/");
 	URL=concat_and_free(&URL, application_id);
+	if(application_id!=NULL){
+		URL=concat_and_free(&URL, application_id);
+	}else{
+		printf(" mf_query_workflow application_id is NULL\n");
+	}
 // 	printf("******* register workflow ******\n");
 	char operation[]="GET";
 // 	new_query_json(URL, &response, operation,NULL); //********2 times ??? ****************************************
 	if(new_query_json(URL, &response, operation, NULL) > 0) {
-		printf("ERROR: query with %s failed.\n", URL);
+		printf("ERROR: query GET \"%s\" failed.\n", URL);
 		if(URL!=NULL) free(URL);
 		URL=NULL;
 		if(response.data!=NULL) { free(response.data); response.data=NULL; }
@@ -686,18 +730,30 @@ char* mf_send(const char *server,const char *application_id,const char *componen
 	char *msg = NULL;
 	msg=concat_and_free(&msg, "{\"application\":\"");
 	msg=concat_and_free(&msg, application_id);
-	msg=concat_and_free(&msg, "\", \"task\": \"");
-	msg=concat_and_free(&msg, component_id);
-	msg=concat_and_free(&msg, "\", \"host\": \"");
-	msg=concat_and_free(&msg, platform_id);
+	if(component_id==NULL){
+		printf(" mf_send component_id is NULL\n");
+	}else{
+		msg=concat_and_free(&msg, "\", \"task\": \"");
+		msg=concat_and_free(&msg, component_id);
+	}
+	if(platform_id==NULL){
+		printf(" mf_send platform_id is NULL\n");
+	}else{
+		msg=concat_and_free(&msg, "\", \"host\": \"");
+		msg=concat_and_free(&msg, platform_id);
+	}
 	msg=concat_and_free(&msg, "\"}");
-	URL=concat_and_free(&URL, server);
+	if(server!=NULL){
+		URL=concat_and_free(&URL, server);
+	}else{
+		printf(" mf_send server is NULL\n");return NULL;
+	}
 	URL=concat_and_free(&URL, "/v1/phantom_mf/experiments/");
 	URL=concat_and_free(&URL, application_id);
 // 	printf("******* new_create_new_experiment ******\n");
 	char operation[]="POST";
 	if(query_message_json(URL, msg, NULL, &response, operation, token)==FAILED){
-		printf("ERROR: Cannot create new experiment for application %s\n", application_id);
+		printf("ERROR: Cannot create new experiment for application %s, failed response\n", application_id);
 		if(msg!=NULL) {free(msg); msg=NULL;}
 		if(URL!=NULL) {free(URL); URL=NULL;}
 		if(response.data!=NULL) {free(response.data); response.data=NULL;}
@@ -741,7 +797,11 @@ char* mf_send(const char *server,const char *application_id,const char *componen
 		if(drp->d_name[0]!='.'){//not wish to process (. .. or hidden files)
 			filename=concat_and_free(&filename, DataPath);
 			filename=concat_and_free(&filename, "/");
-			filename=concat_and_free(&filename, drp->d_name);
+			if(drp->d_name!=NULL){
+				filename=concat_and_free(&filename, drp->d_name);
+			}else{
+				printf(" mf_send drp->d_name is NULL\n");
+			}
 			static_string=concat_and_free(&static_string, "\"WorkflowID\":\"");//****
 			static_string=concat_and_free(&static_string, application_id);
 			static_string=concat_and_free(&static_string, "\", \"TaskID\": \"");
@@ -1244,7 +1304,7 @@ int register_workflow(const char *server,const char *regplatformid,const  char *
 	char optimization[]="Time";
 	char tasks_desc[]="[{\"device\":\"demo_desktop\", \"exec\":\"hello_world\", \"cores_nr\": \"2\"}]";
 // 	printf("\nQUERY FOR WORKFLOW ...\n");
-	char* response=query_workflow( server, appid);
+	char* response=query_workflow(server, appid);
 	if (response==NULL) {
 		printf("ERROR registering workflow server: %s\n",server);
 		return 1;

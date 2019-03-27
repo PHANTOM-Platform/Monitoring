@@ -25,7 +25,7 @@ struct url_data {
 };
 
 /** if the token is NULL or empty string, will procedd as not token provided or required*/
-int new_query_json(char *URL, struct url_data *response, char *operation, const char *token);
+int new_query_json(char *URL, struct url_data *response, const char *operation, const char *token);
 
 // int query_json(char *URL, char *response);
 

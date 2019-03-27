@@ -114,6 +114,9 @@ struct app_report_t *reserve_app_report(const unsigned int num_of_threads, const
 	my_reservation->my_thread_report = (struct Thread_report_t **) malloc(num_of_threads * sizeof(struct Thread_report_t *));
 	for (int i=0;i<num_of_threads;i++){
 		my_reservation->my_thread_report[i] = (struct Thread_report_t *) malloc(sizeof(struct Thread_report_t));
+		my_app_report->my_thread_report[i]->user_label=NULL;
+		my_app_report->my_thread_report[i]->user_value=NULL;
+		my_app_report->my_thread_report[i]->metric_time=NULL;
 		strcpy(my_reservation->my_thread_report[i]->currentid,currentid);
 		my_reservation->my_thread_report[i]->total_metrics=0;
 	}
@@ -184,9 +187,9 @@ int register_user_metric(struct Thread_report_t *my_thread_report, const char *t
 		my_thread_report->user_value  = (char **) realloc(my_thread_report->user_value, (n+1)  * sizeof(char*));
 		my_thread_report->metric_time = (char **) realloc(my_thread_report->metric_time, (n+1) * sizeof(char*));
 	}
-		my_thread_report->user_label[n]  = (char *) malloc(40 * sizeof(char));
-		my_thread_report->user_value[n]  = (char *) malloc(40 * sizeof(char));
-		my_thread_report->metric_time[n] = (char *) malloc(40 * sizeof(char));
+	my_thread_report->user_label[n]  = (char *) malloc(40 * sizeof(char));
+	my_thread_report->user_value[n]  = (char *) malloc(40 * sizeof(char));
+	my_thread_report->metric_time[n] = (char *) malloc(40 * sizeof(char));
 	my_thread_report->total_metrics=n+1;
 	strcpy(my_thread_report->metric_time[n], time); // <<-- TIME
 	strcpy(my_thread_report->user_label[n], label); // <<-- LABEL

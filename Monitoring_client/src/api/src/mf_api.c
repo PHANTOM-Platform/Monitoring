@@ -92,7 +92,7 @@ char parameters_name[9][32] = {"MAX_CPU_POWER", "MIN_CPU_POWER",
 char DataPath[256];
 pthread_t threads[MAX_NUM_METRICS];
 int num_threads;
-int pid;
+int pid=0;//considered as undefined if equal zero
 
 FILE *logFile=NULL;
 
@@ -197,7 +197,7 @@ char* update_exec(const char *server, const char *filenamepath, const char * tok
 	response.headercode=NULL;
 	URL=concat_and_free(&URL, server);
 	URL=concat_and_free(&URL, "/update_exec");
-	
+
 // 	printf(" URL: %s\n", URL );
 // 	printf(" filenamepath: %s\n", filenamepath );
 // 	printf(" operation: %s\n", operation );
@@ -205,7 +205,7 @@ char* update_exec(const char *server, const char *filenamepath, const char * tok
 
 	query_message_json(URL,NULL, filenamepath, &response, operation, token); //*****
 // 	printf(" response is %s\n",response.data);
-	
+
 	if(URL!=NULL) free(URL);
 	URL=NULL;
 	if(response.headercode!=NULL) free(response.headercode);
@@ -289,7 +289,7 @@ void calculate_date(long long int current, struct Mydate *exampledate) {
 
 #define FLOAT_TO_LLINT(x) ((x)>=0?(long long int)((x)+0.5):(long long int)((x)-0.5))
 
-char *mf_exec_stats( struct app_report_t my_app_report, const char *application_id, const char *exec_id, const char *platform_id ){
+char *mf_exec_stats( struct app_report_t my_app_report, const char *application_id, const char *exec_id, const char *platform_id){
 	/*create and open the file*/
 	char *json_msg = NULL;
 	char tempstr[2560] = {'\0'};
@@ -632,7 +632,7 @@ char* mf_query_workflow(const char *server, const char *application_id ){
 * @return the path to query the workflow.
 */
 char* mf_new_workflow(const char *server, const char *application_id, const char *author_id,
-		const char *optimization, const char *tasks_desc, const char *token) {
+	const char *optimization, const char *tasks_desc, const char *token) {
 	/* create an workflow */
 	char *URL = NULL;
 	struct url_data response;
@@ -803,7 +803,7 @@ static int api_prepare(char *Data_path){
 	memcpy(Data_path, buf_2, ptr);
 	/*create logfile*/
 	char logFileName[256] = {'\0'};
-	sprintf(logFileName, "%s/log.txt", Data_path);
+	sprintf(logFileName, "%s/log_%i.txt", Data_path, pid);
 	logFile = fopen(logFileName, "w");
 	if (logFile == NULL)
 		printf("Could not create log file %s", logFileName);
@@ -864,6 +864,7 @@ void debugging_mf_configs(struct json_mf_config **mf_config,const unsigned int t
 * @return SUCCESS(0) if succeed, otherwise returns FAILED
 */
 int get_config_parameters(const char *resource_manager,const char *platform_id,const char *token){
+		return SUCCESS;
 	/* send the query and retrieve the response string */
 // 	char resoucemanager_path[]="query_device_mf_config?pretty=true\\&device=\"";//pretty is not needed
 	if(strlen(platform_id)==0)
@@ -1179,7 +1180,8 @@ void register_end_component(char *currentid, struct Thread_report_t single_threa
 }
 
 //it calls the mf_end and mf_send and frees memory, and closes logfile
-void monitoring_end(const char *mf_server, const char *exec_server, const char *appid, const char *exec_id, const char *execfile, const char *regplatformid, const char *token, struct app_report_t *my_app_report){
+void monitoring_end(const char *mf_server, const char *exec_server, const char *appid, const char *exec_id, const char *execfile, 
+		const char *regplatformid, const char *token, struct app_report_t *my_app_report){
 	mf_end();
 	/* MONITORING SEND */
 	char *experiment_id = mf_send(mf_server, appid, execfile, regplatformid, token);
@@ -1190,23 +1192,26 @@ void monitoring_end(const char *mf_server, const char *exec_server, const char *
 		printf("my_app_report NULL!!\n");
 		return;
 	}
-	char *json_msg=mf_exec_stats(*my_app_report, appid, exec_id, regplatformid);
+
 	//SAVE the FILE for forwarding it to the Execution Manager
 	char FileName[256] = {'\0'};
-	sprintf(FileName, "%s", "exec_stats.json");
+	sprintf(FileName, "exec_stats_%i.json", pid);
 	FILE *fp = fopen(FileName, "a"); //append data to the end of the file
 	if (fp == NULL) {
 		printf("ERROR: Could not create file: %s\n", FileName);
 		return;
 	}
+	char *json_msg=mf_exec_stats(*my_app_report, appid, exec_id, regplatformid);
 	fprintf(fp,"%s",json_msg);
 	/*close the file*/
 	fclose(fp);
 
-	char* resp= update_exec(exec_server, FileName, token);
-// 	printf("%s",json_msg);
+	char* resp= update_exec(exec_server, FileName, token);// this sends the file to the server.
+	if (resp!= NULL)//if NULL the data was NOT uploaded to the server, may because the server is not reachable
+	unlink(FileName); //delete the temporal file wiht statistics
 	free(resp);
 	free(json_msg);
+	printf("\n");
 	for(int i=0;i<my_app_report->num_of_threads;i++){
 		printf(" Execution label of the workflow: \"%s\"\n", my_app_report->currentid);
 		printf("   THREAD num %i, name : %s\n",i, my_app_report->my_thread_report[i]->taskid);
@@ -1215,8 +1220,13 @@ void monitoring_end(const char *mf_server, const char *exec_server, const char *
 			printf("   %s : %s\n", my_app_report->my_thread_report[i]->user_label[0], my_app_report->my_thread_report[i]->user_value[0]);
 		printf("   duration of the component : %lli us\n", (my_app_report->my_thread_report[i]->end_time- my_app_report->my_thread_report[i]->start_time)/1000);
 	}
-	free_app_report(my_app_report);
-	free_mem_report(mmy_task_data_a);
+	if(my_app_report!=NULL)
+		free_app_report(my_app_report);
+	my_app_report=NULL;
+	if(mmy_task_data_a!=NULL)
+		free_mem_report(mmy_task_data_a);
+	mmy_task_data_a=NULL;
+	
 }
 
 

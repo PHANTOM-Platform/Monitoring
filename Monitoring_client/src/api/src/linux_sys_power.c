@@ -712,9 +712,9 @@ int calculate_and_update(resources_stats *before, resources_stats *after, resour
 }
 
 unsigned int numcores(char *comout, size_t *comalloc) {
-	const char command[]= "nproc;";
+	const char command[]= "grep -c ^processor /proc/cpuinfo;";
 	execute_command(command, comout, comalloc);
-	return atoi(comout);;
+	return atoi(comout);
 }
 
 
@@ -800,8 +800,8 @@ void procesa_cpuinfo( char *comout, size_t *comalloc, unsigned int argmaxcores, 
 		contador=0;
 		while((comout[i]!='\0')&&(i<comlen)){
 			if(contador>= maxcores){
-				printf(" counter of freqs exceds maxcores\n");
-				exit(1);
+				printf(" counter of freqs exceds maxcores %i\n",maxcores);
+				return;
 			}
 			while (comout[i]==' ')
 				i++;

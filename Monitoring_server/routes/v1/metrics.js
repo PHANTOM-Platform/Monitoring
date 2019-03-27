@@ -124,6 +124,26 @@ router.get('/:workflowID/:taskID/:experimentID', function(req, res, next) {
 	});
 });
 
+
+function lowercase(input_string){
+	var result="";
+	for (var j = 0; j < input_string.length; j++) {
+// 		input_string.replaceAt(j, character.toLowerCase());
+		var charCode = input_string.charCodeAt(j);
+		if (charCode < 65 || charCode > 90) {
+			// NOT an uppercase ASCII character
+			// Append the original character
+			result += input_string.substr(j, 1);
+		} else {
+			// Character in the ['A'..'Z'] range
+			// Append the lowercase character
+			result += String.fromCharCode(charCode + 32);
+		}
+	}
+	return (result);
+}
+
+
 /**
 * @api {post} /metrics 3. Send an array of metrics
 * @apiVersion 1.0.0
@@ -185,16 +205,17 @@ router.post('/', function(req, res, next) {
 	var client = new elasticsearch.Client({
 		host: "localhost:9400",
 		log: 'error'
-	}); 
+	});
 	
- 
+//  	console.log("[metrics] data is "+JSON.stringify(data)+" \n");
+	
 	const contentType_text_plain = 'text/plain';
 // 	console.log("data is "+JSON.stringify(data)+"\n");
 // // 			res.end("data is "+JSON.stringify(data)+"\n", 'utf-8');
 // 			res.writeHead(600, { 'Content-Type': contentType_text_plain });
 // 			res.end("data is " +"\n");
 // 			return("data is " +"\n");
-	if(data.length>1){	
+	if(data.length>1){
 		var tmp = {};
 		tmp.index = {};
 		for (i = 0; i != data.length; ++i) {
@@ -205,6 +226,7 @@ router.post('/', function(req, res, next) {
 			} else {
 				index = index + '_all';
 			}
+			index=lowercase(index); //index can not have capital letters !!!
 			/*
 			if(data[i]['@timestamp'] == undefined) {
 			data[i]['@timestamp'] = dateFormat(new Date(), "yyyy-mm-dd'T'HH:MM:ss.l");
@@ -233,6 +255,7 @@ router.post('/', function(req, res, next) {
 				return next(error);
 			}
 			var json = [];
+// 			console.log("[metrics] response is "+JSON.stringify(response)+" \n");
 			for (var i in response.items) {
 				json.push(mf_server + '/phantom_mf/profiles/' +
 				response.items[i].create._index.replace('_all', '/all') +

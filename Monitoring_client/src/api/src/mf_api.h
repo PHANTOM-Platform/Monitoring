@@ -41,12 +41,28 @@ typedef struct app_report_t{
 	unsigned int num_of_threads;
 	double timestamp_ms;
 	char currentid[100];
+	float total_cpu_energy;
+	float pid_mem_power, pid_disk_power;// pid_cpu_power,duration, sys_cpu_power,
+	long long int pid_l2_cache_misses;
+	long long int read_bytes;
+	long long int write_bytes;
+	long long int cancelled_writes;
+	float pid_net_power;
+	float total_hd_energy;
+	float total_watts;
 }app_report;
 
 typedef struct metric_query_t {
 	char *query;
 	int multiple_fields;
 } metric_query;
+
+typedef struct each_metric_t {
+	long sampling_interval;				//in milliseconds
+	char metric_name[NAME_LENGTH];		//user defined metrics
+	long long int start_app_time;
+	struct app_report_t *my_app_report;
+} each_metric;
 
 struct app_report_t *reserve_app_report(const unsigned int num_of_threads,const char *currentid);
 int free_app_report(struct app_report_t *my_app_report);
@@ -65,7 +81,7 @@ void submit_metric(metric_query *user_query);
 * requires: #include <sys/time.h> */
 long long int mycurrenttime (void);
 
-char *mycurrenttime_str (void) ;
+char *mycurrenttime_str (void);
 void start_monitoring(char *server, char *regplatformid);
 
 void user_metrics_buffer(struct Thread_report_t single_thread_report);

@@ -75,12 +75,6 @@ char *mycurrenttime_str (void) {
 /*******************************************************************************
 * Variable Declarations
 ******************************************************************************/
-typedef struct each_metric_t {
-	long sampling_interval;				//in milliseconds
-	char metric_name[NAME_LENGTH];		//user defined metrics
-	long long int start_app_time;
-} each_metric;
-
 int running;
 int keep_local_data_flag = 1;
 char parameters_name[9][32] = {"MAX_CPU_POWER", "MIN_CPU_POWER",
@@ -223,23 +217,22 @@ char* update_exec(const char *server, const char *filenamepath, const char * tok
 	}
 	URL=concat_and_free(&URL, "/update_exec");
 
-// 	printf(" URL: %s\n", URL );
-// 	printf(" filenamepath: %s\n", filenamepath );
-// 	printf(" operation: %s\n", operation );
-// 	printf(" token: %s\n", token );
+// 	printf(" URL: %s\n", URL);
+// 	printf(" filenamepath: %s\n", filenamepath);
+// 	printf(" operation: %s\n", operation);
+// 	printf(" token: %s\n", token);
 
 	query_message_json(URL, NULL, filenamepath, &response, operation, token); //*****
-// 	printf(" response is %s\n",response.data);
 
 	if(URL!=NULL) free(URL);
 	URL=NULL;
 	if(response.headercode!=NULL) free(response.headercode);
 	response.headercode=NULL;
 	if(response.data == NULL) {
-		printf("ERROR: Cannot register execution ..\n");
+		printf("ERROR: Cannot register execution on server %s\n", server);
 		return NULL;
 	}else if(response.data[0] == '\0') {
-		printf("ERROR: Cannot register execution .\n");
+		printf("ERROR: Cannot register execution on  server %s\n", server);
 		return NULL;
 	}
 	char* p= response.data;
@@ -326,7 +319,7 @@ void calculate_date(long long int current, struct Mydate *exampledate) {
 
 #define FLOAT_TO_LLINT(x) ((x)>=0?(long long int)((x)+0.5):(long long int)((x)-0.5))
 
-char *mf_exec_stats( struct app_report_t my_app_report, const char *application_id, const char *exec_id, const char *platform_id){
+char *mf_exec_stats(struct app_report_t my_app_report, const char *application_id, const char *exec_id, const char *platform_id){
 	/*create and open the file*/
 	char *json_msg = NULL;
 	char tempstr[2560] = {'\0'};
@@ -356,7 +349,7 @@ char *mf_exec_stats( struct app_report_t my_app_report, const char *application_
 	// We convert Epoch into timestamp format, required by ElasticSearch:
 	calculate_date(FLOAT_TO_LLINT(my_app_report.timestamp_ms), &exampledate);
 	sprintf(tempstr," %u-%02u-%02uT%02u:%02u:%02u.%03u",exampledate.year,exampledate.month,
-		exampledate.day, exampledate.hour, exampledate.min , exampledate.sec, exampledate.msec);
+		exampledate.day, exampledate.hour, exampledate.min, exampledate.sec, exampledate.msec);
 	concat_and_free(&json_msg, tempstr);
 	concat_and_free(&json_msg, "\",\n");
 	concat_and_free(&json_msg, "\t\"end_timestamp\": \"");
@@ -364,13 +357,43 @@ char *mf_exec_stats( struct app_report_t my_app_report, const char *application_
 	// We convert Epoch into timestamp format, required by ElasticSearch:
 	calculate_date(FLOAT_TO_LLINT(timestamp_ms), &exampledate);
 	sprintf(tempstr," %u-%02u-%02uT%02u:%02u:%02u.%03u",exampledate.year,exampledate.month,
-		exampledate.day, exampledate.hour, exampledate.min , exampledate.sec, exampledate.msec);
+		exampledate.day, exampledate.hour, exampledate.min, exampledate.sec, exampledate.msec);
 	concat_and_free(&json_msg, tempstr);
 	concat_and_free(&json_msg, "\",\n");
+
 	concat_and_free(&json_msg, "\t\"energy\": \"");
-	sprintf(tempstr, "%.2f", 22.12);
+	sprintf(tempstr, "%.2f", my_app_report.total_watts);
 	concat_and_free(&json_msg, tempstr);
 	concat_and_free(&json_msg, "\",\n");
+
+	concat_and_free(&json_msg, "\t\"cpu_power_consumption\": \"");
+	sprintf(tempstr, "%.2f", my_app_report.total_cpu_energy);
+	concat_and_free(&json_msg, tempstr);
+	concat_and_free(&json_msg, "\",\n");
+	
+	concat_and_free(&json_msg, "\t\"io_power_consumption\": \"");
+	sprintf(tempstr, "%.2f", my_app_report.total_hd_energy);
+	concat_and_free(&json_msg, tempstr);
+	concat_and_free(&json_msg, "\",\n");
+	
+	concat_and_free(&json_msg, "\t\"mem_power_consumption\": \"");
+	sprintf(tempstr, "%.2f", my_app_report.pid_mem_power);
+	concat_and_free(&json_msg, tempstr);
+	concat_and_free(&json_msg, "\",\n");
+	
+	concat_and_free(&json_msg, "\t\"net_power_consumption\": \"");
+	sprintf(tempstr, "%.2f", my_app_report.pid_net_power);
+	concat_and_free(&json_msg, tempstr);
+	concat_and_free(&json_msg, "\",\n");
+
+	concat_and_free(&json_msg, "\t\"cost_power_consumption\": \"");
+	sprintf(tempstr, "%.2f", my_app_report.total_watts*0.25/(1000.0*3600.0));
+	concat_and_free(&json_msg, tempstr);
+	concat_and_free(&json_msg, "\",\n");
+
+// 		printf(" pidpower %.3f J",my_app_report->pid_disk_power);
+// 		printf(" time %.3f s\n", (actual_time - start_app_time)/(1.0e9) );
+	
 	// 2- read the duration_components, and remove the fields
 	concat_and_free(&json_msg, "\t\"component_stats\": [\n");
 	long long int end_time = mycurrenttime();
@@ -567,11 +590,12 @@ char *mf_start(const char *server, const char *exec_server, const char *exec_id,
 	keep_local_data_flag = m->local_data_storage;
 	for (t = 0; t < num_threads; t++) {
 		/*prepare the argument for the thread*/
+		each_m[t]->my_app_report=my_app_report;//all share the memory, but each one can write only their own fields !!!
 		each_m[t]->start_app_time=start_app_time;
 		each_m[t]->sampling_interval = m->sampling_interval[t];
 		strcpy(each_m[t]->metric_name, m->metrics_names[t]);
 		/*create the thread and pass associated arguments */
-		iret[t] = pthread_create(&threads[t], NULL, MonitorStart, (each_m[t]));
+		iret[t] = pthread_create(&threads[t], NULL, MonitorStart, (each_m[t]));// plus struct app_report_t *my_app_report, for add the power consumption !!
 		if (iret[t]) {
 			printf("ERROR: pthread_create failed for %s\n", strerror(iret[t]));
 			if(each_m[t]!=NULL)
@@ -896,7 +920,7 @@ static void *MonitorStart(void *arg) {
 		xlnx_monitor(DataPath, metric->sampling_interval);
 	} else if(strcmp(metric->metric_name, METRIC_NAME_3) == 0) {
 //  		printf("Starting monitoring modul %s\n",METRIC_NAME_3);
-		power_monitor(pid, DataPath, metric->sampling_interval, metric->start_app_time);
+		power_monitor(pid, DataPath, metric->sampling_interval, metric->start_app_time, metric->my_app_report ); //struct app_report_t *my_app_report
 #ifdef NVML
 #if NVML == yes
 	} else if(strcmp(metric->metric_name, METRIC_NAME_4) == 0) {
@@ -1291,14 +1315,15 @@ void monitoring_end(const char *mf_server, const char *exec_server, const char *
 			mmy_task_data_a=NULL;
 		return;
 	}
+	
 	char *json_msg=mf_exec_stats(*my_app_report, appid, exec_id, regplatformid);
 	fprintf(fp,"%s",json_msg);
 	/*close the file*/
 	fclose(fp);
 
 	char* resp= update_exec(exec_server, FileName, token);// this sends the file to the server.
-	if (resp!= NULL)//if NULL the data was NOT uploaded to the server, may because the server is not reachable
-	unlink(FileName); //delete the temporal file wiht statistics
+// 	if (resp!= NULL)//if NULL the data was NOT uploaded to the server, may because the server is not reachable
+// 		unlink(FileName); //delete the temporal file with statistics
 	free(resp);
 	free(json_msg);
 	printf("\n");

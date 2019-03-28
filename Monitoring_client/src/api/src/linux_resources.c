@@ -1123,6 +1123,11 @@ unsigned int procesa_pid_load(int pid, unsigned int argmaxcores, struct task_dat
 							j=my_task_data->totaltid;
 							my_task_data->totaltid=my_task_data->totaltid+1;
 							my_task_data->subtask[j]->starttime=actual_time;
+							
+						my_task_data->subtask[j]->min_send_bytes=0;
+						my_task_data->subtask[j]->send_bytes=0;
+						my_task_data->subtask[j]->max_send_bytes =0;	
+							
 						my_task_data->subtask[j]->accum_read_bytes =0;
 						my_task_data->subtask[j]->accum_write_bytes =0;
 						my_task_data->subtask[j]->before_accum_read_bytes = my_task_data->subtask[j]->accum_read_bytes;
@@ -1206,8 +1211,13 @@ unsigned int procesa_pid_load(int pid, unsigned int argmaxcores, struct task_dat
 	for(i=0;i<maxcores;i++) {
 		my_task_data->total_load_cpu+=my_task_data->cores[i].total_load_core;
 		long int freqs=my_task_data->cores[i].core_freq;
+		if(param_energy.freq_max<=param_energy.freq_min){
+		my_task_data->cores[i].total_joules_core=
+			my_task_data->cores[i].total_load_core*(param_energy.MIN_CPU_POWER);	
+		}else{
 		my_task_data->cores[i].total_joules_core=
 			my_task_data->cores[i].total_load_core*(param_energy.MIN_CPU_POWER + power_range * (freqs-param_energy.freq_min)/(param_energy.freq_max-param_energy.freq_min))/100.0; // in milliJoule
+		}
 		if(my_task_data->cores[i].time_of_last_measured!=0){
 			long long int total_time = (actual_time - my_task_data->cores[i].time_of_last_measured);
 			my_task_data->cores[i].time_between_measures=total_time;
@@ -1264,15 +1274,17 @@ void procesa_task_io(task_data *my_task_data ) {
 }
 
 void free_mem_report(struct task_data_t *my_task_data_a){
-	for(int i=0;i<my_task_data_a->maxprocesses;i++){
-		free(my_task_data_a->subtask[i]);
-		free(my_task_data_a->task_def[i]);
-	}
-	free(my_task_data_a->subtask);
-	free(my_task_data_a->task_def);
+// 	for(int i=0;i<my_task_data_a->maxprocesses;i++){
+// 		free(my_task_data_a->subtask[i]);
+// 		free(my_task_data_a->task_def[i]);
+// 	}
+// 	free(my_task_data_a->subtask);
+// 	free(my_task_data_a->task_def);
 }
 
 void init_stats(task_data *my_task_data_a){
+	energy_model param_energy;
+	param_energy.freq_min=400000;
 	my_task_data_a->maxprocesses =30;
 	my_task_data_a->maxcores=30;
 	my_task_data_a->subtask = (struct sub_task_data **) malloc( my_task_data_a->maxprocesses * sizeof(struct sub_task_data *));
@@ -1282,6 +1294,13 @@ void init_stats(task_data *my_task_data_a){
 		my_task_data_a->task_def[i] = (struct sub_task_user_def *) malloc(sizeof(struct sub_task_user_def));
 	}
 	my_task_data_a->cores = (struct cores_data *) malloc( my_task_data_a->maxcores * sizeof(struct cores_data));
+	
+	for (int i=0; i<my_task_data_a->maxcores; i++) {
+		my_task_data_a->cores[i].total_joules_core=0;
+		my_task_data_a->cores[i].total_load_core=0;
+		my_task_data_a->cores[i].time_of_last_measured=0;
+		my_task_data_a->cores[i].core_freq=param_energy.freq_min;
+	}
 	my_task_data_a->totaltid=0;
 	my_task_data_a->maxtotaltid=1;
 	my_task_data_a->first_start=0;
@@ -1292,7 +1311,7 @@ void init_stats(task_data *my_task_data_a){
 
 void stats_sample(const unsigned int pids, task_data *my_task_data) {
 	energy_model param_energy;
-	param_energy.freq_min=400000;
+	param_energy.freq_min=400000;  //<<---- warning, also update in init_stats !!!
 	param_energy.freq_max=2800000;
 
 	param_energy.MAX_CPU_POWER=55.5/4.0;//[0] <--- per core

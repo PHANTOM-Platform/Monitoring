@@ -255,7 +255,10 @@ char* starting_exec(const char *server, const char *exec_id, const char * token)
 	response.headercode=NULL;
 	URL=concat_and_free(&URL, server);
 	if(server!=NULL){
-		URL=concat_and_free(&URL, server);return NULL;
+		URL=concat_and_free(&URL, server);
+		if(URL!=NULL) free(URL);
+		URL=NULL;
+		return NULL;
 	}else{
 		printf(" starting_exec server is NULL\n");
 	}
@@ -267,7 +270,7 @@ char* starting_exec(const char *server, const char *exec_id, const char * token)
 	}
 	URL=concat_and_free(&URL, "\"");
 	char operation[]="POST";
-	int result=query_message_json(URL,NULL, NULL, &response, operation, token); //*****
+	int result=query_message_json(URL, NULL, NULL, &response, operation, token); //*****
 	if(URL!=NULL) free(URL);
 	URL=NULL;
 	if(response.headercode!=NULL) free(response.headercode);
@@ -893,7 +896,7 @@ static void *MonitorStart(void *arg) {
 		xlnx_monitor(DataPath, metric->sampling_interval);
 	} else if(strcmp(metric->metric_name, METRIC_NAME_3) == 0) {
 //  		printf("Starting monitoring modul %s\n",METRIC_NAME_3);
-		power_monitor(pid, DataPath, metric->sampling_interval,  metric->start_app_time );
+		power_monitor(pid, DataPath, metric->sampling_interval, metric->start_app_time);
 #ifdef NVML
 #if NVML == yes
 	} else if(strcmp(metric->metric_name, METRIC_NAME_4) == 0) {
@@ -1253,6 +1256,16 @@ void monitoring_end(const char *mf_server, const char *exec_server, const char *
 	experiment_id=NULL;
 	if(my_app_report==NULL) {
 		printf("my_app_report NULL!!\n");
+		for(int i=0;i<mmy_task_data_a->maxprocesses;i++){
+			free(mmy_task_data_a->subtask[i]);
+			free(mmy_task_data_a->task_def[i]);
+		}
+		free(mmy_task_data_a->cores);
+		free(mmy_task_data_a->subtask);
+		free(mmy_task_data_a->task_def);
+		if(mmy_task_data_a!=NULL)
+			free(mmy_task_data_a);
+		mmy_task_data_a=NULL;
 		return;
 	}
 
@@ -1262,6 +1275,20 @@ void monitoring_end(const char *mf_server, const char *exec_server, const char *
 	FILE *fp = fopen(FileName, "a"); //append data to the end of the file
 	if (fp == NULL) {
 		printf("ERROR: Could not create file: %s\n", FileName);
+			if(my_app_report!=NULL)
+				free_app_report(my_app_report);
+			my_app_report=NULL;
+
+			for(int i=0;i<mmy_task_data_a->maxprocesses;i++){
+				free(mmy_task_data_a->subtask[i]);
+				free(mmy_task_data_a->task_def[i]);
+			}
+			free(mmy_task_data_a->cores);
+			free(mmy_task_data_a->subtask);
+			free(mmy_task_data_a->task_def);
+			if(mmy_task_data_a!=NULL)
+				free(mmy_task_data_a);
+			mmy_task_data_a=NULL;
 		return;
 	}
 	char *json_msg=mf_exec_stats(*my_app_report, appid, exec_id, regplatformid);
@@ -1286,10 +1313,17 @@ void monitoring_end(const char *mf_server, const char *exec_server, const char *
 	if(my_app_report!=NULL)
 		free_app_report(my_app_report);
 	my_app_report=NULL;
+
+	for(int i=0;i<mmy_task_data_a->maxprocesses;i++){
+		free(mmy_task_data_a->subtask[i]);
+		free(mmy_task_data_a->task_def[i]);
+	}
+	free(mmy_task_data_a->cores);
+	free(mmy_task_data_a->subtask);
+	free(mmy_task_data_a->task_def);
 	if(mmy_task_data_a!=NULL)
-		free_mem_report(mmy_task_data_a);
+		free(mmy_task_data_a);
 	mmy_task_data_a=NULL;
-	
 }
 
 

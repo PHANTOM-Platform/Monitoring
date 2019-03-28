@@ -836,7 +836,6 @@ int power_monitor(int pid, char *DataPath, long sampling_interval,long long int 
 	for(i=0;i<my_task_data_a.maxprocesses;i++)
 		my_task_data_a.subtask[i]->totaltime=0;
 
-
 	for(i=0;i<my_task_data_a.maxcores;i++){
 		my_task_data_a.cores[i].total_joules_core=0;
 		my_task_data_a.cores[i].time_of_last_measured=0;
@@ -902,6 +901,20 @@ int power_monitor(int pid, char *DataPath, long sampling_interval,long long int 
 	double timestamp_ms;
 	float pid_mem_power, pid_disk_power;// pid_cpu_power,duration, sys_cpu_power,  
 	resources_stats before;//, delta;, after
+	
+	before.min_write_bytes = 0;
+	before.max_write_bytes = 0;
+	before.min_read_bytes = 0;
+	before.max_read_bytes = 0; 
+	before.write_bytes = 0;
+	before.read_bytes = 0;
+	before.accum_read_bytes = 0;
+	before.before_accum_read_bytes = 0;
+	before.accum_write_bytes = 0;
+	before.before_accum_write_bytes = 0;
+	before.accum_cancelled_writes = 0;
+	before.before_accum_cancelled_writes = 0;
+	
 	int fd_perf = create_perf_stat_counter(pid);
 	if(fd_perf <= 0){
 		printf("ERROR: create_perf_stat_counter: %s\n", FileName);

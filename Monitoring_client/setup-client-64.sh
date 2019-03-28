@@ -233,7 +233,7 @@
 		exit 1;
 	fi;
 	tar zxvf lm-sensors-3-5-0.tar.gz;
-	cd lm-sensors-3-5-0.tar.gz;
+	cd lm-sensors-3-5-0;
 	make PREFIX=${INSTALL_PATH_SENSORS} all
 	make PREFIX=${INSTALL_PATH_SENSORS} install	
 # ============================================================================ #

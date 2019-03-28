@@ -39,6 +39,7 @@ typedef struct app_report_t{
 	long long int start_app;
 	struct Thread_report_t **my_thread_report;
 	unsigned int num_of_threads;
+	unsigned int num_of_processes;
 	double timestamp_ms;
 	char currentid[100];
 	float total_cpu_energy;

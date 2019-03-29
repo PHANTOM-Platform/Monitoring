@@ -1,0 +1,24 @@
+{
+  "name": "PHANTOM Monitoring API",
+  "version": "1.0.0",
+  "description": "RESTful service of the PHANTOM monitoring framework",
+  "title": "PHANTOM Monitoring API",
+  "url" : "http://localhost:3033/v1/phantom_mf",
+  "header": {
+    "title": "PHANTOM Monitoring API"
+  },
+  "order": [
+    "Workflows",
+    "Experiments",
+    "Runtime",
+    "Profiles",
+    "Metrics",
+    "Statistics",
+    "RM_Resources",
+    "RM_Configs"
+  ],
+  "template": {
+  	"withCompare": true,
+  	"withGenerator": true
+  }
+}

@@ -2,6 +2,8 @@ var express = require('express');
 var async = require('async');
 var router = express.Router();
 
+var middleware = require('./token-middleware');
+
 /**
 * @api {get} /runtime/:workflowID/:experimentID 1. Get runtime information with given workflow ID and experiment ID
 * @apiVersion 1.0.0
@@ -62,7 +64,7 @@ var router = express.Router();
 *       "error": "No results found."
 *     }
 */
-router.get('/:workID/:expID', function(req, res, next) {
+router.get('/:workID/:expID', middleware.ensureAuthenticated, function(req, res, next) {
 	var client = req.app.get('elastic'),
 		workflow = req.params.workID,
 		experiment = req.params.expID,
@@ -213,7 +215,7 @@ router.get('/:workID/:expID', function(req, res, next) {
 *       "error": "No results found."
 *     }
 */
-router.get('/:workID/:taskID/:expID', function(req, res, next) {
+router.get('/:workID/:taskID/:expID', middleware.ensureAuthenticated,  function(req, res, next) {
 	var client = req.app.get('elastic'),
 		workflow = req.params.workID.toLowerCase(),
 		task = req.params.taskID.toLowerCase(),

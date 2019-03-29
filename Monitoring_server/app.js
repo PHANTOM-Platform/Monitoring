@@ -40,7 +40,7 @@ var app = express();
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 app.set('elastic', elastic);
-app.set('version', '22.02.19');
+app.set('version', '29.03.19');
 var port = '3033',
 hostname = os.hostname();
 // redirect backend hostname to front-end
@@ -205,6 +205,25 @@ function retrieve_file(filePath,res){
 	});
 }
 
+//**********************************************************
+app.get('/servername', function(req, res, next) {
+	var SERVERNAME = "PHANTOM Monitoring Server is up and running.";
+	res.end(SERVERNAME);
+});
+
+//**********************************************************
+app.get('/verify_es_connection', function(req, res) {
+	var testhttp = require('http');
+	testhttp.get('http://'+es_servername+':'+es_port+'/', function(rescode) {
+// 		var int_code= parseInt( rescode.statusCode, 10 );
+		res.writeHead(rescode.statusCode, { 'Content-Type': contentType_text_plain });
+		res.end(""+rescode.statusCode, 'utf-8');
+	}).on('error', function(e) {
+// 		console.error(e); //if not reply is expected an ECONNREFUSED ERROR, we return 503 as not available service
+		res.writeHead(503, { 'Content-Type': contentType_text_plain });
+		res.end("503", 'utf-8');
+	});
+});
 
 app.post('/new_log', function(req, res) {
 	"use strict";

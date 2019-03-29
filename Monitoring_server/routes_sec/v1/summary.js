@@ -3,19 +3,21 @@ var async = require('async');
 var dateFormat = require('dateformat');
 var router = express.Router();
 
-router.get('/:indexID/:experimentID', function(req, res, next) {  
+var middleware = require('./token-middleware');
+
+router.get('/:indexID/:experimentID', middleware.ensureAuthenticated, function(req, res, next) {  
 	var index = req.params.indexID;
 	var experiment = req.params.experimentID;
 	res = agg_summary(req,res,next, index, experiment) ;
 });
 
-router.get('/', function(req, res, next) {  
+router.get('/', middleware.ensureAuthenticated, function(req, res, next) {  
 res = agg_summary(req,res,next,'bench_t1', 'AV29MeMni9gmp2734xfP') ;
 });
 
-router.get('/:indexID', function(req, res, next) {
+router.get('/:indexID', middleware.ensureAuthenticated, function(req, res, next) {
 	var index = req.params.indexID;
-	res = agg_summary_all(req,res,next,index) ;   
+	res = agg_summary_all(req,res,next,index);
 });
 
 
@@ -41,9 +43,9 @@ function agg_summary_all(req, res, next,index ){
 //           json.error = "Experiment-index with the ID '" + index + "' not found.";
 	//		res.json(json);
 	//		return;
-//       } 
-//   });    	
-			
+//       }
+//   });
+
 client.indices.refresh({
 		index: index 
 	}, function(error, response) {
@@ -59,25 +61,25 @@ client.indices.refresh({
 		//    json.error = "No registered Devices.";
 		//    res.json(json);
 		//    return;
-		//}     
+		//}
 		client.search({
-			index: index,   
+			index: index,
 			body: {
-				//query: innerQuery,  
+				//query: innerQuery,
 				//query : body  //performs query":{body},
 				query: { "match_all": {} },
-				_source: ["host", "TaskID", "platform_id"],	
+				_source: ["host", "TaskID", "platform_id"],
 				aggs: {
-					"experiments": { 
+					"experiments": {
 						terms: { field: "_type"}, 
-						aggs: {  
+						aggs: {
 							"platform_id": {
 								top_hits: {
 									_source: { includes: [ "platform_id" ] },
 									size : 1
 								}
 							},
-							"RAM":{ stats:{ field: "RAM_usage_rate" }},			
+							"RAM":{ stats:{ field: "RAM_usage_rate" }},
 							"CPU":{ stats:{ field: "CPU_usage_rate" }},
 							"net_throughput":{ stats:{ field: "net_throughput" }},
 							"STARTTIME": { min:{ field: "local_timestamp" }},

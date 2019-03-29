@@ -3,12 +3,14 @@ var async = require('async');
 var dateFormat = require('dateformat');
 var router = express.Router();
 
-router.get('/:deploymentID', function(req, res, next) {
+var middleware = require('./token-middleware');
+
+router.get('/:deploymentID',middleware.ensureAuthenticated, function(req, res, next) {
 	var deployment = req.params.deploymentID;
 	res = deploy_comp(req,res,next,deployment) ;
 });
 
-router.get('/', function(req, res, next) {
+router.get('/',middleware.ensureAuthenticated, function(req, res, next) {
 	var client = req.app.get('elastic'),
 		size = 1000,
 		json = {};

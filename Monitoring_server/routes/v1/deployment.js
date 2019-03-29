@@ -4,65 +4,65 @@ var dateFormat = require('dateformat');
 var router = express.Router();
 
 router.get('/', function(req, res, next) {
-    var client = req.app.get('elastic'),
-        size = 1000,
-        json = {};
+	var client = req.app.get('elastic'),
+		size = 1000,
+		json = {};
 
-    client.count({
-        index: 'mf',
-        type: 'deployment'
-    }, function(error, response) {
-        if (error) {
-            res.status(500);
-            return next(error);
-        }
-        if (response.hits !== undefined) {
-            size = response.count;//size = response.hits.total;
-        }
-        if (size === 0) {
-            res.status(404);
-            json.error = "No registered Devices.";
-            res.json(json);
-            return;
-        }
+	client.count({
+		index: 'mf',
+		type: 'deployment'
+	}, function(error, response) {
+		if (error) {
+			res.status(500);
+			return next(error);
+		}
+		if (response.hits !== undefined) {
+			size = response.count;//size = response.hits.total;
+		}
+		if (size === 0) {
+			res.status(404);
+			json.error = "No registered Devices.";
+			res.json(json);
+			return;
+		}
 
-        client.search({
-            index: 'mf',
-            type: 'deployment',
-            size: size
-        }, function(error, response) {
-            if (error) {
-                res.status(500);
-                return next(error);
-            }
-            if (response.hits !== undefined) {
-                var results = response.hits.hits;
-                json = get_details(results);
-            }
-            res.json(json);
-        });
-    });
+		client.search({
+			index: 'mf',
+			type: 'deployment',
+			size: size
+		}, function(error, response) {
+			if (error) {
+				res.status(500);
+				return next(error);
+			}
+			if (response.hits !== undefined) {
+				var results = response.hits.hits;
+				json = get_details(results);
+			}
+			res.json(json);
+		});
+	});
 });
 
 function is_defined(variable) {
-    return (typeof variable !== 'undefined');
+	return (typeof variable !== 'undefined');
 }
 
 function get_details(results) {
-    var keys = Object.keys(results),
-        response = {};
-    keys.forEach(function(key) {
-        var source = results[key]._source,
-            item = JSON.parse(JSON.stringify(source));
-        if (is_defined(source.tasks)) {
-            item.tasks = [];
-            for (var i in source.tasks) {
-                item.tasks.push(source.tasks[i].name);
-            }
-        }
-        response[results[key]._id] = item;
-    });
-    return response;
+	var keys = Object.keys(results),
+		response = {};
+	keys.forEach(function(key) {
+		var source = results[key]._source,
+			item = JSON.parse(JSON.stringify(source));
+		if (is_defined(source.tasks)) {
+			item.tasks = [];
+			for (var i in source.tasks) {
+				item.tasks.push(source.tasks[i].name);
+			}
+		}
+		response[results[key]._id] = item;
+	});
+	return response;
 }
 
 router.put('/', function(req, res, next) {
@@ -131,7 +131,7 @@ router.put('/', function(req, res, next) {
 			res.json(json);
 	}	
 }); 
- 
+
 router.post('/', function(req, res, next) {
 	var mf_server = req.app.get('mf_server'),
 		client = req.app.get('elastic'),
@@ -156,8 +156,8 @@ router.post('/', function(req, res, next) {
 				if (error) {
 					res.status(500);
 					return next(error);
-				}   
-				if (response.hits !== undefined) {					
+				}
+				if (response.hits !== undefined) {
 					size = response.hits.total;
 					var results = response.hits.hits;
 					//json = get_details(results); 
@@ -184,19 +184,19 @@ router.post('/', function(req, res, next) {
 								res.json(json);
 							} 
 						});
-					} 	
+					}
 				}else{
 					res.status(500);
 					json.error = "Could not create the deployment (123).";
 					res.json(json);
-				}  
+				}
 			});
 		}); 
-	}else{		
+	}else{
 			res.status(409);
 			json.error = "Could not register the deployment without name."; 
 			res.json(json);
-	}	
+	}
 }); 
 
 module.exports = router;

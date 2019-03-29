@@ -2,6 +2,8 @@ var express = require('express');
 var dateFormat = require('dateformat');
 var router = express.Router();
 
+var middleware = require('./token-middleware');
+
 /**
 * @api {get} /experiments 1. Get a list of all available experiments 
 * @apiVersion 1.0.0
@@ -40,7 +42,7 @@ var router = express.Router();
 *     }
 */
 	const contentType_text_plain = 'text/plain';
-router.get('/', function(req, res, next) {
+router.get('/', middleware.ensureAuthenticated, function(req, res, next) {
 	var elasticsearch = require('elasticsearch');
 	var client = new elasticsearch.Client({
 		host: "localhost:9400",
@@ -152,7 +154,7 @@ function get_details(results) {
 *
 * @apiError DatabaseError Elasticsearch specific error message.
 */
-router.get('/:experimentID', function(req, res, next) {
+router.get('/:experimentID', middleware.ensureAuthenticated, function(req, res, next) {
 	var elasticsearch = require('elasticsearch');
 	var client = new elasticsearch.Client({
 		host: "localhost:9400",

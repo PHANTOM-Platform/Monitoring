@@ -2,20 +2,21 @@ var express = require('express');
 var async = require('async');
 var dateFormat = require('dateformat');
 var router = express.Router();
+var middleware = require('./token-middleware');
 
-router.get('/:deploymentID', function(req, res, next) {
+router.get('/:deploymentID',middleware.ensureAuthenticated, function(req, res, next) {
 	var deployment = req.params.deploymentID;
-	res = deploy_comp(req,res,next,deployment) ;
+	res = deploy_comm(req,res,next,deployment);
 });
 
-router.get('/', function(req, res, next) {
+router.get('/',middleware.ensureAuthenticated, function(req, res, next) {
 	var client = req.app.get('elastic'),
 		size = 1000,
 		json = {};
 
 	client.count({
 		index: 'mf',
-		type: 'deploymentcomp'
+		type: 'deploymentcomm'
 	}, function(error, response) {
 		if (error) {
 			res.status(500);
@@ -33,7 +34,7 @@ router.get('/', function(req, res, next) {
 
 		client.search({
 			index: 'mf',
-			type: 'deploymentcomp',
+			type: 'deploymentcomm',
 			size: size
 		}, function(error, response) {
 			if (error) {
@@ -49,7 +50,7 @@ router.get('/', function(req, res, next) {
 	});
 });
 
-function deploy_comp(req, res, next,deployment ){
+function deploy_comm(req, res, next,deployment ){ 
 	var client = req.app.get('elastic'),
 		size = 1000,
 		json = {};
@@ -58,7 +59,7 @@ function deploy_comp(req, res, next,deployment ){
 
 client.indices.refresh({
 		index: 'mf',
-		type: 'deploymentcomp'
+		type: 'deploymentcomm'
 	}, function(error, response) {
 		if (error) {
 			res.status(500);
@@ -66,7 +67,7 @@ client.indices.refresh({
 		} 
 		client.search({
 			index: 'mf',
-			type: 'deploymentcomp',
+			type: 'deploymentcomm',
 			body: {
 				query: { bool: { must: [ { match: { "deployment_id": deployment } } ] } } 
 			}
@@ -106,8 +107,6 @@ function get_details(results) {
 }
 
 
-
-
 router.put('/', function(req, res, next) {
 	var mf_server = req.app.get('mf_server'),
 		client = req.app.get('elastic'),
@@ -115,28 +114,28 @@ router.put('/', function(req, res, next) {
 
 	if(req.body['deployment_id'] == undefined) {
 			res.status(409);
-			json.error = "Could not register the deploymentcomp without deployment_id.";
+			json.error = "Could not register the deploymentcomm without deployment_id.";
 			res.json(json);	
-	}else if(req.body['comp_id'] == undefined) {
+	}else if(req.body['comm_id'] == undefined) {
 			res.status(409);
-			json.error = "Could not register the deploymentcomp without comp_id.";
+			json.error = "Could not register the deploymentcomm without comm_id.";
 			res.json(json);		
 	}else {
 		var deploymentid = req.body['deployment_id'];
-		var compid = req.body['comp_id'];
+		var compid = req.body['comm_id'];
 		client.indices.refresh({
 			index: 'mf',
-			type: 'deploymentcomp'
+			type: 'deploymentcomm'
 		}, function(error, response) {
 			if (error) {
 				res.status(500);
 				return next(error);
-			} 
+			}
 			client.search({
 				index: 'mf',
-				type: 'deploymentcomp',
+				type: 'deploymentcomm',
 				body: {
-					query: { bool: { must: [ { match: { "comp_id": compid } } , { match: { "deployment_id" : deploymentid } } ] } }
+					query: { bool: { must: [ { match: { "comm_id": compid } } , { match: { "deployment_id" : deploymentid } } ] } }
 				}
 			}, function(error, response) {
 				if (error) {
@@ -158,22 +157,22 @@ router.put('/', function(req, res, next) {
 						client = req.app.get('elastic');
 						client.index({
 							index: 'mf',
-							type: 'deploymentcomp', 
+							type: 'deploymentcomm', 
 							body: req.body
 						}, function(error, response) {
 							if (error !== 'undefined') {
-								json.href = mf_server + '/phantom_mf/deploymentcomp/';
+								json.href = mf_server + '/phantom_mf/deploymentcomm/';
 								res.json(json);
 							} else {
 								res.status(500);
-								json.error = "Could not create the deploymentcomp.";
+								json.error = "Could not create the deploymentcomm.";
 								res.json(json);
-							} 
+							}
 						});
-					} 	
+					}
 				}else{
 					res.status(500);
-					json.error = "Could not create the deploymentcomp (123).";
+					json.error = "Could not create the deploymentcomm (123).";
 					res.json(json);
 				}
 			});
@@ -185,35 +184,35 @@ router.put('/', function(req, res, next) {
 
 
 
+
 router.post('/', function(req, res, next) {
 	var mf_server = req.app.get('mf_server'),
 		client = req.app.get('elastic'),
 		json = {};
-
 	if(req.body['deployment_id'] == undefined) {
 			res.status(409);
-			json.error = "Could not register the deploymentcomp without deployment_id.";
-			res.json(json);	
-	}else if(req.body['comp_id'] == undefined) {
+			json.error = "Could not register the deploymentcomm without deployment_id.";
+			res.json(json);
+	}else if(req.body['comm_id'] == undefined) {
 			res.status(409);
-			json.error = "Could not register the deploymentcomp without comp_id.";
-			res.json(json);		
+			json.error = "Could not register the deploymentcomm without comm_id.";
+			res.json(json);
 	}else {
 		var deploymentid = req.body['deployment_id'];
-		var compid = req.body['comp_id'];
+		var commid = req.body['comm_id'];
 		client.indices.refresh({
 			index: 'mf',
-			type: 'deploymentcomp'
+			type: 'deploymentcomm'
 		}, function(error, response) {
 			if (error) {
 				res.status(500);
 				return next(error);
-			} 
+			}
 			client.search({
 				index: 'mf',
-				type: 'deploymentcomp',
+				type: 'deploymentcomm',
 				body: {
-					query: { bool: { must: [ { match: { "comp_id": compid } } , { match: { "deployment_id" : deploymentid } } ] } } 
+					query: { bool: { must: [ { match: { "comm_id": commid } } , { match: { "deployment_id" : deploymentid } } ] } }
 				}
 			}, function(error, response) {
 				if (error) {
@@ -235,29 +234,27 @@ router.post('/', function(req, res, next) {
 						client = req.app.get('elastic');
 						client.index({
 							index: 'mf',
-							type: 'deploymentcomp',
+							type: 'deploymentcomm',
 							body: req.body
 						}, function(error, response) {
 							if (error !== 'undefined') {
-								json.href = mf_server + '/phantom_mf/deploymentcomp/';
+								json.href = mf_server + '/phantom_mf/deploymentcomm/';
 								res.json(json);
 							} else {
 								res.status(500);
-								json.error = "Could not create the deploymentcomp.";
+								json.error = "Could not create the deploymentcomm.";
 								res.json(json);
-							} 
+							}
 						});
-					} 	
+					}
 				}else{
 					res.status(500);
-					json.error = "Could not create the deploymentcomp (123).";
+					json.error = "Could not create the deploymentcomm (123).";
 					res.json(json);
 				}
 			});
 		});
-	}	
+	}
 });
-
-
 
 module.exports = router;

@@ -3,19 +3,16 @@ var async = require('async');
 var dateFormat = require('dateformat');
 var router = express.Router();
 
-router.get('/:deploymentID', function(req, res, next) {
-	var deployment = req.params.deploymentID;
-	res = deploy_comp(req,res,next,deployment) ;
-});
+var middleware = require('./token-middleware');
 
-router.get('/', function(req, res, next) {
+router.get('/', middleware.ensureAuthenticated, function(req, res, next) {
 	var client = req.app.get('elastic'),
 		size = 1000,
 		json = {};
 
 	client.count({
 		index: 'mf',
-		type: 'deploymentcomp'
+		type: 'deployment'
 	}, function(error, response) {
 		if (error) {
 			res.status(500);
@@ -33,7 +30,7 @@ router.get('/', function(req, res, next) {
 
 		client.search({
 			index: 'mf',
-			type: 'deploymentcomp',
+			type: 'deployment',
 			size: size
 		}, function(error, response) {
 			if (error) {
@@ -48,41 +45,6 @@ router.get('/', function(req, res, next) {
 		});
 	});
 });
-
-function deploy_comp(req, res, next,deployment ){
-	var client = req.app.get('elastic'),
-		size = 1000,
-		json = {};
-	var innerQuery = {};
-	innerQuery.match_all = {};
-
-client.indices.refresh({
-		index: 'mf',
-		type: 'deploymentcomp'
-	}, function(error, response) {
-		if (error) {
-			res.status(500);
-			return next(error);
-		} 
-		client.search({
-			index: 'mf',
-			type: 'deploymentcomp',
-			body: {
-				query: { bool: { must: [ { match: { "deployment_id": deployment } } ] } } 
-			}
-		}, function(error, response) {
-			if (error) {
-				res.status(500);
-				return next(error);
-			}
-			if (response.hits !== undefined) {
-				var results = response.hits.hits;
-				json = get_details(results);
-			}
-			res.json(json);
-		});
-	});
-};
 
 function is_defined(variable) {
 	return (typeof variable !== 'undefined');
@@ -105,28 +67,15 @@ function get_details(results) {
 	return response;
 }
 
-
-
-
 router.put('/', function(req, res, next) {
 	var mf_server = req.app.get('mf_server'),
 		client = req.app.get('elastic'),
-		json = {};
-
-	if(req.body['deployment_id'] == undefined) {
-			res.status(409);
-			json.error = "Could not register the deploymentcomp without deployment_id.";
-			res.json(json);	
-	}else if(req.body['comp_id'] == undefined) {
-			res.status(409);
-			json.error = "Could not register the deploymentcomp without comp_id.";
-			res.json(json);		
-	}else {
-		var deploymentid = req.body['deployment_id'];
-		var compid = req.body['comp_id'];
+		json = {}; 
+	if(req.body['deployment_name'] != undefined) {
+		var name = req.body['deployment_name'];
 		client.indices.refresh({
 			index: 'mf',
-			type: 'deploymentcomp'
+			type: 'deployment'
 		}, function(error, response) {
 			if (error) {
 				res.status(500);
@@ -134,76 +83,66 @@ router.put('/', function(req, res, next) {
 			} 
 			client.search({
 				index: 'mf',
-				type: 'deploymentcomp',
-				body: {
-					query: { bool: { must: [ { match: { "comp_id": compid } } , { match: { "deployment_id" : deploymentid } } ] } }
+				type: 'deployment',
+				body: {  
+					query: { bool: { must: [ { match: { "deployment_name": name } } ] } }
 				}
 			}, function(error, response) {
 				if (error) {
 					res.status(500);
 					return next(error);
-				}
-				if (response.hits !== undefined) {
+				}   
+				if (response.hits !== undefined) {					
 					size = response.hits.total;
 					var results = response.hits.hits;
-					//json = get_details(results);
+					//json = get_details(results); 
 					if( size !== 0 ){
-						res.status(409);
+						res.status(409); 
 						//409 - Conflict
 						//Indica que la solicitud no pudo ser procesada debido a un conflicto con el estado actual del recurso que esta identifica.
 						//Indicates that the request could not be processed because of a conflict with the current state of the resource it identifies.
-						json.error = "Conflict with existing device with the same name, which ID is " + results[0]._id;
+						json.error = "Conflict with existing device with the same name, which ID is " + results[0]._id;  
 						res.json(json);
-					}else{
-						client = req.app.get('elastic');
+					}else{  
+						client = req.app.get('elastic');  
 						client.index({
 							index: 'mf',
-							type: 'deploymentcomp', 
+							type: 'deployment', 
 							body: req.body
 						}, function(error, response) {
 							if (error !== 'undefined') {
-								json.href = mf_server + '/phantom_mf/deploymentcomp/';
+								json.href = mf_server + '/phantom_mf/deployment/'; 
 								res.json(json);
 							} else {
 								res.status(500);
-								json.error = "Could not create the deploymentcomp.";
+								json.error = "Could not create the deployment.";
 								res.json(json);
 							} 
 						});
 					} 	
 				}else{
 					res.status(500);
-					json.error = "Could not create the deploymentcomp (123).";
+					json.error = "Could not create the deployment (123).";
 					res.json(json);
-				}
+				}  
 			});
-		});
-	}
-});
-
-
-
-
+		}); 
+	}else{		
+			res.status(409);
+			json.error = "Could not register the deployment without name."; 
+			res.json(json);
+	}	
+}); 
 
 router.post('/', function(req, res, next) {
 	var mf_server = req.app.get('mf_server'),
 		client = req.app.get('elastic'),
-		json = {};
-
-	if(req.body['deployment_id'] == undefined) {
-			res.status(409);
-			json.error = "Could not register the deploymentcomp without deployment_id.";
-			res.json(json);	
-	}else if(req.body['comp_id'] == undefined) {
-			res.status(409);
-			json.error = "Could not register the deploymentcomp without comp_id.";
-			res.json(json);		
-	}else {
-		var deploymentid = req.body['deployment_id'];
-		var compid = req.body['comp_id'];
+		json = {}; 
+	if(req.body['deployment_name'] != undefined) {
+		var name = req.body['deployment_name'];
 		client.indices.refresh({
 			index: 'mf',
-			type: 'deploymentcomp'
+			type: 'deployment'
 		}, function(error, response) {
 			if (error) {
 				res.status(500);
@@ -211,9 +150,9 @@ router.post('/', function(req, res, next) {
 			} 
 			client.search({
 				index: 'mf',
-				type: 'deploymentcomp',
-				body: {
-					query: { bool: { must: [ { match: { "comp_id": compid } } , { match: { "deployment_id" : deploymentid } } ] } } 
+				type: 'deployment',
+				body: {  
+					query: { bool: { must: [ { match: { "deployment_name": name } } ] } }
 				}
 			}, function(error, response) {
 				if (error) {
@@ -223,41 +162,43 @@ router.post('/', function(req, res, next) {
 				if (response.hits !== undefined) {
 					size = response.hits.total;
 					var results = response.hits.hits;
-					//json = get_details(results);
+					//json = get_details(results); 
 					if( size !== 0 ){
-						res.status(409);
+						res.status(409); 
 						//409 - Conflict
 						//Indica que la solicitud no pudo ser procesada debido a un conflicto con el estado actual del recurso que esta identifica.
 						//Indicates that the request could not be processed because of a conflict with the current state of the resource it identifies.
-						json.error = "Conflict with existing device with the same name, which ID is " + results[0]._id;
+						json.error = "Conflict with existing device with the same name, which ID is " + results[0]._id;  
 						res.json(json);
-					}else{
-						client = req.app.get('elastic');
+					}else{  
+						client = req.app.get('elastic');  
 						client.index({
 							index: 'mf',
-							type: 'deploymentcomp',
+							type: 'deployment', 
 							body: req.body
 						}, function(error, response) {
 							if (error !== 'undefined') {
-								json.href = mf_server + '/phantom_mf/deploymentcomp/';
+								json.href = mf_server + '/phantom_mf/deployment/'; 
 								res.json(json);
 							} else {
 								res.status(500);
-								json.error = "Could not create the deploymentcomp.";
+								json.error = "Could not create the deployment.";
 								res.json(json);
 							} 
 						});
-					} 	
+					}
 				}else{
 					res.status(500);
-					json.error = "Could not create the deploymentcomp (123).";
+					json.error = "Could not create the deployment (123).";
 					res.json(json);
 				}
 			});
-		});
-	}	
-});
-
-
+		}); 
+	}else{
+			res.status(409);
+			json.error = "Could not register the deployment without name."; 
+			res.json(json);
+	}
+}); 
 
 module.exports = router;

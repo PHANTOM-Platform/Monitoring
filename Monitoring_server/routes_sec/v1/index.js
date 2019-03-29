@@ -2,6 +2,8 @@ var express = require('express');
 var dateFormat = require('dateformat');
 var router = express.Router();
 
+var middleware = require('./token-middleware');
+
 /* GET home page. */
 router.get('/', function(req, res, next) {
 	var json = {};

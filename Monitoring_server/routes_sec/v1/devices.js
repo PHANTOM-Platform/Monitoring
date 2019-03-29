@@ -3,7 +3,9 @@ var async = require('async');
 var dateFormat = require('dateformat');
 var router = express.Router();
 
-router.get('/', function(req, res, next) {
+var middleware = require('./token-middleware');
+
+router.get('/',middleware.ensureAuthenticated, function(req, res, next) {
 	var client = req.app.get('elastic'),
 		size = 1000,
 		json = {};
@@ -65,7 +67,7 @@ function get_details(results) {
 	return response;
 }
 
-router.get('/:id', function(req, res, next) {
+router.get('/:id',middleware.ensureAuthenticated, function(req, res, next) {
 	var id = req.params.id,
 		client = req.app.get('elastic'),
 		json = {};

@@ -3,6 +3,8 @@ var async = require('async');
 var dateFormat = require('dateformat');
 var router = express.Router();
 
+var middleware = require('./token-middleware');
+
 /**
 * @api {get} /workflows 1. Get a list of all available workflows
 * @apiVersion 1.0.0
@@ -36,7 +38,7 @@ var router = express.Router();
 */
 	const contentType_text_plain = 'text/plain';
 
-router.get('/', function(req, res, next) {
+router.get('/', middleware.ensureAuthenticated, function(req, res, next) {
 //     var client = req.app.get('elastic'),
 //         size = 1000,
 //         json = {};
@@ -155,7 +157,7 @@ function get_details(results) {
 *       "error": "Workflow with the ID '" + workflowID + "' not found."
 *     }
 */
-router.get('/:id', function(req, res, next) {
+router.get('/:id', middleware.ensureAuthenticated, function(req, res, next) {
 	var id = req.params.id.toLowerCase(),
 		client = req.app.get('elastic'),
 		json = {};

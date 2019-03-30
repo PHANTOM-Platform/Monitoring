@@ -361,6 +361,13 @@ char *mf_exec_stats(struct app_report_t my_app_report, const char *application_i
 	concat_and_free(&json_msg, tempstr);
 	concat_and_free(&json_msg, "\",\n");
 
+	concat_and_free(&json_msg, "\t\"total_time\": \"");
+
+// 	sprintf(tempstr, "%.3f - %.3f = %.3f", my_app_report.timestamp_ms, timestamp_ms,timestamp_ms -my_app_report.timestamp_ms);
+	sprintf(tempstr, "%.3f", timestamp_ms -my_app_report.timestamp_ms);
+	concat_and_free(&json_msg, tempstr);
+	concat_and_free(&json_msg, "\",\n");	
+	
 	concat_and_free(&json_msg, "\t\"energy\": \"");
 	sprintf(tempstr, "%.2f", my_app_report.total_watts);
 	concat_and_free(&json_msg, tempstr);

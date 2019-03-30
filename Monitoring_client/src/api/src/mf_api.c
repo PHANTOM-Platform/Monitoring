@@ -364,7 +364,7 @@ char *mf_exec_stats(struct app_report_t my_app_report, const char *application_i
 	concat_and_free(&json_msg, "\t\"total_time\": \"");
 
 // 	sprintf(tempstr, "%.3f - %.3f = %.3f", my_app_report.timestamp_ms, timestamp_ms,timestamp_ms -my_app_report.timestamp_ms);
-	sprintf(tempstr, "%.3f", timestamp_ms -my_app_report.timestamp_ms);
+	sprintf(tempstr, "%.0f",  1.0e6*(timestamp_ms -my_app_report.timestamp_ms));
 	concat_and_free(&json_msg, tempstr);
 	concat_and_free(&json_msg, "\",\n");	
 	
@@ -393,10 +393,10 @@ char *mf_exec_stats(struct app_report_t my_app_report, const char *application_i
 	concat_and_free(&json_msg, tempstr);
 	concat_and_free(&json_msg, "\",\n");
 
-	concat_and_free(&json_msg, "\t\"cost_power_consumption\": \"");
-	sprintf(tempstr, "%.2f", my_app_report.total_watts*0.25/(1000.0*3600.0));
-	concat_and_free(&json_msg, tempstr);
-	concat_and_free(&json_msg, "\",\n");
+// 	concat_and_free(&json_msg, "\t\"cost_power_consumption\": \"");
+// 	sprintf(tempstr, "%.2f", my_app_report.total_watts*0.25/(1000.0*3600.0));
+// 	concat_and_free(&json_msg, tempstr);
+// 	concat_and_free(&json_msg, "\",\n");
 
 // 		printf(" pidpower %.3f J",my_app_report->pid_disk_power);
 // 		printf(" time %.3f s\n", (actual_time - start_app_time)/(1.0e9) );

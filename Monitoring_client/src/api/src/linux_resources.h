@@ -177,7 +177,7 @@ int io_stats_read(int pid, struct resources_stats_t *stats_now);
 int CPU_stat_read(struct resources_stats_t *stats_now, const float ticksPerSecond);
 
 unsigned int procesa_pid_load(int pid, unsigned int argmaxcores, struct task_data_t *my_task_data, energy_model param_energy);
-unsigned int procesa_pid_load_power(int pid, unsigned int argmaxcores, struct task_data_t *my_task_data, energy_model param_energy);
+// unsigned int procesa_pid_load_power(int pid, unsigned int argmaxcores, struct task_data_t *my_task_data, energy_model param_energy);
 void procesa_task_io(task_data *my_task_data );
 
 size_t execute_command(const char *command, char *comout, size_t *comalloc);

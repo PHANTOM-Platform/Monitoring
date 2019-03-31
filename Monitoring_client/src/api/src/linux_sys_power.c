@@ -837,6 +837,7 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 	}
 	my_task_data_a.cores = (struct cores_data *) malloc( my_task_data_a.maxcores * sizeof(struct cores_data));
 	my_task_data_a.totaltid=0;
+	my_task_data_a.pid=pid;
 	my_task_data_a.maxtotaltid=1;
 	my_task_data_a.first_start=0;
 	my_task_data_a.last_end=0;
@@ -939,6 +940,7 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 	/*in a loop do data sampling and write into the file*/
 	while(running) {
 		procesa_cpuinfo( comout, &comalloc, maxcores, &my_task_data_a);
+
 		maxcores=	procesa_pid_load(pid, maxcores, &my_task_data_a, param_energy);
 		procesa_task_io(&my_task_data_a);
 		procesa_network_stat_read(comout, &comalloc, &my_task_data_a);

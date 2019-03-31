@@ -113,11 +113,14 @@ struct app_report_t *reserve_app_report(const unsigned int num_of_threads, const
 		my_reservation->my_thread_report[i]->metric_time=NULL;
 		strcpy(my_reservation->my_thread_report[i]->currentid,currentid);
 		my_reservation->my_thread_report[i]->total_metrics=0;
+// 		my_reservation->my_thread_report[i]->end_time=0;
+// 		my_reservation->my_thread_report[i]->start_time=0;
 	}
 	struct timespec timestamp;
 	clock_gettime(CLOCK_REALTIME, &timestamp);
 	/*convert to milliseconds */
 	my_reservation->timestamp_ms = timestamp.tv_sec * 1000.0 + (double)(timestamp.tv_nsec / 1.0e6);// in ms + one decimal position
+	my_reservation->num_of_processes=1;
 	return my_reservation;
 }
 
@@ -217,12 +220,12 @@ char* update_exec(const char *server, const char *filenamepath, const char * tok
 	}
 	URL=concat_and_free(&URL, "/update_exec");
 
-// 	printf(" URL: %s\n", URL);
-// 	printf(" filenamepath: %s\n", filenamepath);
-// 	printf(" operation: %s\n", operation);
-// 	printf(" token: %s\n", token);
+	printf(" URL: %s\n", URL);
+	printf(" filenamepath: %s\n", filenamepath);
+	printf(" operation: %s\n", operation);
+	printf(" token: %s\n", token);
 
-	query_message_json(URL, NULL, filenamepath, &response, operation, token); //*****
+	query_message_json(URL, NULL, filenamepath, &response, operation, token);
 
 	if(URL!=NULL) free(URL);
 	URL=NULL;
@@ -319,7 +322,7 @@ void calculate_date(long long int current, struct Mydate *exampledate) {
 
 #define FLOAT_TO_LLINT(x) ((x)>=0?(long long int)((x)+0.5):(long long int)((x)-0.5))
 
-char *mf_exec_stats(struct app_report_t my_app_report, const char *application_id, const char *exec_id, const char *platform_id){
+char *mf_exec_stats(struct app_report_t my_app_report, const char *application_id, const char *exec_id, const char *platform_id, struct task_data_t *mmy_task_data_a){
 	/*create and open the file*/
 	char *json_msg = NULL;
 	char tempstr[2560] = {'\0'};
@@ -338,9 +341,10 @@ char *mf_exec_stats(struct app_report_t my_app_report, const char *application_i
 		printf(" mf_exec_stats application_id is NULL\n");
 	}
 	concat_and_free(&json_msg, "\",\n");
-	concat_and_free(&json_msg, "\t\"device\":\"");
-	concat_and_free(&json_msg, platform_id);
-	concat_and_free(&json_msg, "\",\n");
+	
+// 	concat_and_free(&json_msg, "\t\"device\":\"");
+// 	concat_and_free(&json_msg, platform_id);
+// 	concat_and_free(&json_msg, "\",\n");
 
 	concat_and_free(&json_msg, "\t\"execution_id\":\"");
 	concat_and_free(&json_msg, exec_id);
@@ -361,8 +365,18 @@ char *mf_exec_stats(struct app_report_t my_app_report, const char *application_i
 	concat_and_free(&json_msg, tempstr);
 	concat_and_free(&json_msg, "\",\n");
 
-	concat_and_free(&json_msg, "\t\"total_time\": \"");
+	concat_and_free(&json_msg, "\t\"start_timestamp_ns\": \"");
+	sprintf(tempstr, "%.0f",  1.0e6*my_app_report.timestamp_ms);
+	concat_and_free(&json_msg, tempstr);
+	concat_and_free(&json_msg, "\",\n");
+	
+	concat_and_free(&json_msg, "\t\"end_timestamp_ns\": \"");
+	sprintf(tempstr, "%.0f",  1.0e6*timestamp_ms);
+	concat_and_free(&json_msg, tempstr);
+	concat_and_free(&json_msg, "\",\n");
 
+	
+	concat_and_free(&json_msg, "\t\"total_time_ns\": \"");
 // 	sprintf(tempstr, "%.3f - %.3f = %.3f", my_app_report.timestamp_ms, timestamp_ms,timestamp_ms -my_app_report.timestamp_ms);
 	sprintf(tempstr, "%.0f",  1.0e6*(timestamp_ms -my_app_report.timestamp_ms));
 	concat_and_free(&json_msg, tempstr);
@@ -392,6 +406,21 @@ char *mf_exec_stats(struct app_report_t my_app_report, const char *application_i
 	sprintf(tempstr, "%.2f", my_app_report.pid_net_power);
 	concat_and_free(&json_msg, tempstr);
 	concat_and_free(&json_msg, "\",\n");
+	
+	concat_and_free(&json_msg, "\t\"num_of_processes\": \"");
+	sprintf(tempstr, "%i", my_app_report.num_of_processes);
+	concat_and_free(&json_msg, tempstr);
+	concat_and_free(&json_msg, "\",\n");
+		concat_and_free(&json_msg, "\t\"totaltid\": \"");
+		sprintf(tempstr, "%i", mmy_task_data_a->totaltid);
+		concat_and_free(&json_msg, tempstr);
+		concat_and_free(&json_msg, "\",\n");
+
+		concat_and_free(&json_msg, "\t\"num_of_threads\": \"");
+		sprintf(tempstr, "%i", my_app_report.num_of_threads);
+		concat_and_free(&json_msg, tempstr);
+		concat_and_free(&json_msg, "\",\n");
+	
 
 // 	concat_and_free(&json_msg, "\t\"cost_power_consumption\": \"");
 // 	sprintf(tempstr, "%.2f", my_app_report.total_watts*0.25/(1000.0*3600.0));
@@ -400,7 +429,7 @@ char *mf_exec_stats(struct app_report_t my_app_report, const char *application_i
 
 // 		printf(" pidpower %.3f J",my_app_report->pid_disk_power);
 // 		printf(" time %.3f s\n", (actual_time - start_app_time)/(1.0e9) );
-	
+
 	// 2- read the duration_components, and remove the fields
 	concat_and_free(&json_msg, "\t\"component_stats\": [\n");
 	long long int end_time = mycurrenttime();
@@ -408,22 +437,37 @@ char *mf_exec_stats(struct app_report_t my_app_report, const char *application_i
 		concat_and_free(&json_msg, "\t\t\t\"component_name\": \"");
 		concat_and_free(&json_msg, "main_compent");
 		concat_and_free(&json_msg, "\",\n");
+			concat_and_free(&json_msg, "\t\t\t\"device\":\"");
+			concat_and_free(&json_msg, platform_id);
+			concat_and_free(&json_msg, "\",\n");
 		concat_and_free(&json_msg, "\t\t\t\"component_duration\": \"");
 		sprintf(tempstr, "%lli", end_time - my_app_report.start_app);
 		concat_and_free(&json_msg, tempstr);
 		concat_and_free(&json_msg, "\",\n");
-		concat_and_free(&json_msg, "\t\t\t\"component_start\": \"");
-		sprintf(tempstr, "%.1f", timestamp_ms);
-		concat_and_free(&json_msg, tempstr);
-		concat_and_free(&json_msg, "\",\n");
+// 		concat_and_free(&json_msg, "\t\t\t\"component_start\": \"");
+// 		sprintf(tempstr, "%lli", my_app_report.start_app);
+// 		concat_and_free(&json_msg, tempstr);
+// 		concat_and_free(&json_msg, "\",\n");
+// 		
+// 		concat_and_free(&json_msg, "\t\t\t\"component_end\": \"");
+// 		sprintf(tempstr, "%lli", end_time);
+// 		concat_and_free(&json_msg, tempstr);
+// 		concat_and_free(&json_msg, "\",\n");
+		
+		
 		char *json_msgb=save_stats_resources( stat_resources,1,3);
 		concat_and_free(&json_msg, json_msgb); free(json_msgb);
-		concat_and_free(&json_msg, "\n\t\t},\n");
+		concat_and_free(&json_msg, "\n\t\t}\n");
 
-	for(int i=0;i<my_app_report.num_of_threads;i++){
+
+	for(int i=0;i<my_app_report.num_of_threads;i++){ //mmy_task_data_a->totaltid;
+// 	for(int i=0;i<mmy_task_data_a->totaltid;i++){ //;
+
 		long long int start_time_ns = my_app_report.my_thread_report[i]->start_time;
+		if(start_time_ns!=0){
+			
 		long long int end_time_ns = my_app_report.my_thread_report[i]->end_time;
-		concat_and_free(&json_msg, "\t\t{\n");
+		concat_and_free(&json_msg, "\t\t,{\n");
 		concat_and_free(&json_msg, "\t\t\t\"component_name\": \"");
 		concat_and_free(&json_msg, my_app_report.my_thread_report[i]->taskid);
 		concat_and_free(&json_msg, "\",\n");
@@ -431,10 +475,33 @@ char *mf_exec_stats(struct app_report_t my_app_report, const char *application_i
 		sprintf(tempstr, "%lli", (end_time_ns - start_time_ns)/1000);
 		concat_and_free(&json_msg, tempstr);
 		concat_and_free(&json_msg, "\",\n");
-		concat_and_free(&json_msg, "\t\t\t\"component_start\": \"");
-		sprintf(tempstr, "%.1f", my_app_report.my_thread_report[i]->start_timestamp_ms);
+
+
+// 		concat_and_free(&json_msg, "\t\t\t\"component_start\": \"");
+// 		sprintf(tempstr, "%.1f", my_app_report.my_thread_report[i]->start_time/1000.0);
+// 		concat_and_free(&json_msg, tempstr);
+// 		concat_and_free(&json_msg, "\",\n");
+// 
+// 		concat_and_free(&json_msg, "\t\t\t\"component_end\": \"");
+// 		sprintf(tempstr, "%.1f", my_app_report.my_thread_report[i]->end_time/1000.0);
+// 		concat_and_free(&json_msg, tempstr);
+// 		concat_and_free(&json_msg, "\",\n");
+
+		
+			concat_and_free(&json_msg, "\t\t\t\"device\":\"");
+			concat_and_free(&json_msg, platform_id);
+			concat_and_free(&json_msg, "\",\n");
+		
+		concat_and_free(&json_msg, "\t\t\t\"for-debuging-pid-tid\": \"");
+		sprintf(tempstr, "%i[%i]%i",mmy_task_data_a->subtask[i]->pspid,i, mmy_task_data_a->subtask[i]->pstid);
 		concat_and_free(&json_msg, tempstr);
 		concat_and_free(&json_msg, "\",\n");
+		
+		concat_and_free(&json_msg, "\t\t\t\"for-debuging-taskid\": \"");
+		sprintf(tempstr, "%s",  mmy_task_data_a->subtask[i]->taskid);
+		concat_and_free(&json_msg, tempstr);
+		concat_and_free(&json_msg, "\",\n");
+
 		// end time of the component
 // 		char strend_time[100];
 // 		llint_to_string_alloc(my_app_report.my_thread_report[i]->end_time,strend_time);
@@ -442,9 +509,10 @@ char *mf_exec_stats(struct app_report_t my_app_report, const char *application_i
 		char *json_msgc=save_stats_resources_comp( mmy_task_data_a->subtask[i],1,3);
 		concat_and_free(&json_msg, json_msgc); free(json_msgc);
 		concat_and_free(&json_msg, "\n\t\t}");//end of component stats
-		if(i<my_app_report.num_of_threads-1)
-			concat_and_free(&json_msg, ",");//end of component stats
+// 		if(i<my_app_report.num_of_threads-1)
+// 			concat_and_free(&json_msg, ",");//end of component stats
 		concat_and_free(&json_msg, "\n");
+		}
 	}
 // Notice: "local_timestamp":"1545342592137.9" esta en ms
 // Notice: "component_duration":"2057984735" esta en ns
@@ -522,17 +590,19 @@ int mf_user_metric(char *metric_name, char *value) {
 	return 1;
 }
 
-static void *Monitor_tid_Start(void *arg) {
+static void *Monitor_tid_Start(void *arg) {// increases the totaltid counter, 
+// 	it needs the mmy_task_data_a->subtask[i]->taskid be copied from   my_app_report->my_thread_report[i]->taskid) before call it
 	struct task_data_t *my_task_data_a = (struct task_data_t*) arg;
 	char FileName[100];
 	FILE *fp;
 	sprintf(FileName, "%s/%s", DataPath, "resource_usage_comp");
 	fp = fopen(FileName, "w");
 	while (running==1) {
-		stats_sample(my_task_data_a->pid, my_task_data_a);
+		stats_sample(my_task_data_a->pid, my_task_data_a);//increases the totaltid counter, pid must be correct !!
 		if(my_task_data_a!= NULL){
 			for(int jk=0;jk<my_task_data_a->total_user_def;jk++){
-			save_stats(fp,my_task_data_a->task_def[jk]->pstid, my_task_data_a);
+// 			save_stats(fp,my_task_data_a->task_def[jk]->pstid, my_task_data_a);
+			save_stats(fp,my_task_data_a->subtask[jk]->pstid, my_task_data_a);
 // 			print_stats(my_task_data_a->tids[jk], my_task_data_a);
 			}
 		}
@@ -567,6 +637,8 @@ struct each_metric_t **each_m=NULL;
 /** server consists on an address or ip with a port number like http://129.168.0.1:8600/ */
 char *mf_start(const char *server, const char *exec_server, const char *exec_id, const char* resource_manager, const char *platform_id, metrics *m,struct app_report_t *my_app_report, const char *token) {
 	long long int start_app_time = mycurrenttime();
+	my_app_report->start_app= start_app_time;
+	
 	char* resp= starting_exec(exec_server, exec_id, token);
 	free(resp);
 	/* get pid and setup the DataPath according to pid */
@@ -618,12 +690,20 @@ char *mf_start(const char *server, const char *exec_server, const char *exec_id,
 	mmy_task_data_a->microsleep=420000;
 	mmy_task_data_a->totaltid=0;
 	mmy_task_data_a->total_user_def=0;
-	mmy_task_data_a->task_def[0]->pstid=0;
-	mmy_task_data_a->task_def[1]->pstid=0;
-	/*create the thread and pass associated arguments */
-	strcpy( mmy_task_data_a->subtask[0]->taskid, my_app_report->my_thread_report[0]->taskid);
-	strcpy( mmy_task_data_a->subtask[1]->taskid, my_app_report->my_thread_report[1]->taskid);
-	int tidret = pthread_create(&threads[num_threads], NULL, Monitor_tid_Start, mmy_task_data_a);
+	
+	for(t=0;t <mmy_task_data_a->maxprocesses; t++){//reserved positions
+		mmy_task_data_a->task_def[t]->pstid=0;
+		
+	}
+	for(t=0;t <mmy_task_data_a->maxprocesses; t++){
+		if(t<my_app_report->num_of_threads){
+			strcpy( mmy_task_data_a->subtask[t]->taskid, my_app_report->my_thread_report[t]->taskid);
+		}else{
+			strcpy( mmy_task_data_a->subtask[t]->taskid,"0");
+		}
+	}
+			
+	int tidret = pthread_create(&threads[num_threads], NULL, Monitor_tid_Start, mmy_task_data_a);// Monitor_tid_Start will increase the totaltid
 	if (tidret) {
 		printf("ERROR: pthread_create failed for %s\n", strerror(tidret));
 		return NULL;
@@ -1322,8 +1402,7 @@ void monitoring_end(const char *mf_server, const char *exec_server, const char *
 			mmy_task_data_a=NULL;
 		return;
 	}
-	
-	char *json_msg=mf_exec_stats(*my_app_report, appid, exec_id, regplatformid);
+	char *json_msg=mf_exec_stats(*my_app_report, appid, exec_id, regplatformid, mmy_task_data_a);
 	fprintf(fp,"%s",json_msg);
 	/*close the file*/
 	fclose(fp);

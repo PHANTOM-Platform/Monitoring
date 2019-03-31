@@ -1124,54 +1124,55 @@ unsigned int procesa_pid_load(int pid, unsigned int argmaxcores, struct task_dat
 							my_task_data->totaltid=my_task_data->totaltid+1;
 							my_task_data->subtask[j]->starttime=actual_time;
 							
-						my_task_data->subtask[j]->min_send_bytes=0;
-						my_task_data->subtask[j]->send_bytes=0;
-						my_task_data->subtask[j]->max_send_bytes =0;	
+							my_task_data->subtask[j]->min_send_bytes=0;
+							my_task_data->subtask[j]->send_bytes=0;
+							my_task_data->subtask[j]->max_send_bytes =0;	
+								
+							my_task_data->subtask[j]->accum_read_bytes =0;
+							my_task_data->subtask[j]->accum_write_bytes =0;
+							my_task_data->subtask[j]->before_accum_read_bytes = my_task_data->subtask[j]->accum_read_bytes;
+							my_task_data->subtask[j]->before_accum_write_bytes = my_task_data->subtask[j]->accum_write_bytes;
+							my_task_data->subtask[j]->counter=1;
+
+							my_task_data->subtask[j]->CPU_usage_rate = 0.0;
+							my_task_data->subtask[j]->RAM_usage_rate = 0.0;
+							my_task_data->subtask[j]->swap_usage_rate = 0.0;
+	// 						my_task_data->subtask[j]->send_bytes=0; aqui no
+	// 						my_task_data->subtask[j]->rcv_bytes=0; aqui no, ya se inicia al princio, no resetear
+						// 	for the case of being uninitialized
+							my_task_data->subtask[j]->before_total_cpu_time=my_task_data->subtask[j]->total_cpu_time;
+	// 						my_task_data->subtask[j]->before_accum_pid_runtime=my_task_data->subtask[j]->accum_pid_runtime;
+
+							my_task_data->subtask[j]->min_CPU_usage_rate = 0;
+							my_task_data->subtask[j]->max_CPU_usage_rate = 0;
+
+							my_task_data->subtask[j]->min_RAM_usage_rate = 0;
+							my_task_data->subtask[j]->max_RAM_usage_rate = 0;
+
+							my_task_data->subtask[j]->min_swap_usage_rate = 0;
+							my_task_data->subtask[j]->max_swap_usage_rate = 0;
+
+							my_task_data->subtask[j]->accum_CPU_usage_rate = 0;
+							my_task_data->subtask[j]->accum_RAM_usage_rate = 0;
+							my_task_data->subtask[j]->accum_swap_usage_rate = 0;
 							
-						my_task_data->subtask[j]->accum_read_bytes =0;
-						my_task_data->subtask[j]->accum_write_bytes =0;
-						my_task_data->subtask[j]->before_accum_read_bytes = my_task_data->subtask[j]->accum_read_bytes;
-						my_task_data->subtask[j]->before_accum_write_bytes = my_task_data->subtask[j]->accum_write_bytes;
-						my_task_data->subtask[j]->counter=1;
+							my_task_data->subtask[j]->min_write_bytes = 0;
+							my_task_data->subtask[j]->max_write_bytes = 0;
 
-						my_task_data->subtask[j]->CPU_usage_rate = 0.0;
-						my_task_data->subtask[j]->RAM_usage_rate = 0.0;
-						my_task_data->subtask[j]->swap_usage_rate = 0.0;
-// 						my_task_data->subtask[j]->send_bytes=0; aqui no
-// 						my_task_data->subtask[j]->rcv_bytes=0; aqui no, ya se inicia al princio, no resetear
-					// 	for the case of being uninitialized
-						my_task_data->subtask[j]->before_total_cpu_time=my_task_data->subtask[j]->total_cpu_time;
-// 						my_task_data->subtask[j]->before_accum_pid_runtime=my_task_data->subtask[j]->accum_pid_runtime;
+							my_task_data->subtask[j]->min_read_bytes = 0;
+							my_task_data->subtask[j]->max_read_bytes = 0;
 
-						my_task_data->subtask[j]->min_CPU_usage_rate = 0;
-						my_task_data->subtask[j]->max_CPU_usage_rate = 0;
+							my_task_data->subtask[j]->min_send_bytes = 0;
+							my_task_data->subtask[j]->max_send_bytes = 0;
+							my_task_data->subtask[j]->accum_send_bytes = 0;
 
-						my_task_data->subtask[j]->min_RAM_usage_rate = 0;
-						my_task_data->subtask[j]->max_RAM_usage_rate = 0;
-
-						my_task_data->subtask[j]->min_swap_usage_rate = 0;
-						my_task_data->subtask[j]->max_swap_usage_rate = 0;
-
-						my_task_data->subtask[j]->accum_CPU_usage_rate = 0;
-						my_task_data->subtask[j]->accum_RAM_usage_rate = 0;
-						my_task_data->subtask[j]->accum_swap_usage_rate = 0;
-						
-						my_task_data->subtask[j]->min_write_bytes = 0;
-						my_task_data->subtask[j]->max_write_bytes = 0;
-
-						my_task_data->subtask[j]->min_read_bytes = 0;
-						my_task_data->subtask[j]->max_read_bytes = 0;
-
-						my_task_data->subtask[j]->min_send_bytes = 0;
-						my_task_data->subtask[j]->max_send_bytes = 0;
-						my_task_data->subtask[j]->accum_send_bytes = 0;
-
-							if(j==0)
-								my_task_data->first_start=actual_time;
+								if(j==0)
+									my_task_data->first_start=actual_time;
 							found=true;
 						}
 					}
 					if(found==true){
+						//here is lost my_task_data->pid???
 						my_task_data->subtask[j]->updated=true;
 						my_task_data->subtask[j]->pspid=pspid;
 						my_task_data->subtask[j]->pstid=pstid;
@@ -1186,6 +1187,7 @@ unsigned int procesa_pid_load(int pid, unsigned int argmaxcores, struct task_dat
 			}
 		}
 // 	}
+
 	//now we clean the list removing the subtasks not found in the last ps.
 	//We update the finishing time
 	int count_active_tasks=0;
@@ -1207,7 +1209,7 @@ unsigned int procesa_pid_load(int pid, unsigned int argmaxcores, struct task_dat
 		my_task_data->maxtotaltid=my_task_data->totaltid;
 	//----------------------------------------------------------------------------------
 	fix_Desynchronized_data( maxcores, my_task_data);//updates currentcore and total_load_core
-	
+
 	for(i=0;i<maxcores;i++) {
 		my_task_data->total_load_cpu+=my_task_data->cores[i].total_load_core;
 		long int freqs=my_task_data->cores[i].core_freq;

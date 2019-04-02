@@ -1,7 +1,11 @@
 #ifndef _RESOURCES_MONITOR_H
 #define _RESOURCES_MONITOR_H
 
+#include "mf_api.h"
+
 #define METRIC_NAME_1 "resources_usage"
+
+#define NAME_LENGTH          32
 
 struct cores_data {
 	float total_load_core;
@@ -58,7 +62,10 @@ struct sub_task_user_def { //defined at add_tid_to_report
 struct sub_task_data { // filled by stats_sample, procesa_pid_load, ...
 	char taskid[50];
 	unsigned int currentcore, pspid, pstid;
-	float pmem, pcpu;
+	float pmem, pcpu, total_cpu_energy;
+
+	long long unsigned int start_comp;
+	unsigned long long int time_of_last_measured;
 	int updated;
 	long long int finishtime,totaltime,starttime;
 	long long int rchar, wchar, syscr, syscw, read_bytes, write_bytes,cancelled_write_bytes;
@@ -83,22 +90,7 @@ struct sub_task_data { // filled by stats_sample, procesa_pid_load, ...
 };
 
 
-#define max_report_tids 10
 
-typedef struct task_data_t {
-// 	unsigned int tids[max_report_tids];
-	unsigned long int microsleep;
-	int pid;
-	int maxprocesses, maxcores;
-	unsigned int maxtotaltid;
-	unsigned int totaltid;//counts the total of subtasks
-	struct sub_task_data **subtask;  //for the subtasks running
-	unsigned int total_user_def; //counts the total of user_def params
-	struct sub_task_user_def **task_def;  //for the of user_def params
-	struct cores_data *cores;  //for the total of cores running
-	float total_load_cpu, totalpmem;
-	long long int first_start,last_end;
-}task_data;
 
 
 struct disk_data{
@@ -186,5 +178,7 @@ unsigned int getline_str(char *input, char *output, unsigned const int start);
 unsigned int find_str(int start, const char source[], const char cad1[]);
 int remove_str(int start ,char source[], const char cadenaBuscar[]);
 int find_llint_from_label(char *loadstr, const char *label, long long int *to_update);
+
+
 
 #endif

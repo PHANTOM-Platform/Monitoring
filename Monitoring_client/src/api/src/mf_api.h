@@ -1,11 +1,29 @@
 #ifndef _MF_API_H
 #define _MF_API_H
 
+
 #define MAX_NUM_METRICS     9
 #define NAME_LENGTH          32
 
 #define SUCCESS 0
 #define FAILED 1
+
+#define max_report_tids 10
+
+typedef struct task_data_t {
+// 	unsigned int tids[max_report_tids];
+	unsigned long int microsleep;
+	int pid;
+	int maxprocesses, maxcores;
+	unsigned int maxtotaltid;
+	unsigned int totaltid;//counts the total of subtasks
+	struct sub_task_data **subtask;  //for the subtasks running
+	unsigned int total_user_def; //counts the total of user_def params
+	struct sub_task_user_def **task_def;  //for the of user_def params
+	struct cores_data *cores;  //for the total of cores running
+	float total_load_cpu, totalpmem;
+	long long int first_start,last_end;
+}task_data;
 
 typedef struct metrics_t {
 	long sampling_interval[MAX_NUM_METRICS];	//in milliseconds
@@ -37,6 +55,7 @@ typedef struct Thread_report_t {
 
 typedef struct app_report_t{
 	long long int start_app;
+
 	struct Thread_report_t **my_thread_report;
 	unsigned int num_of_threads;
 	unsigned int num_of_processes;
@@ -53,17 +72,20 @@ typedef struct app_report_t{
 	float total_watts;
 }app_report;
 
-typedef struct metric_query_t {
-	char *query;
-	int multiple_fields;
-} metric_query;
-
 typedef struct each_metric_t {
+	struct task_data_t *my_task_data_a;
 	long sampling_interval;				//in milliseconds
 	char metric_name[NAME_LENGTH];		//user defined metrics
 	long long int start_app_time;
 	struct app_report_t *my_app_report;
 } each_metric;
+
+typedef struct metric_query_t {
+	char *query;
+	int multiple_fields;
+} metric_query;
+
+
 
 struct app_report_t *reserve_app_report(const unsigned int num_of_threads,const char *currentid);
 int free_app_report(struct app_report_t *my_app_report);

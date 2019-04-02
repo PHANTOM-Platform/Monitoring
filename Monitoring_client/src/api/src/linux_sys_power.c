@@ -812,7 +812,7 @@ void procesa_cpuinfo( char *comout, size_t *comalloc, unsigned int argmaxcores, 
 	}
 }
 
-int power_monitor(int pid, char *DataPath, long sampling_interval, long long int start_app_time, struct app_report_t *my_app_report) {
+int power_monitor(int pid, char *DataPath, long sampling_interval, long long int start_app_time, struct app_report_t *my_app_report, struct task_data_t *my_task_data_a) {
 // 	float total_cpu_energy;
 // 	float pid_mem_power, pid_disk_power;// pid_cpu_power,duration, sys_cpu_power,
 // 	long long int pid_l2_cache_misses;
@@ -821,33 +821,32 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 // 	long long int cancelled_writes;
 // 	float pid_net_power;
 // 	float total_hd_energy;
-// 	float total_watts;
+// 	float total_watts; 
 	int i;
 	size_t comalloc = 8256;
 	char *comout = (char *) malloc(comalloc * sizeof(char));
 	unsigned int maxcores= numcores(comout, &comalloc);
-	struct task_data_t my_task_data_a;
-	my_task_data_a.maxprocesses =30;
-	my_task_data_a.maxcores=30;
-	my_task_data_a.subtask = (struct sub_task_data **) malloc( my_task_data_a.maxprocesses * sizeof(struct sub_task_data *));
-	for(i=0;i<my_task_data_a.maxprocesses;i++){
-		my_task_data_a.subtask[i] = (struct sub_task_data *) malloc(sizeof(struct sub_task_data ));
-		my_task_data_a.subtask[i]->rcv_bytes = 0;
-		my_task_data_a.subtask[i]->send_bytes = 0;
+	my_task_data_a->maxprocesses =30;
+	my_task_data_a->maxcores=30;
+	my_task_data_a->subtask = (struct sub_task_data **) malloc( my_task_data_a->maxprocesses * sizeof(struct sub_task_data *));
+	for(i=0;i<my_task_data_a->maxprocesses;i++){
+		my_task_data_a->subtask[i] = (struct sub_task_data *) malloc(sizeof(struct sub_task_data ));
+		my_task_data_a->subtask[i]->rcv_bytes = 0;
+		my_task_data_a->subtask[i]->send_bytes = 0;
 	}
-	my_task_data_a.cores = (struct cores_data *) malloc( my_task_data_a.maxcores * sizeof(struct cores_data));
-	my_task_data_a.totaltid=0;
-	my_task_data_a.pid=pid;
-	my_task_data_a.maxtotaltid=1;
-	my_task_data_a.first_start=0;
-	my_task_data_a.last_end=0;
-	for(i=0;i<my_task_data_a.maxprocesses;i++)
-		my_task_data_a.subtask[i]->totaltime=0;
+	my_task_data_a->cores = (struct cores_data *) malloc( my_task_data_a->maxcores * sizeof(struct cores_data));
+	my_task_data_a->totaltid=0;
+	my_task_data_a->pid=pid;
+	my_task_data_a->maxtotaltid=1;
+	my_task_data_a->first_start=0;
+	my_task_data_a->last_end=0;
+	for(i=0;i<my_task_data_a->maxprocesses;i++)
+		my_task_data_a->subtask[i]->totaltime=0;
 
-	for(i=0;i<my_task_data_a.maxcores;i++){
-		my_task_data_a.cores[i].total_joules_core=0;
-		my_task_data_a.cores[i].time_of_last_measured=0;
-		my_task_data_a.cores[i].total_watts_core=0;
+	for(i=0;i<my_task_data_a->maxcores;i++){
+		my_task_data_a->cores[i].total_joules_core=0;
+		my_task_data_a->cores[i].time_of_last_measured=0;
+		my_task_data_a->cores[i].total_watts_core=0;
 	}
 	energy_model param_energy;
 	param_energy.freq_min=400000;
@@ -937,13 +936,19 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 // 		if(FileName !=NULL) free(FileName);
 // 		return FAILURE;
 	}
+		for(i=0;i<my_task_data_a->totaltid;i++){
+			my_task_data_a->subtask[i]->time_of_last_measured=0;
+			my_task_data_a->subtask[i]->start_comp=0;
+		}	
+	
+	
 	/*in a loop do data sampling and write into the file*/
 	while(running) {
-		procesa_cpuinfo( comout, &comalloc, maxcores, &my_task_data_a);
+		procesa_cpuinfo( comout, &comalloc, maxcores, my_task_data_a);
 
-		maxcores=	procesa_pid_load(pid, maxcores, &my_task_data_a, param_energy);
-		procesa_task_io(&my_task_data_a);
-		procesa_network_stat_read(comout, &comalloc, &my_task_data_a);
+		maxcores=	procesa_pid_load(pid, maxcores, my_task_data_a, param_energy);
+		procesa_task_io(my_task_data_a);
+		procesa_network_stat_read(comout, &comalloc, my_task_data_a);
 
 // 		procesa_system_mem(comout, &comalloc, &mysystem);//global of the system
 // 		mysystem.cpu_system_load= procesa_system_load(comout, &comalloc, array_valores);
@@ -999,8 +1004,8 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 // 				"process_disk_power", pid_disk_power);
 
 		long long int actual_time;
-// 		if ( my_task_data_a.last_end!=0){
-// 			actual_time = my_task_data_a.last_end;
+// 		if ( my_task_data_a->last_end!=0){
+// 			actual_time = my_task_data_a->last_end;
 // 		}else{
 			actual_time=mycurrenttime();
 // 		}
@@ -1008,22 +1013,48 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 		my_app_report->write_bytes = 0;
 		my_app_report->cancelled_writes = 0;
 		my_app_report->pid_net_power = 0.0;
-		for(i=0;i<my_task_data_a.totaltid;i++){ 
-			my_app_report->read_bytes += my_task_data_a.subtask[i]->rchar;
-			my_app_report->write_bytes += my_task_data_a.subtask[i]->wchar;
-			my_app_report->read_bytes += my_task_data_a.subtask[i]->read_bytes;
-			my_app_report->write_bytes += my_task_data_a.subtask[i]->write_bytes;
-			my_app_report->cancelled_writes += my_task_data_a.subtask[i]->cancelled_write_bytes;
-			my_app_report->pid_net_power += (param_energy.E_NET_RCV_PER_MB*my_task_data_a.subtask[i]->rcv_bytes + param_energy.E_NET_SND_PER_MB* my_task_data_a.subtask[i]->send_bytes)* 1.0e-6;
+		for(i=0;i<my_task_data_a->totaltid;i++){
+// 			printf(" AAAA  \"cpu_load\":\"%.2f\"\n", my_task_data_a->subtask[i]->pcpu);
+			my_app_report->read_bytes += my_task_data_a->subtask[i]->rchar;
+			my_app_report->write_bytes += my_task_data_a->subtask[i]->wchar;
+			my_app_report->read_bytes += my_task_data_a->subtask[i]->read_bytes;
+			my_app_report->write_bytes += my_task_data_a->subtask[i]->write_bytes;
+// 			my_task_data_a->subtask[i]->syscr,
+// 			my_task_data_a->subtask[i]->syscw,
+// 			my_task_data_a->subtask[i]->pmem
+			my_app_report->cancelled_writes += my_task_data_a->subtask[i]->cancelled_write_bytes;
+			my_app_report->pid_net_power += (param_energy.E_NET_RCV_PER_MB*my_task_data_a->subtask[i]->rcv_bytes + param_energy.E_NET_SND_PER_MB* my_task_data_a->subtask[i]->send_bytes)* 1.0e-6;
+			
+			if(my_task_data_a->subtask[i]->time_of_last_measured==0){
+				my_task_data_a->subtask[i]->time_of_last_measured=actual_time;
+				my_task_data_a->subtask[i]->start_comp=actual_time;
+			}
+				float total_time = ((1.0e-9)* (actual_time - my_task_data_a->subtask[i]->time_of_last_measured));
+				
+// 			if (i==1)
+// 			printf(" BBBBa  \"cpu_energy [%i]\":\"%.2f\" [ %.6f * %.6f * %.6f= %.6f ] %.2f \n", i, my_task_data_a->subtask[i]->total_cpu_energy,
+// 				   
+// 				   (1.0e-9)*(my_task_data_a->subtask[i]->time_of_last_measured   -  my_task_data_a->subtask[i]->start_comp),
+// 				   0.01*my_task_data_a->subtask[i]->pcpu, 
+// 					param_energy.MIN_CPU_POWER,
+// 	
+// 		  			   (1.0e-9)*(my_task_data_a->subtask[i]->time_of_last_measured   -  my_task_data_a->subtask[i]->start_comp)*
+// 				   0.01*my_task_data_a->subtask[i]->pcpu*
+// 					param_energy.MIN_CPU_POWER,
+// 		  
+// 					total_time
+// 					);
+			my_task_data_a->subtask[i]->total_cpu_energy+=0.01* my_task_data_a->subtask[i]->pcpu*param_energy.MIN_CPU_POWER*total_time;
+			my_task_data_a->subtask[i]->time_of_last_measured=actual_time;
 		}
 		my_app_report->total_cpu_energy =0;
 		for(int c=0;c<maxcores;c++)
-			my_app_report->total_cpu_energy+=my_task_data_a.cores[c].total_watts_core;
+			my_app_report->total_cpu_energy+=my_task_data_a->cores[c].total_watts_core;
 		my_app_report->pid_l2_cache_misses=0;
 		my_app_report->pid_mem_power = ((my_app_report->read_bytes + my_app_report->write_bytes - my_app_report->cancelled_writes) / param_energy.L2CACHE_LINE_SIZE + my_app_report->pid_l2_cache_misses) * param_energy.L2CACHE_MISS_LATENCY * param_energy.MEMORY_POWER* 1.0e-9;// / duration;
 		my_app_report->pid_disk_power = param_energy.hd_power;
 		my_app_report->total_hd_energy=0.0;
-// 		if (my_task_data_a.first_start!=0)
+// 		if (my_task_data_a->first_start!=0)
 			my_app_report->total_hd_energy=my_app_report->pid_disk_power*(actual_time - start_app_time)/(1.0e9);
 		my_app_report->total_watts= my_app_report->total_cpu_energy + my_app_report->total_hd_energy + my_app_report->pid_mem_power + my_app_report->pid_net_power;
 		fprintf(fp, "\"local_timestamp\":\"%.1f\",",timestamp_ms);
@@ -1040,10 +1071,10 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 	fclose(fp);
 	printf(" end power pid=%i\n",pid);
 	if(FileName !=NULL) free(FileName);
-	for(i=0;i<my_task_data_a.maxprocesses;i++)
-		free(my_task_data_a.subtask[i]);
-	free(my_task_data_a.cores);
-	free(my_task_data_a.subtask);
+// 	for(i=0;i<my_task_data_a.maxprocesses;i++)
+// 		free(my_task_data_a.subtask[i]);
+// 	free(my_task_data_a.cores);
+// 	free(my_task_data_a.subtask);
 	free(comout);
 	return SUCCESS;
 }

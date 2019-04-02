@@ -475,9 +475,28 @@ char *save_stats_resources(struct resources_stats_t *stat, int pretty, int tabs)
 	}else{
 		 sprintf(tempstr, ",\"avg\":\"%lli\"", stats->accum_send_bytes );concat_and_free(&msg, tempstr);
 	}
-	sprintf(tempstr, ",\"sum\":\"%lli\"}", stats->accum_send_bytes);concat_and_free(&msg, tempstr);
+	sprintf(tempstr, ",\"sum\":\"%lli\"},", stats->accum_send_bytes);concat_and_free(&msg, tempstr);
+	
+	if (pretty==1) concat_and_free(&msg, "\n");
+	if(pretty==1) for(i=0;i<tabs;i++) concat_and_free(&msg, "\t");
+	sprintf(tempstr, "\"%s\":{", "stats_rcv_bytes");concat_and_free(&msg, tempstr);
+	sprintf(tempstr, "\"count\":\"%li\"", stats->counter);concat_and_free(&msg, tempstr);
+	sprintf(tempstr, ",\"min\":\"%lli\"", stats->min_rcv_bytes);concat_and_free(&msg, tempstr);
+	sprintf(tempstr, ",\"max\":\"%lli\"", stats->max_rcv_bytes);concat_and_free(&msg, tempstr);
+	if(stats->counter>1){//we not wish to divide by zero
+		 sprintf(tempstr, ",\"avg\":\"%lli\"", stats->accum_rcv_bytes/stats->counter);concat_and_free(&msg, tempstr);
+	}else{
+		 sprintf(tempstr, ",\"avg\":\"%lli\"", stats->accum_rcv_bytes );concat_and_free(&msg, tempstr);
+	}
+	sprintf(tempstr, ",\"sum\":\"%lli\"}", stats->accum_rcv_bytes);concat_and_free(&msg, tempstr);	
+	
+	
 //		nets_info->rcv_bytes += temp_rcv_bytes;
 //		nets_info->send_bytes += temp_send_bytes;
+	
+	
+	
+	
 	if(pretty==0) concat_and_free(&msg, "\n");
 	return msg;
 }
@@ -508,7 +527,7 @@ char *save_stats_resources_comp(struct sub_task_data *subtask, int pretty, int t
 	if(subtask->counter>1){//we not wish to divide by zero
 		 sprintf(tempstr, ",\"avg\":\"%.2f\"", (float)subtask->accum_RAM_usage_rate/(float)subtask->counter);concat_and_free(&msg, tempstr);
 	}else{
-		 sprintf(tempstr, ",\"avg\":\"%.2f\"", (float)subtask->accum_RAM_usage_rate );concat_and_free(&msg, tempstr);
+		 sprintf(tempstr, ",\"avg\":\"%.2f\"", (float)subtask->accum_RAM_usage_rate);concat_and_free(&msg, tempstr);
 	}
 	sprintf(tempstr, ",\"sum\":\"%lli\"},", subtask->accum_RAM_usage_rate);concat_and_free(&msg, tempstr);
 // 	----------------------SWAP
@@ -562,7 +581,22 @@ char *save_stats_resources_comp(struct sub_task_data *subtask, int pretty, int t
 	}else{
 		sprintf(tempstr, ",\"avg\":\"%lli\"", subtask->accum_send_bytes);concat_and_free(&msg, tempstr);
 	}
-	sprintf(tempstr, ",\"sum\":\"%lli\"}", subtask->accum_send_bytes);concat_and_free(&msg, tempstr);
+	sprintf(tempstr, ",\"sum\":\"%lli\"},", subtask->accum_send_bytes);concat_and_free(&msg, tempstr);
+	
+	if (pretty==1) concat_and_free(&msg, "\n");
+	if(pretty==1) for(i=0;i<tabs;i++) concat_and_free(&msg, "\t");
+	sprintf(tempstr, "\"%s\":{", "stats_rcv_bytes");concat_and_free(&msg, tempstr);
+	sprintf(tempstr, "\"count\":\"%li\"", subtask->counter);concat_and_free(&msg, tempstr);
+	sprintf(tempstr, ",\"min\":\"%lli\"", subtask->min_rcv_bytes);concat_and_free(&msg, tempstr);
+	sprintf(tempstr, ",\"max\":\"%lli\"", subtask->max_rcv_bytes);concat_and_free(&msg, tempstr);
+	if(subtask->counter>1){//we not wish to divide by zero
+		sprintf(tempstr, ",\"avg\":\"%lli\"", subtask->accum_rcv_bytes/subtask->counter);concat_and_free(&msg, tempstr);
+	}else{
+		sprintf(tempstr, ",\"avg\":\"%lli\"", subtask->accum_rcv_bytes);concat_and_free(&msg, tempstr);
+	}
+	sprintf(tempstr, ",\"sum\":\"%lli\"}", subtask->accum_rcv_bytes);concat_and_free(&msg, tempstr);	
+	
+	
 //		nets_info->rcv_bytes += temp_rcv_bytes;
 //		nets_info->send_bytes += temp_send_bytes;
 	if(pretty==0) concat_and_free(&msg, "\n");
@@ -894,6 +928,8 @@ unsigned int save_stats(FILE *fp, int searchprocess, task_data *my_task_data){
 				fprintf(fp, "\"local_timestamp\":\"%.1f\"", timestamp_ms);
 				if(encontrado<my_task_data->total_user_def){
 					fprintf(fp,", \"component\":\"%s\"", my_task_data->task_def[encontrado]->component_name);
+				}else{
+					fprintf(fp,", \"component\":\"name_not_found\"");
 				}
 				fprintf(fp,", \"cpu_load\":\"%.2f\"", my_task_data->subtask[i]->pcpu);
 				fprintf(fp,", \"mem_load\":\"%.2f\"", my_task_data->subtask[i]->pmem);
@@ -909,35 +945,35 @@ unsigned int save_stats(FILE *fp, int searchprocess, task_data *my_task_data){
 				//printf("  %s%9Li us",NO_COLOUR,my_task_data->subtask[i]->finishtime);
 				//printf(" %s%9Li us",NO_COLOUR,my_task_data->subtask[i]->starttime);
 			}
+			if(flag & HAS_IO_STAT) {
+				/*calculate the values for disk stats */
+		//		my_task_data->subtask[i]->throughput = (my_task_data->subtask[i]->rchar + my_task_data->subtask[i]->wchar) * 1000.0 / sampling_interval; //in bytes/s
+				if(my_task_data->subtask[i]->min_write_bytes > my_task_data->subtask[i]->wchar) my_task_data->subtask[i]->min_write_bytes = my_task_data->subtask[i]->wchar;
+				if(my_task_data->subtask[i]->max_write_bytes < my_task_data->subtask[i]->wchar) my_task_data->subtask[i]->max_write_bytes = my_task_data->subtask[i]->wchar;
+				if(my_task_data->subtask[i]->min_read_bytes > my_task_data->subtask[i]->rchar) my_task_data->subtask[i]->min_read_bytes = my_task_data->subtask[i]->rchar;
+				if(my_task_data->subtask[i]->max_read_bytes < my_task_data->subtask[i]->rchar) my_task_data->subtask[i]->max_read_bytes = my_task_data->subtask[i]->rchar;
+			}
+			if(flag & HAS_NET_STAT) {
+				if(my_task_data->subtask[i]->min_send_bytes > my_task_data->subtask[i]->send_bytes)
+					my_task_data->subtask[i]->min_send_bytes = my_task_data->subtask[i]->send_bytes;
+				if(my_task_data->subtask[i]->max_send_bytes < my_task_data->subtask[i]->send_bytes)
+					my_task_data->subtask[i]->max_send_bytes = my_task_data->subtask[i]->send_bytes;
+		// 		my_task_data->subtask[i]->accum_send_bytes += my_task_data->subtask[i]->send_bytes;
+			}
+			if(my_task_data->subtask[i]->min_CPU_usage_rate > my_task_data->subtask[i]->pcpu) my_task_data->subtask[i]->min_CPU_usage_rate = my_task_data->subtask[i]->pcpu;
+			if(my_task_data->subtask[i]->max_CPU_usage_rate < my_task_data->subtask[i]->pcpu) my_task_data->subtask[i]->max_CPU_usage_rate = my_task_data->subtask[i]->pcpu;
+			if(my_task_data->subtask[i]->min_RAM_usage_rate > my_task_data->subtask[i]->pmem) my_task_data->subtask[i]->min_RAM_usage_rate = my_task_data->subtask[i]->pmem;
+			if(my_task_data->subtask[i]->max_RAM_usage_rate < my_task_data->subtask[i]->pmem) my_task_data->subtask[i]->max_RAM_usage_rate = my_task_data->subtask[i]->pmem;
+		// 	if(my_task_data->subtask[i]->min_swap_usage_rate > my_task_data->subtask[i]->swap_usage_rate) my_task_data->subtask[i]->min_swap_usage_rate = my_task_data->subtask[i]->swap_usage_rate;
+		// 	if(my_task_data->subtask[i]->max_swap_usage_rate < my_task_data->subtask[i]->swap_usage_rate) my_task_data->subtask[i]->max_swap_usage_rate = my_task_data->subtask[i]->swap_usage_rate;
+			my_task_data->subtask[i]->accum_CPU_usage_rate += my_task_data->subtask[i]->pcpu;
+			my_task_data->subtask[i]->accum_RAM_usage_rate += my_task_data->subtask[i]->pmem;
+		// 	my_task_data->subtask[i]->accum_swap_usage_rate += my_task_data->subtask[i]->swap_usage_rate;
+			my_task_data->subtask[i]->counter=my_task_data->subtask[i]->counter+1;
 		}
-		if(flag & HAS_IO_STAT) {
-			/*calculate the values for disk stats */
-	// 		my_task_data->subtask[i]->throughput = (my_task_data->subtask[i]->rchar + my_task_data->subtask[i]->wchar) * 1000.0 / sampling_interval; //in bytes/s
-			if(my_task_data->subtask[i]->min_write_bytes > my_task_data->subtask[i]->wchar) my_task_data->subtask[i]->min_write_bytes = my_task_data->subtask[i]->wchar;
-			if(my_task_data->subtask[i]->max_write_bytes < my_task_data->subtask[i]->wchar) my_task_data->subtask[i]->max_write_bytes = my_task_data->subtask[i]->wchar;
-			if(my_task_data->subtask[i]->min_read_bytes > my_task_data->subtask[i]->rchar) my_task_data->subtask[i]->min_read_bytes = my_task_data->subtask[i]->rchar;
-			if(my_task_data->subtask[i]->max_read_bytes < my_task_data->subtask[i]->rchar) my_task_data->subtask[i]->max_read_bytes = my_task_data->subtask[i]->rchar;
-		}
-		if(flag & HAS_NET_STAT) {
-			if(my_task_data->subtask[i]->min_send_bytes > my_task_data->subtask[i]->send_bytes)
-				my_task_data->subtask[i]->min_send_bytes = my_task_data->subtask[i]->send_bytes;
-			if(my_task_data->subtask[i]->max_send_bytes < my_task_data->subtask[i]->send_bytes)
-				my_task_data->subtask[i]->max_send_bytes = my_task_data->subtask[i]->send_bytes;
-	// 		my_task_data->subtask[i]->accum_send_bytes += my_task_data->subtask[i]->send_bytes;
-		}
-		if(my_task_data->subtask[i]->min_CPU_usage_rate > my_task_data->subtask[i]->pcpu) my_task_data->subtask[i]->min_CPU_usage_rate = my_task_data->subtask[i]->pcpu;
-		if(my_task_data->subtask[i]->max_CPU_usage_rate < my_task_data->subtask[i]->pcpu) my_task_data->subtask[i]->max_CPU_usage_rate = my_task_data->subtask[i]->pcpu;
-		if(my_task_data->subtask[i]->min_RAM_usage_rate > my_task_data->subtask[i]->pmem) my_task_data->subtask[i]->min_RAM_usage_rate = my_task_data->subtask[i]->pmem;
-		if(my_task_data->subtask[i]->max_RAM_usage_rate < my_task_data->subtask[i]->pmem) my_task_data->subtask[i]->max_RAM_usage_rate = my_task_data->subtask[i]->pmem;
-	// 	if(my_task_data->subtask[i]->min_swap_usage_rate > my_task_data->subtask[i]->swap_usage_rate) my_task_data->subtask[i]->min_swap_usage_rate = my_task_data->subtask[i]->swap_usage_rate;
-	// 	if(my_task_data->subtask[i]->max_swap_usage_rate < my_task_data->subtask[i]->swap_usage_rate) my_task_data->subtask[i]->max_swap_usage_rate = my_task_data->subtask[i]->swap_usage_rate;
-		my_task_data->subtask[i]->accum_CPU_usage_rate += my_task_data->subtask[i]->pcpu;
-		my_task_data->subtask[i]->accum_RAM_usage_rate += my_task_data->subtask[i]->pmem;
-	// 	my_task_data->subtask[i]->accum_swap_usage_rate += my_task_data->subtask[i]->swap_usage_rate;
-		my_task_data->subtask[i]->counter=my_task_data->subtask[i]->counter+1;
 	}
 	free(szBuffer);
-	return 0;
+	return i;
 }
 
 
@@ -1073,7 +1109,7 @@ unsigned int procesa_pid_load(int pid, unsigned int argmaxcores, struct task_dat
 	my_task_data->totalpmem=0;
 	long long int actual_time=mycurrenttime();
 	int j, found;
-	int pspid, pstid,currentcore;
+	int pspid, pstid, currentcore;
 	float pcpu, pmem;
 // 	if(pid[0]!='\0') {
 		// Execute a process listing
@@ -1106,7 +1142,7 @@ unsigned int procesa_pid_load(int pid, unsigned int argmaxcores, struct task_dat
 					}else if(contador==5){
 						pmem=atof(loadstr);
 						my_task_data->totalpmem+= pmem;
-					} 
+					}
 				}
 				if(comout[i]=='\n'){
 					j=0;
@@ -1121,6 +1157,7 @@ unsigned int procesa_pid_load(int pid, unsigned int argmaxcores, struct task_dat
 					if((found==false)&&(my_task_data->totaltid<my_task_data->maxprocesses+1)){
 						if(pcpu>0.0){//if(pspid==pstid){
 							j=my_task_data->totaltid;
+							my_task_data->subtask[j]->time_of_last_measured=0;
 							my_task_data->totaltid=my_task_data->totaltid+1;
 							my_task_data->subtask[j]->starttime=actual_time;
 							
@@ -1165,9 +1202,8 @@ unsigned int procesa_pid_load(int pid, unsigned int argmaxcores, struct task_dat
 							my_task_data->subtask[j]->min_send_bytes = 0;
 							my_task_data->subtask[j]->max_send_bytes = 0;
 							my_task_data->subtask[j]->accum_send_bytes = 0;
-
-								if(j==0)
-									my_task_data->first_start=actual_time;
+							if(j==0)
+								my_task_data->first_start=actual_time;
 							found=true;
 						}
 					}
@@ -1180,6 +1216,8 @@ unsigned int procesa_pid_load(int pid, unsigned int argmaxcores, struct task_dat
 						my_task_data->subtask[j]->totaltime=0;
 						my_task_data->subtask[j]->pcpu=pcpu;
 						my_task_data->subtask[j]->pmem=pmem;
+// 						printf(" paco task [%i-%i] j=%i pcpu = %.3f\n",pspid, pstid,j,my_task_data->subtask[j]->pcpu);
+						
 					}
 					contador=0;
 					i++;
@@ -1198,7 +1236,7 @@ unsigned int procesa_pid_load(int pid, unsigned int argmaxcores, struct task_dat
 		}else if(my_task_data->subtask[i]->totaltime==0){
 			finishing_tasks++;
 			my_task_data->subtask[i]->finishtime=actual_time;
-			my_task_data->subtask[i]->totaltime=my_task_data->subtask[i]->finishtime- my_task_data->subtask[i]->starttime;
+			my_task_data->subtask[i]->totaltime=my_task_data->subtask[i]->finishtime - my_task_data->subtask[i]->starttime;
 			my_task_data->subtask[i]->pcpu=0.0;
 			my_task_data->subtask[i]->pmem=0.0;
 		}
@@ -1215,7 +1253,7 @@ unsigned int procesa_pid_load(int pid, unsigned int argmaxcores, struct task_dat
 		long int freqs=my_task_data->cores[i].core_freq;
 		if(param_energy.freq_max<=param_energy.freq_min){
 		my_task_data->cores[i].total_joules_core=
-			my_task_data->cores[i].total_load_core*(param_energy.MIN_CPU_POWER);	
+			my_task_data->cores[i].total_load_core*(param_energy.MIN_CPU_POWER);
 		}else{
 		my_task_data->cores[i].total_joules_core=
 			my_task_data->cores[i].total_load_core*(param_energy.MIN_CPU_POWER + power_range * (freqs-param_energy.freq_min)/(param_energy.freq_max-param_energy.freq_min))/100.0; // in milliJoule
@@ -1224,14 +1262,14 @@ unsigned int procesa_pid_load(int pid, unsigned int argmaxcores, struct task_dat
 			long long int total_time = (actual_time - my_task_data->cores[i].time_of_last_measured);
 			my_task_data->cores[i].time_between_measures=total_time;
 			my_task_data->cores[i].total_watts_core+= my_task_data->cores[i].total_joules_core*(1.0e-9)*total_time;
-// 			fprintf(kkfp, "t=%lli %lli  %.2f %lli\n",  actual_time, my_task_data->cores[i].time_of_last_measured,  my_task_data->cores[i].total_joules_core, total_time);
+// 			fprintf(kkfp, "t=%lli %lli  %.2f %lli\n", actual_time, my_task_data->cores[i].time_of_last_measured, my_task_data->cores[i].total_joules_core, total_time);
 		}
 		my_task_data->cores[i].time_of_last_measured=actual_time;
 	}
 	free(comout);
 	return maxcores;
 }
- 
+
 
 
 void procesa_task_io(task_data *my_task_data ) {
@@ -1267,7 +1305,7 @@ void procesa_task_io(task_data *my_task_data ) {
 						find_llint_from_label(loadstr, "write_bytes: ", &my_task_data->subtask[subtask]->write_bytes);
 						find_llint_from_label(loadstr, "cancelled_write_bytes: ", &my_task_data->subtask[subtask]->cancelled_write_bytes);
 					} //end while
-// 					printf(" %i: %lli %lli ==== ", my_task_data->subtask[subtask]->pstid, my_task_data->subtask[subtask]->rchar, my_task_data->subtask[subtask]->wchar );
+// 					printf(" %i: %lli %lli ==== ", my_task_data->subtask[subtask]->pstid, my_task_data->subtask[subtask]->rchar, my_task_data->subtask[subtask]->wchar);
 				}
 // 			}
 // 		}//end if
@@ -1276,12 +1314,20 @@ void procesa_task_io(task_data *my_task_data ) {
 }
 
 void free_mem_report(struct task_data_t *my_task_data_a){
-// 	for(int i=0;i<my_task_data_a->maxprocesses;i++){
-// 		free(my_task_data_a->subtask[i]);
-// 		free(my_task_data_a->task_def[i]);
-// 	}
-// 	free(my_task_data_a->subtask);
-// 	free(my_task_data_a->task_def);
+//not needed because we will free in other place
+//	if(my_task_data_a==NULL) return;
+//	for(int i=0;i<my_task_data_a->maxprocesses;i++){
+//		if(my_task_data_a->subtask!=NULL)
+//		if(my_task_data_a->subtask[i]!=NULL)
+//		free(my_task_data_a->subtask[i]);
+//		if(my_task_data_a->task_def!=NULL)
+//		if(my_task_data_a->task_def[i]!=NULL)
+//		free(my_task_data_a->task_def[i]);
+//	}
+//	if(my_task_data_a->subtask!=NULL);
+//		free(my_task_data_a->subtask);
+//	if(my_task_data_a->task_def!=NULL);
+//		free(my_task_data_a->task_def);
 }
 
 void init_stats(task_data *my_task_data_a){
@@ -1296,7 +1342,7 @@ void init_stats(task_data *my_task_data_a){
 		my_task_data_a->task_def[i] = (struct sub_task_user_def *) malloc(sizeof(struct sub_task_user_def));
 	}
 	my_task_data_a->cores = (struct cores_data *) malloc( my_task_data_a->maxcores * sizeof(struct cores_data));
-	
+
 	for (int i=0; i<my_task_data_a->maxcores; i++) {
 		my_task_data_a->cores[i].total_joules_core=0;
 		my_task_data_a->cores[i].total_load_core=0;
@@ -1323,7 +1369,6 @@ void stats_sample(const unsigned int pids, task_data *my_task_data) {
 	param_energy.MEMORY_POWER=2.016;//[2]
 	param_energy.case_fan= 1;
 	param_energy.motherboard_power = 40;
-	
 	param_energy.sata_drive=15.0;
 
 	param_energy.hd_power = 8;
@@ -1333,7 +1378,7 @@ void stats_sample(const unsigned int pids, task_data *my_task_data) {
 	// Idle        5.50 Watts
 	// Standby     0.80 Watts
 	// Sleep       0.80 Watts
-	
+
 // values from https://www.tomshardware.co.uk/desktop-hdd.15-st4000dm000-4tb,review-32729-6.html
 // 	WD RED WD30EFRX 3TB 5400 rpm  5.4W
 // 	Seagate Desktop HDD 15  4TB 5900 rpm 5.9W

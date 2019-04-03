@@ -40,28 +40,28 @@
 int valid_cpu_freq_stat;
 
 // size_t execute_command(const char *command, char *comout, size_t *comalloc){
-// 	// Setup our pipe for reading and execute our command.
-// 	FILE *fd;
-// 	size_t comlen = 0;
-// 	fd = popen(command,"r");//if (!fd) == if(fp==NULL) This if statement implicitly checks "is not 0", so we reverse that to mean "is 0".
-// 	if (fd!=NULL){
-// 		char buffer[256];
-// 		size_t chread;
-// 		/* Use fread so binary data is dealt with correctly */
-// 		while ((chread = fread(buffer, 1, sizeof(buffer), fd)) != 0) {
-// 			if (comlen + chread +1>= *comalloc) {
-// 				*comalloc = *comalloc + *comalloc;
-// 				comout = (char *) realloc(comout, *comalloc * sizeof(char));
-// 			}
-// 			memmove(comout + comlen, buffer, chread);// destination source numbytes
-// 			comlen += chread;
-// 		}
-// 		pclose(fd);
-// 	}
-// 	comout[comlen]='\0';
-// 	/* We can now work with the output as we please. Just print out to confirm output is as expected */
-// 	//fwrite(comout, 1, comlen, stdout);
-// 	return comlen;
+//	// Setup our pipe for reading and execute our command.
+//	FILE *fd;
+//	size_t comlen = 0;
+//	fd = popen(command,"r");//if (!fd) == if(fp==NULL) This if statement implicitly checks "is not 0", so we reverse that to mean "is 0".
+//	if (fd!=NULL){
+//		char buffer[256];
+//		size_t chread;
+//		/* Use fread so binary data is dealt with correctly */
+//		while ((chread = fread(buffer, 1, sizeof(buffer), fd)) != 0) {
+//			if (comlen + chread +1>= *comalloc) {
+//				*comalloc = *comalloc + *comalloc;
+//				comout = (char *) realloc(comout, *comalloc * sizeof(char));
+//			}
+//			memmove(comout + comlen, buffer, chread);// destination source numbytes
+//			comlen += chread;
+//		}
+//		pclose(fd);
+//	}
+//	comout[comlen]='\0';
+//	/* We can now work with the output as we please. Just print out to confirm output is as expected */
+//	//fwrite(comout, 1, comlen, stdout);
+//	return comlen;
 // }
 
 
@@ -131,13 +131,13 @@ void add_int_to_str(char *str_2_add, const int position, const int number, const
 * until find end of string, end of line or a space character ' '
 */
 // unsigned int process_str(char *input, char *output, unsigned const int start, const unsigned int max_output_size){
-// 	unsigned int j=0;
-// 	while((input[j+start]!='\n')&&(input[j+start]!='\0')&&(input[j+start]!=' ')&&(j+1<max_output_size) ){
-// 		output[j]=input[j+start];
-// 		j++;
-// 	}
-// 	output[j]='\0';
-// 	return (start+j);
+//	unsigned int j=0;
+//	while((input[j+start]!='\n')&&(input[j+start]!='\0')&&(input[j+start]!=' ')&&(j+1<max_output_size) ){
+//		output[j]=input[j+start];
+//		j++;
+//	}
+//	output[j]='\0';
+//	return (start+j);
 // }
 
 /*
@@ -145,64 +145,64 @@ void add_int_to_str(char *str_2_add, const int position, const int number, const
 * until find end of string or end of line 
 */
 // unsigned int getline_str(char *input, char *output, unsigned const int start){
-// 	unsigned int j=0;
-// 	while((input[j+start]!='\n')&&(input[j+start]!='\0')){
-// 		output[j]=input[j+start];
-// 		j++;
-// 	}
-// 	output[j]='\0';
-// 	return (start+j+1);
+//	unsigned int j=0;
+//	while((input[j+start]!='\n')&&(input[j+start]!='\0')){
+//		output[j]=input[j+start];
+//		j++;
+//	}
+//	output[j]='\0';
+//	return (start+j+1);
 // }
 
 //search for the string cad1 in the string source, starting from position "start"
 //if found: return ths position where starts the cad1 in the string source
 //if not found: returns a not valid value, which is the lenght of source +1 
 // unsigned int find_str(int start, char source[], const char cad1[]){
-// 	int longsource=lengthstring(source);
-// 	int longcad=lengthstring(cad1);
-// 	if (longsource<longcad)
-// 		return(longsource+1);
-// 	int i=start;
-// 	int iguales;
-// 	do{
-// 		iguales=true;	
-// 		for (int j=0;j<longcad;j++)
-// 			if (source[i+j]!=cad1[j])
-// 				iguales=false;
-// 		i++;
-// 	} while ((iguales==false) && (i<=(longsource-longcad)));
-// 	if (iguales==false)
-// 		return(longsource+1);
-// 	i--;// Habiamos sumado uno de mas
-// 	return (i);
+//	int longsource=lengthstring(source);
+//	int longcad=lengthstring(cad1);
+//	if (longsource<longcad)
+//		return(longsource+1);
+//	int i=start;
+//	int iguales;
+//	do{
+//		iguales=true;	
+//		for (int j=0;j<longcad;j++)
+//			if (source[i+j]!=cad1[j])
+//				iguales=false;
+//		i++;
+//	} while ((iguales==false) && (i<=(longsource-longcad)));
+//	if (iguales==false)
+//		return(longsource+1);
+//	i--;// Habiamos sumado uno de mas
+//	return (i);
 // }
 
 //removes the string "cadenaBuscar" from the string "source"
 //returns true if the string "cadenaBuscar" was found and removed
 // int remove_str(int start ,char source[], const char cadenaBuscar[]){
-// 	int longsource=lengthstring(source);
-// 	int longcad=lengthstring(cadenaBuscar);
-// 	if (longsource>=longcad){
-// 		int i=find_str(start,source, cadenaBuscar);
-// 		if (i+longcad<=longsource) { // Encontramos la cadena 1 y empieza en i1
-// 			for (int j=i;j<=longsource;j++) 
-// 				source[j]=source[j+longcad];
-// 			return(true);
-// 		//}else{
-// 		//	printf(" i %i longcad %i long source %i\n",i,longcad,longsource);
-// 		}
-// 	}
-// 	return(false);
+//	int longsource=lengthstring(source);
+//	int longcad=lengthstring(cadenaBuscar);
+//	if (longsource>=longcad){
+//		int i=find_str(start,source, cadenaBuscar);
+//		if (i+longcad<=longsource) { // Encontramos la cadena 1 y empieza en i1
+//			for (int j=i;j<=longsource;j++) 
+//				source[j]=source[j+longcad];
+//			return(true);
+//		//}else{
+//		//	printf(" i %i longcad %i long source %i\n",i,longcad,longsource);
+//		}
+//	}
+//	return(false);
 // }
 
 //it searches for the first integer from the position "start" in a text string
 //if found number:
 //		the funtion returns TRUE if found number
-// 		returns in "end" the ending position of the number found in the string.
+//		returns in "end" the ending position of the number found in the string.
 //		returns dato with the value of the number found
 // if not found number:
 //		the funtion returns FALSE if found number
-// 		returns in "end" the position of the end of the line, or end of the string if not found any end of line
+//		returns in "end" the position of the end of the line, or end of the string if not found any end of line
 //		returns dato with zero
 int get_first_int(const int start,int *end, char *loadstr, int *dato){
 	int pos=start;
@@ -337,89 +337,89 @@ int textoentre(const char cad1[],const char cad2[], int ini, char *LINEA, char t
  
 // /* read the process runtime from /proc/[pid]/stat */
 // int read_pid_time(int pid, resources_stats *info) {
-// 	FILE *fp;
-// 	char *line= (char *) malloc(1024);
-// 	char pid_cpu_file[128] = {'\0'};
-// 	char tmp_str[32];
-// 	char tmp_char;
-// 	unsigned long long tmp, pid_utime, pid_stime;
-// 	if(line == NULL) {
-// 		printf("ERROR: Could not alocate memory\n");
-// 		return 0;
-// 	}
-// 	sprintf(pid_cpu_file, "/proc/%d/stat", pid);
-// 	fp = fopen(pid_cpu_file, "r");
-// 	if(fp == NULL) {
-// 		printf("ERROR: Could not open file %s\n", pid_cpu_file);
-// 		return 0;
-// 	}
-// 	if(fgets(line, 1024, fp) != NULL) {
-// 		sscanf(line, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu",
-// 			(int *)&tmp, tmp_str, &tmp_char, (int *)&tmp, (int *)&tmp, (int *)&tmp, (int *)&tmp, (int *)&tmp,
-// 			(unsigned int *)&tmp, (unsigned long *)&tmp, (unsigned long *)&tmp, (unsigned long *)&tmp,
-// 			(unsigned long *)&tmp, (unsigned long *)&pid_utime, (unsigned long *)&pid_stime);
-// 	}
-// 	info->pid_runtime = pid_utime + pid_stime;
-// 	fclose(fp);
-// 	if(line!=NULL) free(line);
-// 	return 1;
+//	FILE *fp;
+//	char *line= (char *) malloc(1024);
+//	char pid_cpu_file[128] = {'\0'};
+//	char tmp_str[32];
+//	char tmp_char;
+//	unsigned long long tmp, pid_utime, pid_stime;
+//	if(line == NULL) {
+//		printf("ERROR: Could not alocate memory\n");
+//		return 0;
+//	}
+//	sprintf(pid_cpu_file, "/proc/%d/stat", pid);
+//	fp = fopen(pid_cpu_file, "r");
+//	if(fp == NULL) {
+//		printf("ERROR: Could not open file %s\n", pid_cpu_file);
+//		return 0;
+//	}
+//	if(fgets(line, 1024, fp) != NULL) {
+//		sscanf(line, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu",
+//			(int *)&tmp, tmp_str, &tmp_char, (int *)&tmp, (int *)&tmp, (int *)&tmp, (int *)&tmp, (int *)&tmp,
+//			(unsigned int *)&tmp, (unsigned long *)&tmp, (unsigned long *)&tmp, (unsigned long *)&tmp,
+//			(unsigned long *)&tmp, (unsigned long *)&pid_utime, (unsigned long *)&pid_stime);
+//	}
+//	info->pid_runtime = pid_utime + pid_stime;
+//	fclose(fp);
+//	if(line!=NULL) free(line);
+//	return 1;
 // }
 // 
 // /* read the process read_bytes, write_bytes, and cancelled_writes from /proc/[pid]/io */
 // int read_pid_io(int pid, resources_stats *info) {
-// 	FILE *fp;
-// 	char line[128];
-// 	char disk_file[128] = {'\0'};
-// 	sprintf(disk_file, "/proc/%d/io", pid);
-// 	fp = fopen(disk_file, "r");
-// 	if(fp == NULL) {
-// 		printf("ERROR: Could not open file %s\n", disk_file);
-// 		return 0;
-// 	}
-// 	while (fgets(line, 128, fp) != NULL) {
-// 		if(!strncmp(line, "read_bytes:", 11)) {
-// 			sscanf(line + 12, "%llu", &info->pid_read_bytes);
-// 		} else if(!strncmp(line, "write_bytes:", 12)) {
-// 			sscanf(line + 13, "%llu", &info->pid_write_bytes);
-// 		} else if(!strncmp(line, "cancelled_write_bytes:", 22)) {
-// 			sscanf(line + 23, "%llu", &info->pid_cancelled_writes);
-// 		}
-// 	}
-// 	fclose(fp);
-// 	return 1;
+//	FILE *fp;
+//	char line[128];
+//	char disk_file[128] = {'\0'};
+//	sprintf(disk_file, "/proc/%d/io", pid);
+//	fp = fopen(disk_file, "r");
+//	if(fp == NULL) {
+//		printf("ERROR: Could not open file %s\n", disk_file);
+//		return 0;
+//	}
+//	while (fgets(line, 128, fp) != NULL) {
+//		if(!strncmp(line, "read_bytes:", 11)) {
+//			sscanf(line + 12, "%llu", &info->pid_read_bytes);
+//		} else if(!strncmp(line, "write_bytes:", 12)) {
+//			sscanf(line + 13, "%llu", &info->pid_write_bytes);
+//		} else if(!strncmp(line, "cancelled_write_bytes:", 22)) {
+//			sscanf(line + 23, "%llu", &info->pid_cancelled_writes);
+//		}
+//	}
+//	fclose(fp);
+//	return 1;
 // }
-// 
+
 // /* read the system itv and runtime from /proc/stat*/
 // int read_sys_time(resources_stats *info) {
-// 	FILE *fp;
-// 	char *line= (char *) malloc(1024);
-// 	const char cpu_file[] = "/proc/stat";
-// 	unsigned long long cpu_user, cpu_nice, cpu_sys, cpu_idle, cpu_iowait, cpu_hardirq, cpu_softirq, cpu_steal;
-// 	if(line == NULL) {
-// 		printf("ERROR: Could not alocate memory\n");
-// 		return 0;
-// 	}
-// 	fp = fopen(cpu_file, "r");
-// 	if(fp == NULL) {
-// 		printf("ERROR: Could not open file %s\n", cpu_file);
-// 		return 0;
-// 	}
-// 	if(fgets(line, 1024, fp) != NULL) {
-// 		sscanf(line+5, "%llu %llu %llu %llu %llu %llu %llu %llu",
-// 			&cpu_user,
-// 			&cpu_nice,
-// 			&cpu_sys,
-// 			&cpu_idle,
-// 			&cpu_iowait,
-// 			&cpu_hardirq,
-// 			&cpu_softirq,
-// 			&cpu_steal);
-// 	}
-// 	info->sys_itv = cpu_user + cpu_nice + cpu_sys + cpu_idle + cpu_iowait + cpu_hardirq + cpu_softirq + cpu_steal;
-// 	info->sys_runtime = cpu_user + cpu_sys;
-// 	fclose(fp);
-// 	if(line!=NULL) free(line);
-// 	return 1;
+//	FILE *fp;
+//	char *line= (char *) malloc(1024);
+//	const char cpu_file[] = "/proc/stat";
+//	unsigned long long cpu_user, cpu_nice, cpu_sys, cpu_idle, cpu_iowait, cpu_hardirq, cpu_softirq, cpu_steal;
+//	if(line == NULL) {
+//		printf("ERROR: Could not alocate memory\n");
+//		return 0;
+//	}
+//	fp = fopen(cpu_file, "r");
+//	if(fp == NULL) {
+//		printf("ERROR: Could not open file %s\n", cpu_file);
+//		return 0;
+//	}
+//	if(fgets(line, 1024, fp) != NULL) {
+//		sscanf(line+5, "%llu %llu %llu %llu %llu %llu %llu %llu",
+//			&cpu_user,
+//			&cpu_nice,
+//			&cpu_sys,
+//			&cpu_idle,
+//			&cpu_iowait,
+//			&cpu_hardirq,
+//			&cpu_softirq,
+//			&cpu_steal);
+//	}
+//	info->sys_itv = cpu_user + cpu_nice + cpu_sys + cpu_idle + cpu_iowait + cpu_hardirq + cpu_softirq + cpu_steal;
+//	info->sys_runtime = cpu_user + cpu_sys;
+//	fclose(fp);
+//	if(line!=NULL) free(line);
+//	return 1;
 // }
 
 
@@ -449,95 +449,94 @@ int create_perf_stat_counter(int pid) {
 	return syscall(__NR_perf_event_open, &attr, pid, mcpu, mgroup_fd, mflags);
 	
 // #ifdef USERSPACE_ONLY
-// 	attr.exclude_kernel = 1;
-// 	attr.exclude_hv = 1;
-// 	attr.exclude_idle = 1;
-// 	attr.exclude_callchain_kernel = 1;
+//	attr.exclude_kernel = 1;
+//	attr.exclude_hv = 1;
+//	attr.exclude_idle = 1;
+//	attr.exclude_callchain_kernel = 1;
 // #endif
-// 	attr.type = PERF_TYPE_HARDWARE;
-// 	attr.config = PERF_COUNT_HW_CPU_CYCLES;
-// 	cycles_fd = sys_perf_event_open(&attr, 0, -1, -1, 0);
-// 	if (cycles_fd < 0) {
-// 		perror("sys_perf_event_open");
-// 		exit(1);
-// 	}
-// 
-// 	/* We use cycles_fd as the group leader in order to ensure
-// 	 * both counters run at the same time and our CPI statistics are
-// 	 * valid. */
-// 	attr.disabled = 0; /* The group leader will start/stop us */
-// 	attr.type = PERF_TYPE_HARDWARE;
-// 	attr.config = PERF_COUNT_HW_INSTRUCTIONS;
-// 	instructions_fd = sys_perf_event_open(&attr, 0, -1, cycles_fd, 0);
-// 	if (instructions_fd < 0) {
-// 		perror("sys_perf_event_open");
-// 		exit(1);
-// 	}
+//	attr.type = PERF_TYPE_HARDWARE;
+//	attr.config = PERF_COUNT_HW_CPU_CYCLES;
+//	cycles_fd = sys_perf_event_open(&attr, 0, -1, -1, 0);
+//	if (cycles_fd < 0) {
+//		perror("sys_perf_event_open");
+//		exit(1);
+//	}
+//	/* We use cycles_fd as the group leader in order to ensure
+//	 * both counters run at the same time and our CPI statistics are
+//	 * valid. */
+//	attr.disabled = 0; /* The group leader will start/stop us */
+//	attr.type = PERF_TYPE_HARDWARE;
+//	attr.config = PERF_COUNT_HW_INSTRUCTIONS;
+//	instructions_fd = sys_perf_event_open(&attr, 0, -1, cycles_fd, 0);
+//	if (instructions_fd < 0) {
+//		perror("sys_perf_event_open");
+//		exit(1);
+//	}
 }
 
 
 /* get the cpu freq counting and return the cpu energy since the last call of the function */
 // int cpu_freq_stat_time_in_state(resources_stats *info) {
-// 	/* read the system cpu energy based on given max- and min- cpu energy, and frequencies statistics */
-// 	FILE *fp;
-// 	char line[32] = {'\0'};
-// 	int i, max_i;
-// 	struct dirent *dirent;
-// 	char *cpu_freq_file = NULL;
-// 	float energy_total;
-// 	unsigned long long tmp;
-// 	unsigned long long freqs[16];
-// 	const char filenametest[]="/sys/devices/system/cpu/cpu0/cpufreq/stats/time_in_state";
-// 	energy_total = 0.0;
-// 	info->sys_cpu_energy = energy_total;// TODO we need a default value in case can not collect data !!!
-// 	if(valid_cpu_freq_stat==0)
-// 		return FAILURE;
-// 	/* check if system support cpu freq counting */
-// 	if(access( filenametest, F_OK ) != -1 ) {
-// 		// file exists
-// 	} else {
-// 		// file doesn't exist
-// 		printf("ERROR: CPU frequency statistics are not supported.\n");
-// 		valid_cpu_freq_stat=0;
-// 		return FAILURE;
-// 	}
-// 	float power_range = parameters_value[0] - parameters_value[1];
-// 	DIR *dir = opendir("/sys/devices/system/cpu");
-// 	if(!dir) {
-// 		printf("ERROR: Could not open directory /sys/devices/system/cpu\n");
-// 		valid_cpu_freq_stat=0;
-// 		return FAILURE;
-// 	}
-// 	while ((dirent = readdir(dir))) {
-// 		/* for each entry name starting by cpuxx */
-// 		if(strncmp(dirent->d_name,"cpu", 3) != 0)
-// 			continue;
-// 		cpu_freq_file=concat_and_free(&cpu_freq_file, "/sys/devices/system/cpu/");
-// 		cpu_freq_file=concat_and_free(&cpu_freq_file, dirent->d_name);
-// 		cpu_freq_file=concat_and_free(&cpu_freq_file, "/cpufreq/stats/time_in_state");
-// 		fp = fopen(cpu_freq_file, "r");
-// 		cpu_freq_file[0]='\0';//in the next loop the string will be empty
-// 		//memset(cpu_freq_file, '\0', malloc_usable_size(cpu_freq_file));
-// 		if(!fp)
-// 			continue;
-// 		for (i = 0; !feof(fp) && (i <= 15); i++) {
-// 			if(fgets(line, 32, fp) == NULL)
-// 				break;
-// 			sscanf(line, "%llu %llu", &tmp, &freqs[i]);
-// 			/* each line has a pair like "<frequency> <time>", which means this CPU spent <time> usertime at <frequency>.
-// 			unit of <time> is 10ms*/
-// 		}
-// 		max_i = i - 1;
-// 		fclose(fp);
-// 		for (i = 0; i <= max_i; i++) //for each possible freq value
-// 			energy_total += (parameters_value[0] - power_range * i / max_i) * freqs[i] * 10.0; // in milliJoule
-// 	}
-// 	if(cpu_freq_file!= NULL) free(cpu_freq_file);
-// 	closedir(dir);
-// 	info->sys_cpu_energy = energy_total;
-// 	printf("energy_total %.6f\n",energy_total);
-// 	return SUCCESS;
-// }//cpu_freq_stat_time_in_state
+//	/* read the system cpu energy based on given max- and min- cpu energy, and frequencies statistics */
+//	FILE *fp;
+//	char line[32] = {'\0'};
+//	int i, max_i;
+//	struct dirent *dirent;
+//	char *cpu_freq_file = NULL;
+//	float energy_total;
+//	unsigned long long tmp;
+//	unsigned long long freqs[16];
+//	const char filenametest[]="/sys/devices/system/cpu/cpu0/cpufreq/stats/time_in_state";
+//	energy_total = 0.0;
+//	info->sys_cpu_energy = energy_total;// TODO we need a default value in case can not collect data !!!
+//	if(valid_cpu_freq_stat==0)
+//		return FAILURE;
+//	/* check if system support cpu freq counting */
+//	if(access( filenametest, F_OK ) != -1 ) {
+//		// file exists
+//	} else {
+//		// file doesn't exist
+//		printf("ERROR: CPU frequency statistics are not supported.\n");
+//		valid_cpu_freq_stat=0;
+//		return FAILURE;
+//	}
+//	float power_range = parameters_value[0] - parameters_value[1];
+//	DIR *dir = opendir("/sys/devices/system/cpu");
+//	if(!dir) {
+//		printf("ERROR: Could not open directory /sys/devices/system/cpu\n");
+//		valid_cpu_freq_stat=0;
+//		return FAILURE;
+//	}
+//	while ((dirent = readdir(dir))) {
+//		/* for each entry name starting by cpuxx */
+//		if(strncmp(dirent->d_name,"cpu", 3) != 0)
+//			continue;
+//		cpu_freq_file=concat_and_free(&cpu_freq_file, "/sys/devices/system/cpu/");
+//		cpu_freq_file=concat_and_free(&cpu_freq_file, dirent->d_name);
+//		cpu_freq_file=concat_and_free(&cpu_freq_file, "/cpufreq/stats/time_in_state");
+//		fp = fopen(cpu_freq_file, "r");
+//		cpu_freq_file[0]='\0';//in the next loop the string will be empty
+//		//memset(cpu_freq_file, '\0', malloc_usable_size(cpu_freq_file));
+//		if(!fp)
+//			continue;
+//		for (i = 0; !feof(fp) && (i <= 15); i++) {
+//			if(fgets(line, 32, fp) == NULL)
+//				break;
+//			sscanf(line, "%llu %llu", &tmp, &freqs[i]);
+//			/* each line has a pair like "<frequency> <time>", which means this CPU spent <time> usertime at <frequency>.
+//			unit of <time> is 10ms*/
+//		}
+//		max_i = i - 1;
+//		fclose(fp);
+//		for (i = 0; i <= max_i; i++) //for each possible freq value
+//			energy_total += (parameters_value[0] - power_range * i / max_i) * freqs[i] * 10.0; // in milliJoule
+//	}
+//	if(cpu_freq_file!= NULL) free(cpu_freq_file);
+//	closedir(dir);
+//	info->sys_cpu_energy = energy_total;
+//	printf("energy_total %.6f\n",energy_total);
+//	return SUCCESS;
+//}//cpu_freq_stat_time_in_state
 
 
 //equation of the line: Energy = (Energy_max- Energy_min)/(Freq_max - Freq_min)
@@ -553,16 +552,16 @@ int cpu_freq_stat(resources_stats *info, energy_model param_energy) {
 	FILE *fp;
 	char line[32] = {'\0'};
 
-// 	int i, max_i;
+//	int i, max_i;
 	struct dirent *dirent;
 	char *cpu_freq_file = NULL;
 	unsigned long long freqs;
 	const char filenametest[]="/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq";
 	float energy_total = 0.0; 
-// 	unsigned long long tmp;
-// 	unsigned long long freqs_states[16];
-// 	long int temp_freq;
-// 	info->sys_cpu_energy = energy_total;// TODO we need a default value in case can not collect data !!!
+//	unsigned long long tmp;
+//	unsigned long long freqs_states[16];
+//	long int temp_freq;
+//	info->sys_cpu_energy = energy_total;// TODO we need a default value in case can not collect data !!!
 	/* check if system support cpu freq counting */
 	if(access( filenametest, F_OK ) != -1 ) {
 		// file exists
@@ -577,7 +576,7 @@ int cpu_freq_stat(resources_stats *info, energy_model param_energy) {
 	DIR *dir = opendir("/sys/devices/system/cpu");
 	if(!dir) {
 		printf("ERROR: Could not open directory /sys/devices/system/cpu\n");
-// 		valid_cpu_freq_stat=0;
+//		valid_cpu_freq_stat=0;
 		return FAILURE;
 	}
 	int count_cores=0;
@@ -585,45 +584,45 @@ int cpu_freq_stat(resources_stats *info, energy_model param_energy) {
 		/* for each entry name starting by cpuxx */
 		if(strncmp(dirent->d_name,"cpu", 3) != 0)
 			continue;
-// 		sprintf(cpu_freq_file, "/sys/devices/system/cpu/%s/cpufreq/stats/time_in_state", dirent->d_name);
+//		sprintf(cpu_freq_file, "/sys/devices/system/cpu/%s/cpufreq/stats/time_in_state", dirent->d_name);
 		cpu_freq_file=concat_and_free(&cpu_freq_file, "/sys/devices/system/cpu/");
 		cpu_freq_file=concat_and_free(&cpu_freq_file, dirent->d_name);
-// 		cpu_freq_file=concat_and_free(&cpu_freq_file, "/cpufreq/stats/time_in_state");// not appear on my S.O. Ubuntu
+//		cpu_freq_file=concat_and_free(&cpu_freq_file, "/cpufreq/stats/time_in_state");// not appear on my S.O. Ubuntu
 		cpu_freq_file=concat_and_free(&cpu_freq_file, "/cpufreq/scaling_cur_freq");
 		fp = fopen(cpu_freq_file, "r");
 		cpu_freq_file[0]='\0';//in the next loop the filename-string will be empty, but not null
 		//memset(cpu_freq_file, '\0', malloc_usable_size(cpu_freq_file));
 		if(!fp)
 			continue;
-// 		for (i = 0; !feof(fp) && (i <= 15); i++) {// it was used for the time_in_state
+//		for (i = 0; !feof(fp) && (i <= 15); i++) {// it was used for the time_in_state
 			if(fgets(line, 32, fp) == NULL)
 				break;
 			sscanf(line, "%llu", &freqs);//units are in KHz at scaling_cur_freq
-// 			sscanf(line, "%llu %llu", &tmp, &freqs_states[i]);// it was used for the time_in_state
+//			sscanf(line, "%llu %llu", &tmp, &freqs_states[i]);// it was used for the time_in_state
 			/* each line has a pair like "<frequency> <time>", which means this CPU spent <time> usertime at <frequency>.
 			unit of <time> is 10ms*/
-// 		}
-// 		max_i = i - 1;//that is the num of states// it was used for the time_in_state
+//		}
+//		max_i = i - 1;//that is the num of states// it was used for the time_in_state
 		fclose(fp);
-// 		for (i = 0; i <= max_i; i++) // it was used for the time_in_state
-// 			energy_total += (parameters_value[0] - power_range * i / max_i) * freqs_states[i] * 10.0; // in milliJoule// it was used for the time_in_state
-// 		temp_freq=((float)freqs )/1000000.0;
-// 		energy_total += param_energy.cpu_factor_c + param_energy.cpu_factor_k * temp_freq*temp_freq*temp_freq; // in milliJoule
+//		for (i = 0; i <= max_i; i++) // it was used for the time_in_state
+//			energy_total += (parameters_value[0] - power_range * i / max_i) * freqs_states[i] * 10.0; // in milliJoule// it was used for the time_in_state
+//		temp_freq=((float)freqs )/1000000.0;
+//		energy_total += param_energy.cpu_factor_c + param_energy.cpu_factor_k * temp_freq*temp_freq*temp_freq; // in milliJoule
 		energy_total += param_energy.MIN_CPU_POWER + power_range * (freqs-param_energy.freq_min)/(param_energy.freq_max-param_energy.freq_min); // in milliJoule
-// 		printf("  core num %i,  freq %llu Energy %.6f \n",count_cores, freqs, param_energy.MIN_CPU_POWER + power_range * (freqs-param_energy.freq_min)/(param_energy.freq_max-param_energy.freq_min));
-// 		printf("   ---> %.6f\n", energy_total);
+//		printf("  core num %i,  freq %llu Energy %.6f \n",count_cores, freqs, param_energy.MIN_CPU_POWER + power_range * (freqs-param_energy.freq_min)/(param_energy.freq_max-param_energy.freq_min));
+//		printf("   ---> %.6f\n", energy_total);
 		count_cores++;
 	}
-// 	printf("-----\ncount_cores %i\n",count_cores);
-// 	printf("  param_energy.MIN_CPU_POWER %.3f\n",param_energy.MIN_CPU_POWER);
-// 	printf("  param_energy.MAX_CPU_POWER %.3f\n",param_energy.MAX_CPU_POWER);
-// 	printf("  freq_max %llu freq_min %llu\n",param_energy.freq_max, param_energy.freq_min);
+//	printf("-----\ncount_cores %i\n",count_cores);
+//	printf("  param_energy.MIN_CPU_POWER %.3f\n",param_energy.MIN_CPU_POWER);
+//	printf("  param_energy.MAX_CPU_POWER %.3f\n",param_energy.MAX_CPU_POWER);
+//	printf("  freq_max %llu freq_min %llu\n",param_energy.freq_max, param_energy.freq_min);
 	
-// 	printf("CPU energy_total  =%.6f Joules\n",energy_total);
+//	printf("CPU energy_total  =%.6f Joules\n",energy_total);
 	if(cpu_freq_file!= NULL) free(cpu_freq_file);
 	closedir(dir);
 	info->sys_cpu_energy = energy_total;//in watts
-// 	printf("energy_total %.6f\n",energy_total);
+//	printf("energy_total %.6f\n",energy_total);
 	return SUCCESS;
 }
 
@@ -666,29 +665,29 @@ int read_and_check(int fd, int pid, resources_stats *info, energy_model param_en
 	}else{
 		info->pid_accum_l2_cache_misses = read_perf_counter(fd);
 	}
-// 	if(info->pid_accum_l2_cache_misses < info->before_pid_accum_l2_cache_misses) value_to_return+=16;
+//	if(info->pid_accum_l2_cache_misses < info->before_pid_accum_l2_cache_misses) value_to_return+=16;
 	info->pid_l2_cache_misses= info->pid_accum_l2_cache_misses - info->before_pid_accum_l2_cache_misses;
 	return value_to_return;
 }
 // int oldread_and_check(int fd, int pid, resources_stats *info) {
-// 	printf("**** read_and_check\n\n");
-// 	int value_to_return=0;
-// 	if(read_pid_time(pid, info) <= 0)
-// 		value_to_return+=1;
+//	printf("**** read_and_check\n\n");
+//	int value_to_return=0;
+//	if(read_pid_time(pid, info) <= 0)
+//		value_to_return+=1;
 // 
-// 	if(read_pid_io(pid, info) <=0)
-// 		value_to_return+=2;
+//	if(read_pid_io(pid, info) <=0)
+//		value_to_return+=2;
 // 
-// 	if(read_sys_time(info) <= 0)
-// 		value_to_return+=4;
-// 	
-// 	if(cpu_freq_stat(info) <= 0)
-// 		value_to_return+=8;
+//	if(read_sys_time(info) <= 0)
+//		value_to_return+=4;
+//	
+//	if(cpu_freq_stat(info) <= 0)
+//		value_to_return+=8;
 // 
-// 	info->pid_l2_cache_misses = read_perf_counter(fd);
-// 	if(info->pid_l2_cache_misses <= 0)
-// 		value_to_return+=16;
-// 	return value_to_return;
+//	info->pid_l2_cache_misses = read_perf_counter(fd);
+//	if(info->pid_l2_cache_misses <= 0)
+//		value_to_return+=16;
+//	return value_to_return;
 // }
 
 /* check if values are increasing; calculate the differences in the time interval; update the before values with after values */
@@ -730,7 +729,7 @@ int procesa_network_stat_read(char *comout, size_t *comalloc, struct task_data_t
 	for(subtask=0;subtask< my_task_data->totaltid;subtask++){
 		if(my_task_data->subtask[subtask]->updated==true){
 			if(my_task_data->subtask[subtask]->pstid==my_task_data->subtask[subtask]->pspid){
-// 				int pstid=my_task_data->subtask[subtask]->pstid;
+//				int pstid=my_task_data->subtask[subtask]->pstid;
 				int pspid=my_task_data->subtask[subtask]->pspid;
 				if(pspid!=0){
 				/* values reset to zeros */
@@ -739,8 +738,8 @@ int procesa_network_stat_read(char *comout, size_t *comalloc, struct task_data_t
 				char pid_net_file[128], line[1024];
 				sprintf(pid_net_file, NET_STAT_FILE, pspid);
 				if ((fp = fopen(pid_net_file, "r")) != NULL) {
-// 					printf( "Error: Cannot open %s.\n", pid_net_file);
-// 					return false;
+//					printf( "Error: Cannot open %s.\n", pid_net_file);
+//					return false;
 				while(fgets(line, 1024, fp) != NULL) {
 					char *sub_line_eth = strstr(line, "eth");
 					if (sub_line_eth != NULL) {
@@ -788,7 +787,7 @@ void procesa_cpuinfo( char *comout, size_t *comalloc, unsigned int argmaxcores, 
 	const int size_loadstr=250;
 	char loadstr[size_loadstr];
 	float my_temp_float;
-// 	long long int actual_time=mycurrenttime();
+//	long long int actual_time=mycurrenttime();
 	size_t comlen = execute_command( command, comout, comalloc);
 	//update all the loads to 0 of all tasks registerd in my_task_data
 	//first need to find if the pspid and pstid were already registered in my_task_data, its position will be stored in "index"
@@ -813,15 +812,15 @@ void procesa_cpuinfo( char *comout, size_t *comalloc, unsigned int argmaxcores, 
 }
 
 int power_monitor(int pid, char *DataPath, long sampling_interval, long long int start_app_time, struct app_report_t *my_app_report, struct task_data_t *my_task_data_a) {
-// 	float total_cpu_energy;
-// 	float pid_mem_power, pid_disk_power;// pid_cpu_power,duration, sys_cpu_power,
-// 	long long int pid_l2_cache_misses;
-// 	long long int read_bytes;
-// 	long long int write_bytes;
-// 	long long int cancelled_writes;
-// 	float pid_net_power;
-// 	float total_hd_energy;
-// 	float total_watts; 
+//	float total_cpu_energy;
+//	float pid_mem_power, pid_disk_power;// pid_cpu_power,duration, sys_cpu_power,
+//	long long int pid_l2_cache_misses;
+//	long long int read_bytes;
+//	long long int write_bytes;
+//	long long int cancelled_writes;
+//	float pid_net_power;
+//	float total_hd_energy;
+//	float total_watts; 
 	int i;
 	size_t comalloc = 8256;
 	char *comout = (char *) malloc(comalloc * sizeof(char));
@@ -863,32 +862,32 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 	param_energy.sata_drive=15.0;
 
 	param_energy.hd_power = 8;
-// 	param_energy.E_DISK_R_PER_MB=0.0556;//[5]
-// 	param_energy.E_DISK_W_PER_MB=0.0438;//[6]
+//	param_energy.E_DISK_R_PER_MB=0.0556;//[5]
+//	param_energy.E_DISK_W_PER_MB=0.0438;//[6]
 	// Read/Write  6.00 Watts
 	// Idle        5.50 Watts
 	// Standby     0.80 Watts
 	// Sleep       0.80 Watts
 
 // values from https://www.tomshardware.co.uk/desktop-hdd.15-st4000dm000-4tb,review-32729-6.html
-// 	WD RED WD30EFRX 3TB 5400 rpm  5.4W
-// 	Seagate Desktop HDD 15  4TB 5900 rpm 5.9W
-// 	Hitachi Deskstar 5K4000 4TB 5400 rpm 6.0 W
-// 	Hitachi Deskstar 5K3000 3TB 5400 rpm 6.4 W
-// 	WD Caviar Green WD30ERZRX 3TB 5400 rpm 7.0W
-// 	Seagate Barracuda 3TB 7200 rpm 7.9 W
-// 	Hitachi Deskstar 7K3000 3TB 7200 rom 8.6W
-// 	Hitachi Deskstar 7K4000 4TB 7200 rpm 8.7W
-// 	WD Black WD4001FAEX 4TB 7200 rpm 9.3 W
-// 	Seagate Barracuda XT 3TB 7200 rpm 9.5W
+//	WD RED WD30EFRX 3TB 5400 rpm  5.4W
+//	Seagate Desktop HDD 15  4TB 5900 rpm 5.9W
+//	Hitachi Deskstar 5K4000 4TB 5400 rpm 6.0 W
+//	Hitachi Deskstar 5K3000 3TB 5400 rpm 6.4 W
+//	WD Caviar Green WD30ERZRX 3TB 5400 rpm 7.0W
+//	Seagate Barracuda 3TB 7200 rpm 7.9 W
+//	Hitachi Deskstar 7K3000 3TB 7200 rom 8.6W
+//	Hitachi Deskstar 7K4000 4TB 7200 rpm 8.7W
+//	WD Black WD4001FAEX 4TB 7200 rpm 9.3 W
+//	Seagate Barracuda XT 3TB 7200 rpm 9.5W
 
 	param_energy.E_NET_SND_PER_MB=0.14256387;
 	param_energy.E_NET_RCV_PER_MB=0.24133936;
 
 // char parameters_name[9][32] = {"MAX_CPU_POWER", "MIN_CPU_POWER",// fields [0] [1]
-// 	"MEMORY_POWER", "L2CACHE_MISS_LATENCY", "L2CACHE_LINE_SIZE",//fields [2] [3] [4]
-// 	"E_DISK_R_PER_MB", "E_DISK_W_PER_MB", //fields [5] [6]
-// 	"E_NET_SND_PER_KB", "E_NET_RCV_PER_KB"};
+//	"MEMORY_POWER", "L2CACHE_MISS_LATENCY", "L2CACHE_LINE_SIZE",//fields [2] [3] [4]
+//	"E_DISK_R_PER_MB", "E_DISK_W_PER_MB", //fields [5] [6]
+//	"E_NET_SND_PER_KB", "E_NET_RCV_PER_KB"};
 // float parameters_value[9];
 
 	valid_cpu_freq_stat=1;
@@ -912,7 +911,7 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 	before.min_write_bytes = 0;
 	before.max_write_bytes = 0;
 	before.min_read_bytes = 0;
-	before.max_read_bytes = 0; 
+	before.max_read_bytes = 0;
 	before.write_bytes = 0;
 	before.read_bytes = 0;
 	before.accum_read_bytes = 0;
@@ -925,16 +924,16 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 	int fd_perf = create_perf_stat_counter(pid);
 	if(fd_perf <= 0){
 		printf("ERROR: create_perf_stat_counter: %s\n", FileName);
-// 		if(fp!=NULL) fclose(fp); fp=NULL;
-// 		if(FileName !=NULL) free(FileName);
-// 		return FAILURE;
+//		if(fp!=NULL) fclose(fp); fp=NULL;
+//		if(FileName !=NULL) free(FileName);
+//		return FAILURE;
 	}
 	int returned_value =read_and_check(fd_perf, pid, &before, param_energy);
 	if(returned_value != SUCCESS){
 		printf("ERROR: 3: %s\n", FileName);
-// 		if(fd_perf!=NULL) fclose(fd_perf); fd_perf=NULL;
-// 		if(FileName !=NULL) free(FileName);
-// 		return FAILURE;
+//		if(fd_perf!=NULL) fclose(fd_perf); fd_perf=NULL;
+//		if(FileName !=NULL) free(FileName);
+//		return FAILURE;
 	}
 		for(i=0;i<my_task_data_a->totaltid;i++){
 			my_task_data_a->subtask[i]->time_of_last_measured=0;
@@ -950,78 +949,78 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 		procesa_task_io(my_task_data_a);
 		procesa_network_stat_read(comout, &comalloc, my_task_data_a);
 
-// 		procesa_system_mem(comout, &comalloc, &mysystem);//global of the system
-// 		mysystem.cpu_system_load= procesa_system_load(comout, &comalloc, array_valores);
-// 		totaldevices=procesa_disk_stats( comout, &comalloc, newdata, olddata, &valid_disk_data);
+//		procesa_system_mem(comout, &comalloc, &mysystem);//global of the system
+//		mysystem.cpu_system_load= procesa_system_load(comout, &comalloc, array_valores);
+//		totaldevices=procesa_disk_stats( comout, &comalloc, newdata, olddata, &valid_disk_data);
 
 		/*get before timestamp in ms*/
-// 		clock_gettime(CLOCK_REALTIME, &timestamp_before);
+//		clock_gettime(CLOCK_REALTIME, &timestamp_before);
 		usleep(sampling_interval * 1000);
-// 		int returned_value =read_and_check(fd_perf, pid, &after, param_energy);
-// 		if(returned_value != SUCCESS){
-// 			printf("ERROR: 4: %s\n", FileName);
-// 			if(fp!=NULL) fclose(fp); fp=NULL;
-// 			if(FileName !=NULL) free(FileName);
-// 			return FAILURE;
-// 		}
-// 		printf(" delta->sys_runtime %llu\n",delta.sys_runtime);
-// 		delta.throughput = (delta.read_bytes + delta.write_bytes) / sampling_interval; //in bytes/s, must be after linux_resources_sample or read_and_check
+//		int returned_value =read_and_check(fd_perf, pid, &after, param_energy);
+//		if(returned_value != SUCCESS){
+//			printf("ERROR: 4: %s\n", FileName);
+//			if(fp!=NULL) fclose(fp); fp=NULL;
+//			if(FileName !=NULL) free(FileName);
+//			return FAILURE;
+//		}
+//		printf(" delta->sys_runtime %llu\n",delta.sys_runtime);
+//		delta.throughput = (delta.read_bytes + delta.write_bytes) / sampling_interval; //in bytes/s, must be after linux_resources_sample or read_and_check
 
 		/*get after timestamp in ms*/
 		clock_gettime(CLOCK_REALTIME, &timestamp_after);
 		/*calculate the increments of counters; update the values before and after */
-// 		if(calculate_and_update(&before, &after, &delta) <= 0)// needed??
-// 			continue;
-// 		calculate_and_update(&before, &after, &delta);
+//		if(calculate_and_update(&before, &after, &delta) <= 0)// needed??
+//			continue;
+//		calculate_and_update(&before, &after, &delta);
 		/* calculate the time interval in seconds */
-// 		duration = timestamp_after.tv_sec - timestamp_before.tv_sec + ((timestamp_after.tv_nsec - timestamp_before.tv_nsec) / 1.0e9);
+//		duration = timestamp_after.tv_sec - timestamp_before.tv_sec + ((timestamp_after.tv_nsec - timestamp_before.tv_nsec) / 1.0e9);
 		/* system-wide cpu power in milliwatt */
-// 		sys_cpu_power = (delta.sys_cpu_energy * delta.sys_runtime) / (delta.sys_itv * duration);
+//		sys_cpu_power = (delta.sys_cpu_energy * delta.sys_runtime) / (delta.sys_itv * duration);
 		/* pid-based cpu power in milliwatt */
-// 		pid_cpu_power = (sys_cpu_power * delta.pid_runtime) / delta.sys_runtime;
+//		pid_cpu_power = (sys_cpu_power * delta.pid_runtime) / delta.sys_runtime;
 
-// 		printf("delta.sys_runtime %.6f\n",delta.sys_runtime);
-// 		printf("delta->sys_itv %llu\n",delta.sys_itv);
-// 		printf("duration %.5f\n",duration);
-// 		printf("sys_cpu_power %.6f\n",sys_cpu_power);
-// 		printf("delta.sys_cpu_energy %.6f\n",delta.sys_cpu_energy);
+//		printf("delta.sys_runtime %.6f\n",delta.sys_runtime);
+//		printf("delta->sys_itv %llu\n",delta.sys_itv);
+//		printf("duration %.5f\n",duration);
+//		printf("sys_cpu_power %.6f\n",sys_cpu_power);
+//		printf("delta.sys_cpu_energy %.6f\n",delta.sys_cpu_energy);
 
 		/* pid-based memory access power in milliwatt */
-// 		pid_mem_power = ((delta.read_bytes + delta.write_bytes - delta.cancelled_writes) / param_energy.L2CACHE_LINE_SIZE + delta.pid_l2_cache_misses) *
-// 					param_energy.L2CACHE_MISS_LATENCY * param_energy.MEMORY_POWER * 1.0e-6 / duration;
+//		pid_mem_power = ((delta.read_bytes + delta.write_bytes - delta.cancelled_writes) / param_energy.L2CACHE_LINE_SIZE + delta.pid_l2_cache_misses) *
+//					param_energy.L2CACHE_MISS_LATENCY * param_energy.MEMORY_POWER * 1.0e-6 / duration;
 		/* pid-based disk access power in milliwatt */
-// 		pid_disk_power = 8;//(delta.read_bytes * param_energy.E_DISK_R_PER_MB + (delta.write_bytes - delta.cancelled_writes) * param_energy.E_DISK_W_PER_MB) / (1024 * duration);
+//		pid_disk_power = 8;//(delta.read_bytes * param_energy.E_DISK_R_PER_MB + (delta.write_bytes - delta.cancelled_writes) * param_energy.E_DISK_W_PER_MB) / (1024 * duration);
 
 		timestamp_ms = timestamp_after.tv_sec * 1000.0 + (double)(timestamp_after.tv_nsec / 1.0e6);
 		if(fp==NULL){
 			printf("Error file handler not valid\n");
 			exit (1);
 		}else{
-// 			fprintf(fp, "\"local_timestamp\":\"%.1f\", \"%s\":%.3f, \"%s\":%.3f, \"%s\":%.3f, \"%s\":%.3f\n", timestamp_ms,
-// 				"total_CPU_power", sys_cpu_power,
-// 				"process_CPU_power", pid_cpu_power,
-// 				"process_mem_power", pid_mem_power,
-// 				"process_disk_power", pid_disk_power);
+//			fprintf(fp, "\"local_timestamp\":\"%.1f\", \"%s\":%.3f, \"%s\":%.3f, \"%s\":%.3f, \"%s\":%.3f\n", timestamp_ms,
+//				"total_CPU_power", sys_cpu_power,
+//				"process_CPU_power", pid_cpu_power,
+//				"process_mem_power", pid_mem_power,
+//				"process_disk_power", pid_disk_power);
 
 		long long int actual_time;
-// 		if ( my_task_data_a->last_end!=0){
-// 			actual_time = my_task_data_a->last_end;
-// 		}else{
+//		if ( my_task_data_a->last_end!=0){
+//			actual_time = my_task_data_a->last_end;
+//		}else{
 			actual_time=mycurrenttime();
-// 		}
+//		}
 		my_app_report->read_bytes = 0;
 		my_app_report->write_bytes = 0;
 		my_app_report->cancelled_writes = 0;
 		my_app_report->pid_net_power = 0.0;
 		for(i=0;i<my_task_data_a->totaltid;i++){
-// 			printf(" AAAA  \"cpu_load\":\"%.2f\"\n", my_task_data_a->subtask[i]->pcpu);
+//			printf(" AAAA  \"cpu_load\":\"%.2f\"\n", my_task_data_a->subtask[i]->pcpu);
 			my_app_report->read_bytes += my_task_data_a->subtask[i]->rchar;
 			my_app_report->write_bytes += my_task_data_a->subtask[i]->wchar;
 			my_app_report->read_bytes += my_task_data_a->subtask[i]->read_bytes;
 			my_app_report->write_bytes += my_task_data_a->subtask[i]->write_bytes;
-// 			my_task_data_a->subtask[i]->syscr,
-// 			my_task_data_a->subtask[i]->syscw,
-// 			my_task_data_a->subtask[i]->pmem
+//			my_task_data_a->subtask[i]->syscr,
+//			my_task_data_a->subtask[i]->syscw,
+//			my_task_data_a->subtask[i]->pmem
 			my_app_report->cancelled_writes += my_task_data_a->subtask[i]->cancelled_write_bytes;
 			my_app_report->pid_net_power += (param_energy.E_NET_RCV_PER_MB*my_task_data_a->subtask[i]->rcv_bytes + param_energy.E_NET_SND_PER_MB* my_task_data_a->subtask[i]->send_bytes)* 1.0e-6;
 			
@@ -1031,19 +1030,19 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 			}
 				float total_time = ((1.0e-9)* (actual_time - my_task_data_a->subtask[i]->time_of_last_measured));
 				
-// 			if (i==1)
-// 			printf(" BBBBa  \"cpu_energy [%i]\":\"%.2f\" [ %.6f * %.6f * %.6f= %.6f ] %.2f \n", i, my_task_data_a->subtask[i]->total_cpu_energy,
-// 				   
-// 				   (1.0e-9)*(my_task_data_a->subtask[i]->time_of_last_measured   -  my_task_data_a->subtask[i]->start_comp),
-// 				   0.01*my_task_data_a->subtask[i]->pcpu, 
-// 					param_energy.MIN_CPU_POWER,
-// 	
-// 		  			   (1.0e-9)*(my_task_data_a->subtask[i]->time_of_last_measured   -  my_task_data_a->subtask[i]->start_comp)*
-// 				   0.01*my_task_data_a->subtask[i]->pcpu*
-// 					param_energy.MIN_CPU_POWER,
-// 		  
-// 					total_time
-// 					);
+//			if (i==1)
+//			printf(" BBBBa  \"cpu_energy [%i]\":\"%.2f\" [ %.6f * %.6f * %.6f= %.6f ] %.2f \n", i, my_task_data_a->subtask[i]->total_cpu_energy,
+//				   
+//				   (1.0e-9)*(my_task_data_a->subtask[i]->time_of_last_measured   -  my_task_data_a->subtask[i]->start_comp),
+//				   0.01*my_task_data_a->subtask[i]->pcpu, 
+//					param_energy.MIN_CPU_POWER,
+//	
+//		  			   (1.0e-9)*(my_task_data_a->subtask[i]->time_of_last_measured -  my_task_data_a->subtask[i]->start_comp)*
+//				   0.01*my_task_data_a->subtask[i]->pcpu*
+//					param_energy.MIN_CPU_POWER,
+//		  
+//					total_time
+//					);
 			my_task_data_a->subtask[i]->total_cpu_energy+=0.01* my_task_data_a->subtask[i]->pcpu*param_energy.MIN_CPU_POWER*total_time;
 			my_task_data_a->subtask[i]->time_of_last_measured=actual_time;
 		}
@@ -1054,7 +1053,7 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 		my_app_report->pid_mem_power = ((my_app_report->read_bytes + my_app_report->write_bytes - my_app_report->cancelled_writes) / param_energy.L2CACHE_LINE_SIZE + my_app_report->pid_l2_cache_misses) * param_energy.L2CACHE_MISS_LATENCY * param_energy.MEMORY_POWER* 1.0e-9;// / duration;
 		my_app_report->pid_disk_power = param_energy.hd_power;
 		my_app_report->total_hd_energy=0.0;
-// 		if (my_task_data_a->first_start!=0)
+//		if (my_task_data_a->first_start!=0)
 			my_app_report->total_hd_energy=my_app_report->pid_disk_power*(actual_time - start_app_time)/(1.0e9);
 		my_app_report->total_watts= my_app_report->total_cpu_energy + my_app_report->total_hd_energy + my_app_report->pid_mem_power + my_app_report->pid_net_power;
 		fprintf(fp, "\"local_timestamp\":\"%.1f\",",timestamp_ms);
@@ -1064,17 +1063,17 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 		fprintf(fp, "\"net_power\":\"%5.3f\",",my_app_report->pid_net_power);
 		fprintf(fp, "\"total_watts\":\"%5.3f\",",my_app_report->total_watts);
 		fprintf(fp, "\"cost_power\":\"%5.6f\"\n",my_app_report->total_watts*0.25/(1000.0*3600.0));
-// 		fprintf(fp, " pidpower %.3f J",my_app_report->pid_disk_power);
-// 		fprintf(fp, " time %.3f s\n", (actual_time - start_app_time)/(1.0e9));
+//		fprintf(fp, " pidpower %.3f J",my_app_report->pid_disk_power);
+//		fprintf(fp, " time %.3f s\n", (actual_time - start_app_time)/(1.0e9));
 		}
 	}//end while running
 	fclose(fp);
 	printf(" end power pid=%i\n",pid);
 	if(FileName !=NULL) free(FileName);
-// 	for(i=0;i<my_task_data_a.maxprocesses;i++)
-// 		free(my_task_data_a.subtask[i]);
-// 	free(my_task_data_a.cores);
-// 	free(my_task_data_a.subtask);
+//	for(i=0;i<my_task_data_a.maxprocesses;i++)
+//		free(my_task_data_a.subtask[i]);
+//	free(my_task_data_a.cores);
+//	free(my_task_data_a.subtask);
 	free(comout);
 	return SUCCESS;
 }

@@ -917,7 +917,13 @@ unsigned int save_stats(FILE *fp, int searchprocess, task_data *my_task_data){
 			if(my_task_data->subtask[i]->totaltime==0){
 				int encontrado=my_task_data->total_user_def;
 			// 	encuentra el k para el que los tid coinciden,
+				
+				
+// 			printf("totaltid %i total def %i \n", my_task_data->totaltid , my_task_data->total_user_def  );
+// 			printf("buscando en savestats pstid %i, valores en lista \n", my_task_data->subtask[i]->pstid );
+			
 				for(int k=0;k<my_task_data->total_user_def;k++){
+// 					printf("      pstid %i\n", my_task_data->task_def[k]->pstid );
 					if(my_task_data->task_def[k]->pstid==my_task_data->subtask[i]->pstid){
 						encontrado=k;
 					}
@@ -931,6 +937,20 @@ unsigned int save_stats(FILE *fp, int searchprocess, task_data *my_task_data){
 				}else{
 					fprintf(fp,", \"component\":\"name_not_found\"");
 				}
+		
+				if(my_task_data->my_app_report!=NULL){
+					if(my_task_data->my_app_report->my_thread_report[i]==NULL){
+						fprintf(fp,", \"component_b\":\"%i %s\"", i, my_task_data->my_app_report->my_thread_report[i]->taskid);
+					}else{
+						fprintf(fp,", \"component_b\":\"%i NULL pointer-b\"", i);
+					}
+				}else{
+				fprintf(fp,", \"component_b\":\"%i NULL pointer\"", i);
+				}
+		
+				fprintf(fp,", \"pstid\":\"%i\"", my_task_data->subtask[i]->pstid);
+				fprintf(fp,", \"time_of_last_measured\":\"%lli\"", my_task_data->subtask[i]->time_of_last_measured);
+			
 				fprintf(fp,", \"cpu_load\":\"%.2f\"", my_task_data->subtask[i]->pcpu);
 				fprintf(fp,", \"mem_load\":\"%.2f\"", my_task_data->subtask[i]->pmem);
 				fprintf(fp,", \"rchar\":%s",str_memorysize( my_task_data->subtask[i]->rchar,szBuffer));
@@ -1118,6 +1138,9 @@ unsigned int procesa_pid_load(int pid, unsigned int argmaxcores, struct task_dat
 		//update all the loads to 0 of all tasks registerd in my_task_data
 		//first need to find if the pspid and pstid were already registered in my_task_data, its position will be stored in "index"
 		//if not find register, then create a new entry and define the current time as start time
+		
+// 		printf("comout is \n%s\n",comout);
+		
 		if(comlen!=0){
 			i=0;
 			contador=0;
@@ -1155,7 +1178,8 @@ unsigned int procesa_pid_load(int pid, unsigned int argmaxcores, struct task_dat
 						}
 					}
 					if((found==false)&&(my_task_data->totaltid<my_task_data->maxprocesses+1)){
-						if(pcpu>0.0){//if(pspid==pstid){
+						
+// 						if(pcpu>0.0){//if(pspid==pstid){
 							j=my_task_data->totaltid;
 							my_task_data->subtask[j]->time_of_last_measured=0;
 							my_task_data->totaltid=my_task_data->totaltid+1;
@@ -1205,13 +1229,16 @@ unsigned int procesa_pid_load(int pid, unsigned int argmaxcores, struct task_dat
 							if(j==0)
 								my_task_data->first_start=actual_time;
 							found=true;
-						}
+// 						}
 					}
 					if(found==true){
 						//here is lost my_task_data->pid???
 						my_task_data->subtask[j]->updated=true;
 						my_task_data->subtask[j]->pspid=pspid;
 						my_task_data->subtask[j]->pstid=pstid;
+						
+// 						my_task_data->task_def[j]->pstid=pstid;
+						
 						my_task_data->subtask[j]->currentcore=currentcore;
 						my_task_data->subtask[j]->totaltime=0;
 						my_task_data->subtask[j]->pcpu=pcpu;

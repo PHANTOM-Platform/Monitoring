@@ -90,9 +90,6 @@ struct sub_task_data { // filled by stats_sample, procesa_pid_load, ...
 };
 
 
-
-
-
 struct disk_data{
 	char labelstr[250];
 	long long int rd_sectors;

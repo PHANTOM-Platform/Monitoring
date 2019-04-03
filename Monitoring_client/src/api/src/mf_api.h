@@ -10,20 +10,7 @@
 
 #define max_report_tids 10
 
-typedef struct task_data_t {
-// 	unsigned int tids[max_report_tids];
-	unsigned long int microsleep;
-	int pid;
-	int maxprocesses, maxcores;
-	unsigned int maxtotaltid;
-	unsigned int totaltid;//counts the total of subtasks
-	struct sub_task_data **subtask;  //for the subtasks running
-	unsigned int total_user_def; //counts the total of user_def params
-	struct sub_task_user_def **task_def;  //for the of user_def params
-	struct cores_data *cores;  //for the total of cores running
-	float total_load_cpu, totalpmem;
-	long long int first_start,last_end;
-}task_data;
+
 
 typedef struct metrics_t {
 	long sampling_interval[MAX_NUM_METRICS];	//in milliseconds
@@ -40,6 +27,8 @@ extern char parameters_name[9][32];
 /* additonal functions developed during the integration */
 typedef struct Thread_report_t {
 	char taskid[50];
+	int pid,tid;
+	int local_pid,local_tid;
 	unsigned long int workerId;
 // 	char *component_name;
 	long long int start_time;
@@ -55,7 +44,6 @@ typedef struct Thread_report_t {
 
 typedef struct app_report_t{
 	long long int start_app;
-
 	struct Thread_report_t **my_thread_report;
 	unsigned int num_of_threads;
 	unsigned int num_of_processes;
@@ -71,6 +59,23 @@ typedef struct app_report_t{
 	float total_hd_energy;
 	float total_watts;
 }app_report;
+
+
+typedef struct task_data_t {
+// 	unsigned int tids[max_report_tids];
+	unsigned long int microsleep;
+	struct app_report_t *my_app_report;
+	int pid;
+	int maxprocesses, maxcores;
+	unsigned int maxtotaltid;
+	unsigned int totaltid;//counts the total of subtasks
+	struct sub_task_data **subtask;  //for the subtasks running
+	unsigned int total_user_def; //counts the total of user_def params
+	struct sub_task_user_def **task_def;  //for the of user_def params
+	struct cores_data *cores;  //for the total of cores running
+	float total_load_cpu, totalpmem;
+	long long int first_start,last_end;
+}task_data;
 
 typedef struct each_metric_t {
 	struct task_data_t *my_task_data_a;

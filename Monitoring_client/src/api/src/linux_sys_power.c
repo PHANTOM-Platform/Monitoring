@@ -567,7 +567,7 @@ int cpu_freq_stat(resources_stats *info, energy_model param_energy) {
 		// file exists
 	} else {
 		// file doesn't exist
-		printf("ERROR: CPU frequency statistics are not supported.\n");
+		printf("Warning: CPU frequency statistics are not supported in this machine, maybe it is a Virtual Machine.\n");
 		valid_cpu_freq_stat=0;
 		return FAILURE;
 	}
@@ -820,7 +820,7 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 //	long long int cancelled_writes;
 //	float pid_net_power;
 //	float total_hd_energy;
-//	float total_watts; 
+//	float total_watts;
 	int i;
 	size_t comalloc = 8256;
 	char *comout = (char *) malloc(comalloc * sizeof(char));
@@ -921,26 +921,29 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 	before.accum_cancelled_writes = 0;
 	before.before_accum_cancelled_writes = 0;
 	
+	
+	
+	 
+	
+	
 	int fd_perf = create_perf_stat_counter(pid);
 	if(fd_perf <= 0){
-		printf("ERROR: create_perf_stat_counter: %s\n", FileName);
+		printf("WARNING: create_perf_stat_counter is not supported.\n", FileName);
 //		if(fp!=NULL) fclose(fp); fp=NULL;
-//		if(FileName !=NULL) free(FileName);
-//		return FAILURE;
+// 		if(FileName !=NULL) free(FileName);
+// 		return FAILURE;
 	}
 	int returned_value =read_and_check(fd_perf, pid, &before, param_energy);
-	if(returned_value != SUCCESS){
-		printf("ERROR: 3: %s\n", FileName);
-//		if(fd_perf!=NULL) fclose(fd_perf); fd_perf=NULL;
-//		if(FileName !=NULL) free(FileName);
-//		return FAILURE;
+// 	if(returned_value != SUCCESS){
+// 		printf("ERROR: 3: %s\n", FileName); 
+// 		if(FileName !=NULL) free(FileName);
+// 		return FAILURE;
+// 	}
+	for(i=0;i<my_task_data_a->totaltid;i++){
+		my_task_data_a->subtask[i]->time_of_last_measured=0;
+		my_task_data_a->subtask[i]->start_comp=0;
 	}
-		for(i=0;i<my_task_data_a->totaltid;i++){
-			my_task_data_a->subtask[i]->time_of_last_measured=0;
-			my_task_data_a->subtask[i]->start_comp=0;
-		}	
-	
-	
+
 	/*in a loop do data sampling and write into the file*/
 	while(running) {
 		procesa_cpuinfo( comout, &comalloc, maxcores, my_task_data_a);

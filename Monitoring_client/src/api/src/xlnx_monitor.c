@@ -30,8 +30,8 @@
 #define true ( ! false )
 
 // //entries for the ZC906
-// #define xilinx_path "/sys/devices/soc0/amba/e0004000.i2c/i2c-0/i2c-7/mux_device/channel-7/8-0065/hwmon/hwmon0/%s"
-#define xilinx_path "/home/jmontana/fake_fpga/%s%s%s"
+#define xilinx_path "/sys/devices/soc0/amba/e0004000.i2c/i2c-0/i2c-7/mux_device/channel-7/8-0065/hwmon/hwmon0/%s%s%s"
+#define xilinx_path_fake "~/fake_fpga/%s%s%s"
 
 #define MAX_CHANNELS 5
 const char channel_labels[MAX_CHANNELS][16] = {//also referrred as Rails
@@ -46,16 +46,27 @@ int xlnx_stats_read(struct xlnx_stats_t *stats) {
 	//name
 	sprintf(filename, xilinx_path, "name","","");
 	if ((fp = fopen(filename, "r")) == NULL) {
-		fprintf(stderr, "ERROR: Could not open file %s.\n", filename);
+		fprintf(stderr, "Warning: Could not open sensored datafile %s.\n", filename);
 		return FAILURE;
+// 		fprintf(stderr, "Trying with the version for testing...\n");
+		sprintf(filename, xilinx_path_fake, "name","","");
+		if ((fp = fopen(filename, "r")) == NULL) {
+// 			fprintf(stderr, "ERROR: Could not open file %s.\n", filename);
+			return FAILURE;
+		}
 	}
 	fgets(stats->name, 30, fp);
 	fclose(fp);
 	//temp
 	sprintf(filename, xilinx_path, "temp1_input","","");
 	if ((fp = fopen(filename, "r")) == NULL) {
-		fprintf(stderr, "ERROR: Could not open file %s.\n", filename);
-		return FAILURE;
+// 		fprintf(stderr, "Warning: Could not open sensored datafile %s.\n", filename);
+// 		fprintf(stderr, "Trying with the version for testing...\n");
+		sprintf(filename, xilinx_path_fake, "temp1_input","","");
+		if ((fp = fopen(filename, "r")) == NULL) {
+// 			fprintf(stderr, "ERROR: Could not open file %s.\n", filename);
+			return FAILURE;
+		}
 	}
 	fgets(line, 256, fp);
 	sscanf(line, "%llu", &temp);
@@ -67,25 +78,36 @@ int xlnx_stats_read(struct xlnx_stats_t *stats) {
 	for (int i=0;i<MAX_CHANNELS;i++){
 		num[0]=48+i+1;
 		//channel i (VCCINT,VCCAUX, VCC1V5_PL, VADJ_FPGA, VCC3V3_FPGA : current
-		sprintf(filename, xilinx_path, "curr",num,"_input");
+		sprintf(filename, xilinx_path, "curr",num,"_input"); 
 		if ((fp = fopen(filename, "r")) == NULL) {
-			fprintf(stderr, "ERROR: Could not open file %s.\n", filename);
-			return FAILURE;
+// 			fprintf(stderr, "Warning: Could not open sensored datafile %s.\n", filename);
+	// 		fprintf(stderr, "Trying with the version for testing...\n");
+			sprintf(filename, xilinx_path_fake, "curr",num,"_input");
+			if ((fp = fopen(filename, "r")) == NULL) {
+	// 			fprintf(stderr, "ERROR: Could not open file %s.\n", filename);
+				return FAILURE;
+			}
 		}
+
 		fgets(line, 256, fp);
 		sscanf(line, "%lli", &stats->current[i]);
 		fclose(fp);
 		//channel 1: voltage
 		sprintf(filename, xilinx_path, "in",num,"_input");
 		if ((fp = fopen(filename, "r")) == NULL) {
-			fprintf(stderr, "ERROR: Could not open file %s.\n", filename);
-			return FAILURE;
+// 			fprintf(stderr, "Warning: Could not open sensored datafile %s.\n", filename);
+	// 		fprintf(stderr, "Trying with the version for testing...\n");
+			sprintf(filename, xilinx_path_fake, "in",num,"_input");
+			if ((fp = fopen(filename, "r")) == NULL) {
+	// 			fprintf(stderr, "ERROR: Could not open file %s.\n", filename);
+				return FAILURE;
+			}
 		}
 		fgets(line, 256, fp);
 		sscanf(line, "%lli", &stats->volt[i]);
 		fclose(fp);
 		stats-> total_watts += stats->current[i] * stats->volt[i];
-	} 
+	}
 	return SUCCESS;
 }
 
@@ -97,16 +119,10 @@ int xlnx_monitor(char *DataPath, long sampling_interval) {
 	_Bool avg_temp_overflow=false;
 	long int counter=1;
 	xlnx_stats result;
-	/*create and open the file*/
-	char FileName[256] = {'\0'};
-	sprintf(FileName, "%s/%s", DataPath, METRIC_NAME_2);
-	FILE *fp = fopen(FileName, "a"); //append data to the end of the file
-	if (fp == NULL) {
-		printf("ERROR: Could not create file: %s\n", FileName);
+	/*initialize the values in result */
+	if(xlnx_stats_read(&result)==FAILURE){ 
 		return 0;
 	}
-	/*initialize the values in result */
-	xlnx_stats_read(&result);
 	result.avg_temp=result.temp;
 	result.max_temp=result.temp;
 	result.min_temp=result.temp;
@@ -118,10 +134,21 @@ int xlnx_monitor(char *DataPath, long sampling_interval) {
 		result.max_volt[i]=result.volt[i];
 		result.min_volt[i]=result.volt[i];
 	}
+	/*create and open the file*/
+	char FileName[256] = {'\0'};
+	sprintf(FileName, "%s/%s", DataPath, METRIC_NAME_2);
+	FILE *fp = fopen(FileName, "a"); //append data to the end of the file
+	if (fp == NULL) {
+		printf("ERROR: Could not create file: %s\n", FileName);
+		return 0;
+	}
 	/*in a loop do data sampling and write into the file*/
 	while(running) {
 		usleep(sampling_interval * 1000);
-		xlnx_stats_read(&result);
+		if(xlnx_stats_read(&result)==FAILURE){
+			fclose(fp);
+			return 0;
+		}
 		/*get current timestamp in ms*/
 		clock_gettime(CLOCK_REALTIME, &timestamp);
 		timestamp_ms = timestamp.tv_sec * 1000.0 + (double)(timestamp.tv_nsec / 1.0e6);

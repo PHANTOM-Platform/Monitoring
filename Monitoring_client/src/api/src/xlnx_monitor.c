@@ -120,7 +120,7 @@ int xlnx_monitor(char *DataPath, long sampling_interval) {
 	long int counter=1;
 	xlnx_stats result;
 	/*initialize the values in result */
-	if(xlnx_stats_read(&result)==FAILURE){ 
+	if(xlnx_stats_read(&result)==FAILURE){
 		return 0;
 	}
 	result.avg_temp=result.temp;

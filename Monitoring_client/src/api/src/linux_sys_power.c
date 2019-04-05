@@ -812,15 +812,6 @@ void procesa_cpuinfo( char *comout, size_t *comalloc, unsigned int argmaxcores, 
 }
 
 int power_monitor(int pid, char *DataPath, long sampling_interval, long long int start_app_time, struct app_report_t *my_app_report, struct task_data_t *my_task_data_a) {
-//	float total_cpu_energy;
-//	float pid_mem_power, pid_disk_power;// pid_cpu_power,duration, sys_cpu_power,
-//	long long int pid_l2_cache_misses;
-//	long long int read_bytes;
-//	long long int write_bytes;
-//	long long int cancelled_writes;
-//	float pid_net_power;
-//	float total_hd_energy;
-//	float total_watts;
 	int i;
 	size_t comalloc = 8256;
 	char *comout = (char *) malloc(comalloc * sizeof(char));
@@ -1058,12 +1049,14 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 		my_app_report->total_hd_energy=0.0;
 //		if (my_task_data_a->first_start!=0)
 			my_app_report->total_hd_energy=my_app_report->pid_disk_power*(actual_time - start_app_time)/(1.0e9);
-		my_app_report->total_watts= my_app_report->total_cpu_energy + my_app_report->total_hd_energy + my_app_report->pid_mem_power + my_app_report->pid_net_power;
+		my_app_report->total_watts= my_app_report->total_cpu_energy + my_app_report->pid_mem_power;
+// 		+ my_app_report->total_hd_energy
+// 		+ my_app_report->pid_net_power;
 		fprintf(fp, "\"local_timestamp\":\"%.1f\",",timestamp_ms);
 		fprintf(fp, "\"cpu_power\":\"%5.3f\",",my_app_report->total_cpu_energy);
-		fprintf(fp, "\"io_power\":\"%5.3f\",",my_app_report->total_hd_energy); //last_end and first start are in ns
+// 		fprintf(fp, "\"io_power\":\"%5.3f\",",my_app_report->total_hd_energy); //last_end and first start are in ns
 		fprintf(fp, "\"mem_power\":\"%5.3f\",",my_app_report->pid_mem_power);
-		fprintf(fp, "\"net_power\":\"%5.3f\",",my_app_report->pid_net_power);
+// 		fprintf(fp, "\"net_power\":\"%5.3f\",",my_app_report->pid_net_power);
 		fprintf(fp, "\"total_watts\":\"%5.3f\",",my_app_report->total_watts);
 		fprintf(fp, "\"cost_power\":\"%5.6f\"\n",my_app_report->total_watts*0.25/(1000.0*3600.0));
 //		fprintf(fp, " pidpower %.3f J",my_app_report->pid_disk_power);

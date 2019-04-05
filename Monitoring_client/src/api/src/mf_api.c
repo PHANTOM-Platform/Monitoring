@@ -430,20 +430,20 @@ char *mf_exec_stats(struct app_report_t my_app_report, const char *application_i
 	concat_and_free(&json_msg, tempstr);
 	concat_and_free(&json_msg, "\",\n");
 	
-	concat_and_free(&json_msg, "\t\"io_power_consumption\": \"");
-	sprintf(tempstr, "%.2f", my_app_report.total_hd_energy);
-	concat_and_free(&json_msg, tempstr);
-	concat_and_free(&json_msg, "\",\n");
+// 	concat_and_free(&json_msg, "\t\"io_power_consumption\": \"");
+// 	sprintf(tempstr, "%.2f", my_app_report.total_hd_energy);
+// 	concat_and_free(&json_msg, tempstr);
+// 	concat_and_free(&json_msg, "\",\n");
 	
 	concat_and_free(&json_msg, "\t\"mem_power_consumption\": \"");
 	sprintf(tempstr, "%.2f", my_app_report.pid_mem_power);
 	concat_and_free(&json_msg, tempstr);
 	concat_and_free(&json_msg, "\",\n");
 	
-	concat_and_free(&json_msg, "\t\"net_power_consumption\": \"");
-	sprintf(tempstr, "%.2f", my_app_report.pid_net_power);
-	concat_and_free(&json_msg, tempstr);
-	concat_and_free(&json_msg, "\",\n");
+// 	concat_and_free(&json_msg, "\t\"net_power_consumption\": \"");
+// 	sprintf(tempstr, "%.2f", my_app_report.pid_net_power);
+// 	concat_and_free(&json_msg, tempstr);
+// 	concat_and_free(&json_msg, "\",\n");
 	
 	concat_and_free(&json_msg, "\t\"num_of_processes\": \"");
 	sprintf(tempstr, "%i", my_app_report.num_of_processes);
@@ -597,24 +597,17 @@ char *mf_exec_stats(struct app_report_t my_app_report, const char *application_i
 			concat_and_free(&json_msg,tempstr );
 			concat_and_free(&json_msg, "\",\n");
 			
-	 
+			concat_and_free(&json_msg, "\t\t\t\"mem_power_consumption\": \"");
+			float pid_mem_power =   ((mmy_task_data_a->subtask[i]->read_bytes + mmy_task_data_a->subtask[i]->write_bytes - mmy_task_data_a->subtask[i]->cancelled_writes) / param_energy.L2CACHE_LINE_SIZE + 0) * param_energy.L2CACHE_MISS_LATENCY * param_energy.MEMORY_POWER* 1.0e-9;// / duration;
+			sprintf(tempstr, "%.2f", pid_mem_power);
+			concat_and_free(&json_msg, tempstr);
+			concat_and_free(&json_msg, "\",\n");
 			
-				concat_and_free(&json_msg, "\t\t\t\"mem_power_consumption\": \"");
-				float pid_mem_power =   ((mmy_task_data_a->subtask[i]->read_bytes + mmy_task_data_a->subtask[i]->write_bytes - mmy_task_data_a->subtask[i]->cancelled_writes) / param_energy.L2CACHE_LINE_SIZE + 0) * param_energy.L2CACHE_MISS_LATENCY * param_energy.MEMORY_POWER* 1.0e-9;// / duration;
-	sprintf(tempstr, "%.2f", pid_mem_power);
-	concat_and_free(&json_msg, tempstr);
-	concat_and_free(&json_msg, "\",\n");
-			
-				concat_and_free(&json_msg, "\t\t\t\"net_power_consumption_comp\": \"");
-				float pid_net_power = (param_energy.E_NET_RCV_PER_MB*mmy_task_data_a->subtask[i]->rcv_bytes + param_energy.E_NET_SND_PER_MB* mmy_task_data_a->subtask[i]->send_bytes)* 1.0e-6;
-	sprintf(tempstr, "%.2f", pid_net_power);
-	concat_and_free(&json_msg, tempstr);
-	concat_and_free(&json_msg, "\",\n");
-	
- 
-
-			
-			
+// 				concat_and_free(&json_msg, "\t\t\t\"net_power_consumption_comp\": \"");
+// 				float pid_net_power = (param_energy.E_NET_RCV_PER_MB*mmy_task_data_a->subtask[i]->rcv_bytes + param_energy.E_NET_SND_PER_MB* mmy_task_data_a->subtask[i]->send_bytes)* 1.0e-6;
+// 				sprintf(tempstr, "%.2f", pid_net_power);
+// 				concat_and_free(&json_msg, tempstr);
+// 				concat_and_free(&json_msg, "\",\n");
 
 		concat_and_free(&json_msg, "\t\t\t\"for-debuging-pid-tid\": \"");
 		sprintf(tempstr, "%i[%i]%i",mmy_task_data_a->subtask[i]->pspid,i, mmy_task_data_a->subtask[i]->pstid);

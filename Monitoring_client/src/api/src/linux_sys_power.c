@@ -1026,7 +1026,6 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 				
 //			if (i==1)
 //			printf(" BBBBa  \"cpu_energy [%i]\":\"%.2f\" [ %.6f * %.6f * %.6f= %.6f ] %.2f \n", i, my_task_data_a->subtask[i]->total_cpu_energy,
-//				   
 //				   (1.0e-9)*(my_task_data_a->subtask[i]->time_of_last_measured   -  my_task_data_a->subtask[i]->start_comp),
 //				   0.01*my_task_data_a->subtask[i]->pcpu, 
 //					param_energy.MIN_CPU_POWER,

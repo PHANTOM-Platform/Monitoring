@@ -29,6 +29,9 @@
 //	#define white "\033[0;0m"
 #endif
 
+
+#include <stdbool.h>
+
 /*******************************************************************************
 * String functions
 ******************************************************************************/
@@ -41,7 +44,7 @@ char* itoa(int i, char b[]);
 
 char* llitoa(const long long int i, char b[]);
 
-char *llint_to_string_alloc(long long int x, char b[]);
+char *llint_to_string_alloc(const long long int x, char b[]);
 
 /**
 * Function for increase dynamically a string concatenating strings at the end

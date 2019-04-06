@@ -1184,7 +1184,8 @@ unsigned int procesa_pid_load(int pid, unsigned int argmaxcores, struct task_dat
 							my_task_data->subtask[j]->time_of_last_measured=0;
 							my_task_data->totaltid=my_task_data->totaltid+1;
 							my_task_data->subtask[j]->starttime=actual_time;
-							
+							my_task_data->subtask[j]->start_comp=0;
+						
 							my_task_data->subtask[j]->min_send_bytes=0;
 							my_task_data->subtask[j]->send_bytes=0;
 							my_task_data->subtask[j]->max_send_bytes =0;	

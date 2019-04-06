@@ -848,22 +848,22 @@ char *mf_start(const char *server, const char *exec_server, const char *exec_id,
 * Close all the files for data storage.
 */
 void mf_end(void){
-	int t;
+	//int t;
 	running = 0;
-	for (t = 0; t < num_threads+1; t++) //we add one more for the Monitor_tid_Start
-		pthread_join(threads[t], NULL);
-	int totalfree=0;
-	if(each_m!=NULL){
-		for (t = 0; t < num_threads; t++){
-			if(each_m[t]!=NULL)
-				free(each_m[t]);
-			each_m[t]=NULL;
-			totalfree++;
-		}
-		if(totalfree==num_threads && each_m!=NULL)
-			free(each_m);
-		each_m=NULL;
-	}
+	//for (t = 0; t < num_threads+1; t++) //we add one more for the Monitor_tid_Start
+	//	pthread_join(threads[t], NULL);
+	//int totalfree=0;
+	//if(each_m!=NULL){
+	//	for (t = 0; t < num_threads; t++){
+	//		if(each_m[t]!=NULL)
+	//			free(each_m[t]);
+	//		each_m[t]=NULL;
+	//		totalfree++;
+	//	}
+	//	if(totalfree==num_threads && each_m!=NULL)
+	//		free(each_m);
+	//	each_m=NULL;
+	//}
 	close_curl();
 	printf("finished mf_end\n");
 }

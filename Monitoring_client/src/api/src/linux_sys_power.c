@@ -919,24 +919,38 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 	
 	int fd_perf = create_perf_stat_counter(pid);
 	if(fd_perf <= 0){
-		printf("WARNING: create_perf_stat_counter is not supported.\n", FileName);
+		printf("WARNING: create_perf_stat_counter is not supported.\n");
 //		if(fp!=NULL) fclose(fp); fp=NULL;
 // 		if(FileName !=NULL) free(FileName);
 // 		return FAILURE;
 	}
-	int returned_value =read_and_check(fd_perf, pid, &before, param_energy);
+// 	int returned_value =
+	read_and_check(fd_perf, pid, &before, param_energy);
 // 	if(returned_value != SUCCESS){
 // 		printf("ERROR: 3: %s\n", FileName); 
 // 		if(FileName !=NULL) free(FileName);
 // 		return FAILURE;
 // 	}
-	for(i=0;i<my_task_data_a->totaltid;i++){
+	int my_totaltid=0;
+	if(my_totaltid!=my_task_data_a->totaltid){
+	for(i=my_totaltid;i<my_task_data_a->totaltid;i++){
 		my_task_data_a->subtask[i]->time_of_last_measured=0;
 		my_task_data_a->subtask[i]->start_comp=0;
 	}
-
+	my_totaltid=my_task_data_a->totaltid;	
+	}
+	
 	/*in a loop do data sampling and write into the file*/
 	while(running) {
+		if(my_totaltid!=my_task_data_a->totaltid){
+		for(i=my_totaltid;i<my_task_data_a->totaltid;i++){
+			my_task_data_a->subtask[i]->time_of_last_measured=0;
+			my_task_data_a->subtask[i]->start_comp=0;
+		}
+		my_totaltid=my_task_data_a->totaltid;	
+		}
+		
+		
 		procesa_cpuinfo( comout, &comalloc, maxcores, my_task_data_a);
 
 		maxcores=	procesa_pid_load(pid, maxcores, my_task_data_a, param_energy);
@@ -1006,6 +1020,7 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 		my_app_report->write_bytes = 0;
 		my_app_report->cancelled_writes = 0;
 		my_app_report->pid_net_power = 0.0;
+		my_app_report->total_cpu_energy=0.0;
 		for(i=0;i<my_task_data_a->totaltid;i++){
 //			printf(" AAAA  \"cpu_load\":\"%.2f\"\n", my_task_data_a->subtask[i]->pcpu);
 			my_app_report->read_bytes += my_task_data_a->subtask[i]->rchar;
@@ -1038,10 +1053,11 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 //					);
 			my_task_data_a->subtask[i]->total_cpu_energy+=0.01* my_task_data_a->subtask[i]->pcpu*param_energy.MIN_CPU_POWER*total_time;
 			my_task_data_a->subtask[i]->time_of_last_measured=actual_time;
+			my_app_report->total_cpu_energy+= my_task_data_a->subtask[i]->total_cpu_energy;
 		}
-		my_app_report->total_cpu_energy =0;
-		for(int c=0;c<maxcores;c++)
-			my_app_report->total_cpu_energy+=my_task_data_a->cores[c].total_watts_core;
+// 		my_app_report->total_cpu_energy =0;
+// 		for(int c=0;c<maxcores;c++)
+// 			my_app_report->total_cpu_energy+=my_task_data_a->cores[c].total_watts_core;
 		my_app_report->pid_l2_cache_misses=0;
 		my_app_report->pid_mem_power = ((my_app_report->read_bytes + my_app_report->write_bytes - my_app_report->cancelled_writes) / param_energy.L2CACHE_LINE_SIZE + my_app_report->pid_l2_cache_misses) * param_energy.L2CACHE_MISS_LATENCY * param_energy.MEMORY_POWER* 1.0e-9;// / duration;
 		my_app_report->pid_disk_power = param_energy.hd_power;
@@ -1052,6 +1068,13 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 // 		+ my_app_report->total_hd_energy
 // 		+ my_app_report->pid_net_power;
 		fprintf(fp, "\"local_timestamp\":\"%.1f\",",timestamp_ms);
+		
+		
+		
+// 		fprintf(fp, " \"start_comp\":\"%lli\",",i,my_task_data_a->subtask[i]->start_comp);
+// 		fprintf(fp, "\"actual_time\":\"%lli\",",actual_time);
+// 		fprintf(fp, "\"time_of_last_measured\":\"%lli\",",my_task_data_a->subtask[i]->time_of_last_measured);
+		
 		fprintf(fp, "\"cpu_power\":\"%5.3f\",",my_app_report->total_cpu_energy);
 // 		fprintf(fp, "\"io_power\":\"%5.3f\",",my_app_report->total_hd_energy); //last_end and first start are in ns
 		fprintf(fp, "\"mem_power\":\"%5.3f\",",my_app_report->pid_mem_power);

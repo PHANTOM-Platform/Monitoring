@@ -481,15 +481,15 @@ char *mf_exec_stats(struct app_report_t my_app_report, const char *application_i
 		sprintf(tempstr, "%lli", end_time - my_app_report.start_app);
 		concat_and_free(&json_msg, tempstr);
 		concat_and_free(&json_msg, "\",\n");
-//		concat_and_free(&json_msg, "\t\t\t\"component_start\": \"");
-//		sprintf(tempstr, "%lli", my_app_report.start_app);
-//		concat_and_free(&json_msg, tempstr);
-//		concat_and_free(&json_msg, "\",\n");
+		concat_and_free(&json_msg, "\t\t\t\"component_start\": \"");
+		sprintf(tempstr, "%lli", my_app_report.start_app);
+		concat_and_free(&json_msg, tempstr);
+		concat_and_free(&json_msg, "\",\n");
 
-//		concat_and_free(&json_msg, "\t\t\t\"component_end\": \"");
-//		sprintf(tempstr, "%lli", end_time);
-//		concat_and_free(&json_msg, tempstr);
-//		concat_and_free(&json_msg, "\",\n");
+		concat_and_free(&json_msg, "\t\t\t\"component_end\": \"");
+		sprintf(tempstr, "%lli", end_time);
+		concat_and_free(&json_msg, tempstr);
+		concat_and_free(&json_msg, "\",\n");
 
 		char *json_msgb=save_stats_resources(stat_resources, 1, 3);   //<=======================================================================
 		concat_and_free(&json_msg, json_msgb); free(json_msgb);
@@ -562,10 +562,10 @@ char *mf_exec_stats(struct app_report_t my_app_report, const char *application_i
 // 			concat_and_free(&json_msg,tempstr );
 // 			concat_and_free(&json_msg, "\",\n");
 // 			
-// 			concat_and_free(&json_msg, "\t\t\t\"start_comp           \":\"");
-// 			sprintf(tempstr, "%lli", mmy_task_data_a->subtask[i]->start_comp);
-// 			concat_and_free(&json_msg,tempstr );
-// 			concat_and_free(&json_msg, "\",\n");
+			concat_and_free(&json_msg, "\t\t\t\"start_comp           \":\"");
+			sprintf(tempstr, "%lli", mmy_task_data_a->subtask[i]->start_comp);
+			concat_and_free(&json_msg,tempstr );
+			concat_and_free(&json_msg, "\",\n");
 			
 // 			concat_and_free(&json_msg, "\t\t\t\"end_time_ns          \":\"");
 // 			sprintf(tempstr, "%lli", my_app_report.my_thread_report[i]->end_time );
@@ -573,10 +573,10 @@ char *mf_exec_stats(struct app_report_t my_app_report, const char *application_i
 // 			concat_and_free(&json_msg, "\",\n");
 			
 			
-// 			concat_and_free(&json_msg, "\t\t\t\"time_of_last_measured\":\"");
-// 			sprintf(tempstr, "%lli", mmy_task_data_a->subtask[i]->time_of_last_measured);
-// 			concat_and_free(&json_msg,tempstr );
-// 			concat_and_free(&json_msg, "\",\n");
+			concat_and_free(&json_msg, "\t\t\t\"time_of_last_measured\":\"");
+			sprintf(tempstr, "%lli", mmy_task_data_a->subtask[i]->time_of_last_measured);
+			concat_and_free(&json_msg,tempstr );
+			concat_and_free(&json_msg, "\",\n");
 		
 //		concat_and_free(&json_msg, "\t\t\t\"component_start\": \"");
 //		sprintf(tempstr, "%.1f", my_app_report.my_thread_report[i]->start_time/1000.0);
@@ -848,23 +848,22 @@ char *mf_start(const char *server, const char *exec_server, const char *exec_id,
 * Close all the files for data storage.
 */
 void mf_end(void){
-	//int t;
+	int t;
 	running = 0;
-	//the ordroid got segmentation fault on the next, we just commented, now debugging
-	//for (t = 0; t < num_threads+1; t++) //we add one more for the Monitor_tid_Start
-	//	pthread_join(threads[t], NULL);
-	//int totalfree=0;
-	//if(each_m!=NULL){
-	//	for (t = 0; t < num_threads; t++){
-	//		if(each_m[t]!=NULL)
-	//			free(each_m[t]);
-	//		each_m[t]=NULL;
-	//		totalfree++;
-	//	}
-	//	if(totalfree==num_threads && each_m!=NULL)
-	//		free(each_m);
-	//	each_m=NULL;
-	//}
+	for (t = 0; t < num_threads+1; t++) //we add one more for the Monitor_tid_Start
+		pthread_join(threads[t], NULL);
+	int totalfree=0;
+	if(each_m!=NULL){
+		for (t = 0; t < num_threads; t++){
+			if(each_m[t]!=NULL)
+				free(each_m[t]);
+			each_m[t]=NULL;
+			totalfree++;
+		}
+		if(totalfree==num_threads && each_m!=NULL)
+			free(each_m);
+		each_m=NULL;
+	}
 	close_curl();
 	printf("finished mf_end\n");
 }
@@ -1575,7 +1574,7 @@ void monitoring_end(const char *mf_server, const char *exec_server, const char *
 	for(int i=0;i<my_app_report->num_of_threads;i++){
 		
 		
-		long long int start_time_ns = my_app_report->my_thread_report[i]->start_time;
+// 		long long int start_time_ns = my_app_report->my_thread_report[i]->start_time;
 // 		if(start_time_ns!=0){
 			printf(" Execution label of the workflow: \"%s\"\n", my_app_report->currentid);
 			printf("   THREAD num %i, name : %s\n",i, my_app_report->my_thread_report[i]->taskid);

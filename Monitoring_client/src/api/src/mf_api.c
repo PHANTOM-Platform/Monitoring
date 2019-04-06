@@ -61,7 +61,7 @@ long long int mycurrenttime (void) {
 	//long long int timeus = (long int) (t0.tv_sec *1000000LL + t0.tv_usec);
 	struct timespec ts_start;
 	clock_gettime(CLOCK_MONOTONIC, &ts_start);
-	long long int timeus = (long int) (ts_start.tv_sec*1000000000LL + ts_start.tv_nsec);
+	long long int timeus = (long long int) (ts_start.tv_sec*1000000000LL + ts_start.tv_nsec);
 	return timeus;
 }
 

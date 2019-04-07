@@ -131,40 +131,40 @@ struct app_report_t *reserve_app_report(const unsigned int num_of_threads, const
 }
 
 int free_app_report(struct app_report_t *my_app_report){
-	if(my_app_report==NULL) return 0;
-	for (int i=0;i<my_app_report->num_of_threads;i++){
-		if(my_app_report->my_thread_report[i]!=NULL){
-		for (int j=0;j<my_app_report->my_thread_report[i]->total_metrics;j++){
-			if(my_app_report->my_thread_report[i]->user_label[j]!=NULL)
-				free(my_app_report->my_thread_report[i]->user_label[j]);
-			my_app_report->my_thread_report[i]->user_label[j]=NULL;
-			if(my_app_report->my_thread_report[i]->user_value[j]!=NULL)
-				free(my_app_report->my_thread_report[i]->user_value[j]);
-			my_app_report->my_thread_report[i]->user_value[j]=NULL;
-			if(my_app_report->my_thread_report[i]->metric_time[j]!=NULL)
-				free(my_app_report->my_thread_report[i]->metric_time[j]);
-			my_app_report->my_thread_report[i]->metric_time[j]=NULL;
-		}
-		if(my_app_report->my_thread_report[i]->user_label!=NULL)
-			free(my_app_report->my_thread_report[i]->user_label);
-		my_app_report->my_thread_report[i]->user_label=NULL;
-		if(my_app_report->my_thread_report[i]->user_value!=NULL)
-			free(my_app_report->my_thread_report[i]->user_value);
-		my_app_report->my_thread_report[i]->user_value=NULL;
-		if(my_app_report->my_thread_report[i]->metric_time!=NULL)
-			free(my_app_report->my_thread_report[i]->metric_time);
-		my_app_report->my_thread_report[i]->metric_time=NULL;
-		if(my_app_report->my_thread_report[i]!=NULL)
-			free(my_app_report->my_thread_report[i]);
-		my_app_report->my_thread_report[i]=NULL;
-		}
-	}
-	if(my_app_report->my_thread_report!=NULL)
-		free(my_app_report->my_thread_report);
-	my_app_report->my_thread_report=NULL;
-	if(my_app_report!=NULL)
-		free(my_app_report);
-	my_app_report=NULL;
+// 	if(my_app_report==NULL) return 0;
+// 	for (int i=0;i<my_app_report->num_of_threads;i++){
+// 		if(my_app_report->my_thread_report[i]!=NULL){
+// 		for (int j=0;j<my_app_report->my_thread_report[i]->total_metrics;j++){
+// 			if(my_app_report->my_thread_report[i]->user_label[j]!=NULL)
+// 				free(my_app_report->my_thread_report[i]->user_label[j]);
+// 			my_app_report->my_thread_report[i]->user_label[j]=NULL;
+// 			if(my_app_report->my_thread_report[i]->user_value[j]!=NULL)
+// 				free(my_app_report->my_thread_report[i]->user_value[j]);
+// 			my_app_report->my_thread_report[i]->user_value[j]=NULL;
+// 			if(my_app_report->my_thread_report[i]->metric_time[j]!=NULL)
+// 				free(my_app_report->my_thread_report[i]->metric_time[j]);
+// 			my_app_report->my_thread_report[i]->metric_time[j]=NULL;
+// 		}
+// 		if(my_app_report->my_thread_report[i]->user_label!=NULL)
+// 			free(my_app_report->my_thread_report[i]->user_label);
+// 		my_app_report->my_thread_report[i]->user_label=NULL;
+// 		if(my_app_report->my_thread_report[i]->user_value!=NULL)
+// 			free(my_app_report->my_thread_report[i]->user_value);
+// 		my_app_report->my_thread_report[i]->user_value=NULL;
+// 		if(my_app_report->my_thread_report[i]->metric_time!=NULL)
+// 			free(my_app_report->my_thread_report[i]->metric_time);
+// 		my_app_report->my_thread_report[i]->metric_time=NULL;
+// 		if(my_app_report->my_thread_report[i]!=NULL)
+// 			free(my_app_report->my_thread_report[i]);
+// 		my_app_report->my_thread_report[i]=NULL;
+// 		}
+// 	}
+// 	if(my_app_report->my_thread_report!=NULL)
+// 		free(my_app_report->my_thread_report);
+// 	my_app_report->my_thread_report=NULL;
+// 	if(my_app_report!=NULL)
+// 		free(my_app_report);
+// 	my_app_report=NULL;
 	return 0;
 }
 
@@ -599,7 +599,7 @@ char *mf_exec_stats(struct app_report_t my_app_report, const char *application_i
 			concat_and_free(&json_msg, "\",\n");
 
 			concat_and_free(&json_msg, "\t\t\t\"total_cpu_energy_comp\":\"");
-			sprintf(tempstr, "%.2f", mmy_task_data_a->subtask[i]->total_cpu_energy);
+			sprintf(tempstr, "%.2f", mmy_task_data_a->subtask[i]->total_cpu_energy);//kk
 			concat_and_free(&json_msg,tempstr );
 			concat_and_free(&json_msg, "\",\n");
 			
@@ -1544,26 +1544,27 @@ void monitoring_end(const char *mf_server, const char *exec_server, const char *
 	FILE *fp = fopen(FileName, "a"); //append data to the end of the file
 	if (fp == NULL) {
 		printf("ERROR: Could not create file: %s\n", FileName);
-			if(my_app_report!=NULL)
-				free_app_report(my_app_report);
-			my_app_report=NULL;
-
-			for(int i=0;i<mmy_task_data_a->maxprocesses;i++){
-				free(mmy_task_data_a->subtask[i]);
-				free(mmy_task_data_a->task_def[i]);
-			}
-			free(mmy_task_data_a->cores);
-			free(mmy_task_data_a->subtask);
-			free(mmy_task_data_a->task_def);
-			if(mmy_task_data_a!=NULL)
-				free(mmy_task_data_a);
-			mmy_task_data_a=NULL;
+// 			if(my_app_report!=NULL)
+// 				free_app_report(my_app_report);
+// 			my_app_report=NULL;
+// 
+// 			for(int i=0;i<mmy_task_data_a->maxprocesses;i++){
+// 				free(mmy_task_data_a->subtask[i]);
+// 				free(mmy_task_data_a->task_def[i]);
+// 			}
+// 			free(mmy_task_data_a->cores);
+// 			free(mmy_task_data_a->subtask);
+// 			free(mmy_task_data_a->task_def);
+// 			if(mmy_task_data_a!=NULL)
+// 				free(mmy_task_data_a);
+// 			mmy_task_data_a=NULL;
 		return;
 	}
 	
 			
 				
 	char *json_msg=mf_exec_stats(*my_app_report, appid, exec_id, regplatformid, mmy_task_data_a);
+	if(json_msg!=NULL)
 	fprintf(fp,"%s",json_msg);
 	/*close the file*/
 	fclose(fp);
@@ -1596,20 +1597,20 @@ void monitoring_end(const char *mf_server, const char *exec_server, const char *
 	//		mmy_task_data_a->subtask[i]->time_of_last_measured);
 // 		}
 	}
-	if(my_app_report!=NULL)
-		free_app_report(my_app_report);
-	my_app_report=NULL;
-
-	for(int i=0;i<mmy_task_data_a->maxprocesses;i++){
-		free(mmy_task_data_a->subtask[i]);
-		free(mmy_task_data_a->task_def[i]);
-	}
-	free(mmy_task_data_a->cores);
-	free(mmy_task_data_a->subtask);
-	free(mmy_task_data_a->task_def);
-	if(mmy_task_data_a!=NULL)
-		free(mmy_task_data_a);
-	mmy_task_data_a=NULL;
+// 	if(my_app_report!=NULL)
+// 		free_app_report(my_app_report);
+// 	my_app_report=NULL;
+// 
+// 	for(int i=0;i<mmy_task_data_a->maxprocesses;i++){
+// 		free(mmy_task_data_a->subtask[i]);
+// 		free(mmy_task_data_a->task_def[i]);
+// 	}
+// 	free(mmy_task_data_a->cores);
+// 	free(mmy_task_data_a->subtask);
+// 	free(mmy_task_data_a->task_def);
+// 	if(mmy_task_data_a!=NULL)
+// 		free(mmy_task_data_a);
+// 	mmy_task_data_a=NULL;
 }
 
 

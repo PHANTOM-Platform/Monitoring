@@ -796,8 +796,8 @@ void procesa_cpuinfo( char *comout, size_t *comalloc, unsigned int argmaxcores, 
 		i=0;
 		contador=0;
 		while((comout[i]!='\0')&&(i<comlen)){
-			if(contador>= maxcores){
-				printf(" counter of freqs exceds maxcores %i\n",maxcores);
+			if(contador>= my_task_data->maxcores){
+				printf(" counter of freqs exceds maxcores %i\n",my_task_data->maxcores);
 				return;
 			}
 			while (comout[i]==' ')
@@ -886,7 +886,7 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 	printf("start power monitor\n");
 	char *FileName=NULL;
 	FileName=concat_and_free(&FileName, DataPath);
-	FileName=concat_and_free(&FileName, "/");
+	FileName=concat_and_free(&FileName, "/"); //kk
 	FileName=concat_and_free(&FileName, METRIC_NAME_3);
 	FILE *fp = fopen(FileName, "a"); //append data to the end of the file
 	if(fp == NULL) {
@@ -1016,7 +1016,7 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 //		}else{
 			actual_time=mycurrenttime();
 //		}
-		my_app_report->read_bytes = 0;
+		my_app_report->read_bytes = 0;//kk
 		my_app_report->write_bytes = 0;
 		my_app_report->cancelled_writes = 0;
 		my_app_report->pid_net_power = 0.0;
@@ -1051,20 +1051,20 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 //		  
 //					total_time
 //					);
-			my_task_data_a->subtask[i]->total_cpu_energy+=0.01* my_task_data_a->subtask[i]->pcpu*param_energy.MIN_CPU_POWER*total_time;
-			my_task_data_a->subtask[i]->time_of_last_measured=actual_time;
-			my_app_report->total_cpu_energy+= my_task_data_a->subtask[i]->total_cpu_energy;
+			my_task_data_a->subtask[i]->total_cpu_energy+=0.01* my_task_data_a->subtask[i]->pcpu*param_energy.MIN_CPU_POWER*total_time;//kk
+			my_task_data_a->subtask[i]->time_of_last_measured=actual_time;//kk
+			my_app_report->total_cpu_energy+= my_task_data_a->subtask[i]->total_cpu_energy;//kk
 		}
 // 		my_app_report->total_cpu_energy =0;
 // 		for(int c=0;c<my_task_data_a->maxcores;c++)
 // 			my_app_report->total_cpu_energy+=my_task_data_a->cores[c].total_watts_core;
-		my_app_report->pid_l2_cache_misses=0;
+		my_app_report->pid_l2_cache_misses=0;//kk
 		my_app_report->pid_mem_power = ((my_app_report->read_bytes + my_app_report->write_bytes - my_app_report->cancelled_writes) / param_energy.L2CACHE_LINE_SIZE + my_app_report->pid_l2_cache_misses) * param_energy.L2CACHE_MISS_LATENCY * param_energy.MEMORY_POWER* 1.0e-9;// / duration;
 		my_app_report->pid_disk_power = param_energy.hd_power;
 		my_app_report->total_hd_energy=0.0;
 //		if (my_task_data_a->first_start!=0)
-			my_app_report->total_hd_energy=my_app_report->pid_disk_power*(actual_time - start_app_time)/(1.0e9);
-		my_app_report->total_watts= my_app_report->total_cpu_energy + my_app_report->pid_mem_power;
+			my_app_report->total_hd_energy=my_app_report->pid_disk_power*(actual_time - start_app_time)/(1.0e9);//kk
+		my_app_report->total_watts= my_app_report->total_cpu_energy + my_app_report->pid_mem_power;//kk
 // 		+ my_app_report->total_hd_energy
 // 		+ my_app_report->pid_net_power;
 		fprintf(fp, "\"local_timestamp\":\"%.1f\",",timestamp_ms);

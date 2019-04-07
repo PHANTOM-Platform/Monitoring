@@ -938,15 +938,16 @@ unsigned int save_stats(FILE *fp, int searchprocess, task_data *my_task_data){
 					fprintf(fp,", \"component\":\"name_not_found\"");
 				}
 		
-				if(my_task_data->my_app_report!=NULL){
-					if(my_task_data->my_app_report->my_thread_report[i]==NULL){
-						fprintf(fp,", \"component_b\":\"%i %s\"", i, my_task_data->my_app_report->my_thread_report[i]->taskid);
-					}else{
-						fprintf(fp,", \"component_b\":\"%i NULL pointer-b\"", i);
-					}
-				}else{
-				fprintf(fp,", \"component_b\":\"%i NULL pointer\"", i);
-				}
+// 				if(my_task_data->my_app_report!=NULL){
+// 					if(my_task_data->my_app_report->my_thread_report!=NULL){
+// 					if(my_task_data->my_app_report->my_thread_report[i]!=NULL){ <-- segmentation fault
+// 						fprintf(fp,", \"component_b\":\"%i %s\"", i, my_task_data->my_app_report->my_thread_report[i]->taskid);
+// 					}else{
+// 						fprintf(fp,", \"component_b\":\"%i NULL pointer-b\"", i);
+// 					}}
+// 				}else{
+// 				fprintf(fp,", \"component_b\":\"%i NULL pointer\"", i);
+// 				}
 		
 				fprintf(fp,", \"pstid\":\"%i\"", my_task_data->subtask[i]->pstid);
 				fprintf(fp,", \"time_of_last_measured\":\"%lli\"", my_task_data->subtask[i]->time_of_last_measured);
@@ -1038,8 +1039,10 @@ void fix_Desynchronized_data(unsigned int maxcores, struct task_data_t *my_task_
 	int total_sorted=0;
 	for(i=0;i<my_task_data->maxcores;i++) 
 		my_task_data->cores[i].total_load_core =0.0;
-	for(j=0;j<my_task_data->totaltid;j++)	
+	for(j=0;j<my_task_data->totaltid;j++){	
+		if (my_task_data->subtask[j]->currentcore< my_task_data->maxcores )
 		my_task_data->cores[my_task_data->subtask[j]->currentcore].total_load_core = my_task_data->cores[my_task_data->subtask[j]->currentcore].total_load_core + my_task_data->subtask[j]->pcpu;
+	}
 	//existe el problema que algun core por encima del 100?
 	c=0;
 	while((c<my_task_data->maxcores)&&(found==false)){
@@ -1071,6 +1074,8 @@ void fix_Desynchronized_data(unsigned int maxcores, struct task_data_t *my_task_
 	}
 	for(j=0;j<my_task_data->totaltid;j++){
 		int wishedcore=my_task_data->subtask[lista[j]]->currentcore;
+		if (wishedcore< my_task_data->maxcores ){
+		
 		if(my_task_data->cores[wishedcore].total_load_core==0.0){
 			my_task_data->cores[wishedcore].total_load_core= my_task_data->subtask[lista[j]]->pcpu;
 		}else{
@@ -1088,6 +1093,7 @@ void fix_Desynchronized_data(unsigned int maxcores, struct task_data_t *my_task_
 			my_task_data->subtask[lista[j]]->currentcore=found;
 			my_task_data->cores[found].total_load_core+= my_task_data->subtask[lista[j]]->pcpu;
 			if(my_task_data->cores[found].total_load_core>100.0) my_task_data->cores[found].total_load_core=100.0;
+		}
 		}
 	}
 	//for(j=0;j<my_task_data->totaltid;j++)
@@ -1285,6 +1291,7 @@ unsigned int procesa_pid_load(int pid, unsigned int argmaxcores, struct task_dat
 		}else{
 		my_task_data->cores[i].total_joules_core=
 			my_task_data->cores[i].total_load_core*(param_energy.MIN_CPU_POWER + power_range * (freqs-param_energy.freq_min)/(param_energy.freq_max-param_energy.freq_min))/100.0; // in milliJoule
+			// confirm not Conditional jump or move depends on uninitialised value(s)?? debug
 		}
 		if(my_task_data->cores[i].time_of_last_measured!=0){
 			long long int total_time = (actual_time - my_task_data->cores[i].time_of_last_measured);

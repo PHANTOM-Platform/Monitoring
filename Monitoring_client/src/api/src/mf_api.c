@@ -61,6 +61,12 @@ long long int mycurrenttime (void) {
 	//long long int timeus = (long int) (t0.tv_sec *1000000LL + t0.tv_usec);
 	struct timespec ts_start;
 	clock_gettime(CLOCK_MONOTONIC, &ts_start);
+	//needed if next look some embedded devices like the Odroid XU4, 
+	// Odroid XU4 cpu is not tls compliant, replace "CLOCK_MONOTONIC" with "CLOCK_REALTIME"
+    while (ts_start.tv_nsec > 1.0e9) {
+        ts_start.tv_sec=ts_start.tv_sec+1;
+        ts_start.tv_nsec= ts_start.tv_nsec- 1.0e9;
+    }	
 	long long int timeus = (long long int) (ts_start.tv_sec*1000000000LL + ts_start.tv_nsec);
 	return timeus;
 }
@@ -848,22 +854,22 @@ char *mf_start(const char *server, const char *exec_server, const char *exec_id,
 * Close all the files for data storage.
 */
 void mf_end(void){
-	//int t;
+// 	int t;
 	running = 0;
-	//for (t = 0; t < num_threads+1; t++) //we add one more for the Monitor_tid_Start
-	//	pthread_join(threads[t], NULL);
-	//int totalfree=0;
-	//if(each_m!=NULL){
-	//	for (t = 0; t < num_threads; t++){
-	//		if(each_m[t]!=NULL)
-	//			free(each_m[t]);
-	//		each_m[t]=NULL;
-	//		totalfree++;
-	//	}
-	//	if(totalfree==num_threads && each_m!=NULL)
-	//		free(each_m);
-	//	each_m=NULL;
-	//}
+// 	for (t = 0; t < num_threads+1; t++) //we add one more for the Monitor_tid_Start
+// 		pthread_join(threads[t], NULL);
+// 	int totalfree=0;
+// 	if(each_m!=NULL){
+// 		for (t = 0; t < num_threads; t++){
+// 			if(each_m[t]!=NULL)
+// 				free(each_m[t]);
+// 			each_m[t]=NULL;
+// 			totalfree++;
+// 		}
+// 		if(totalfree==num_threads && each_m!=NULL)
+// 			free(each_m);
+// 		each_m=NULL;
+// 	}
 	close_curl();
 	printf("finished mf_end\n");
 }

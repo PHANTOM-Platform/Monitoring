@@ -1042,13 +1042,13 @@ void fix_Desynchronized_data(unsigned int maxcores, struct task_data_t *my_task_
 		my_task_data->cores[my_task_data->subtask[j]->currentcore].total_load_core = my_task_data->cores[my_task_data->subtask[j]->currentcore].total_load_core + my_task_data->subtask[j]->pcpu;
 	//existe el problema que algun core por encima del 100?
 	c=0;
-	while((c<maxcores)&&(found==false)){
+	while((c<my_task_data->maxcores)&&(found==false)){
 		if(my_task_data->cores[c].total_load_core>100.0)
 			found=true;
 		c++;
 	}
 	//if(found==false) return;//nothing to do
-	for(c=0;c<maxcores;c++)
+	for(c=0;c<my_task_data->maxcores;c++)
 		my_task_data->cores[c].total_load_core=0.0;
 	//now we sort the list of tasks from higher to the lowest load
 	for(i=0;i<my_task_data->totaltid;i++){
@@ -1075,7 +1075,7 @@ void fix_Desynchronized_data(unsigned int maxcores, struct task_data_t *my_task_
 			my_task_data->cores[wishedcore].total_load_core= my_task_data->subtask[lista[j]]->pcpu;
 		}else{
 			found=0;
-			for(c=0;c<maxcores;c++){
+			for(c=0;c<my_task_data->maxcores;c++){
 				if(my_task_data->cores[c].total_load_core>my_task_data->cores[found].total_load_core){
 					if( my_task_data->cores[c].total_load_core+sorted_list_pcpu[j]< 100.0)
 						found=c;
@@ -1097,7 +1097,7 @@ void fix_Desynchronized_data(unsigned int maxcores, struct task_data_t *my_task_
 	//for(j=0;j<my_task_data->totaltid;j++) 
 	//	printf("j%i core %i load %f ",lista[j], my_task_data->subtask[lista[j]]->currentcore, my_task_data->subtask[lista[j]].pcpu);
 	// printf("\n");
-	//for(c=0;c<maxcores;c++)
+	//for(c=0;c<my_task_data->maxcores;c++)
 	//	printf("TOTAL CORE %f ",my_task_data->cores[c].total_load_core);
 	// printf("\n");
 }
@@ -1276,7 +1276,7 @@ unsigned int procesa_pid_load(int pid, unsigned int argmaxcores, struct task_dat
 	//----------------------------------------------------------------------------------
 	fix_Desynchronized_data( maxcores, my_task_data);//updates currentcore and total_load_core
 
-	for(i=0;i<maxcores;i++) {
+	for(i=0;i<my_task_data->maxcores;i++) {
 		my_task_data->total_load_cpu+=my_task_data->cores[i].total_load_core;
 		long int freqs=my_task_data->cores[i].core_freq;
 		if(param_energy.freq_max<=param_energy.freq_min){

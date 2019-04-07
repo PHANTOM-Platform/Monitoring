@@ -1056,7 +1056,7 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 			my_app_report->total_cpu_energy+= my_task_data_a->subtask[i]->total_cpu_energy;
 		}
 // 		my_app_report->total_cpu_energy =0;
-// 		for(int c=0;c<maxcores;c++)
+// 		for(int c=0;c<my_task_data_a->maxcores;c++)
 // 			my_app_report->total_cpu_energy+=my_task_data_a->cores[c].total_watts_core;
 		my_app_report->pid_l2_cache_misses=0;
 		my_app_report->pid_mem_power = ((my_app_report->read_bytes + my_app_report->write_bytes - my_app_report->cancelled_writes) / param_energy.L2CACHE_LINE_SIZE + my_app_report->pid_l2_cache_misses) * param_energy.L2CACHE_MISS_LATENCY * param_energy.MEMORY_POWER* 1.0e-9;// / duration;

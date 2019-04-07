@@ -817,7 +817,7 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 	char *comout = (char *) malloc(comalloc * sizeof(char));
 	unsigned int maxcores= numcores(comout, &comalloc);
 	my_task_data_a->maxprocesses =30;
-	my_task_data_a->maxcores=30;
+	my_task_data_a->maxcores=130;// excess-fe as 8 (Intel(R) Xeon(R) CPU E5-2609 v2) x 4(cores) x4(threads)=128
 	my_task_data_a->subtask = (struct sub_task_data **) malloc( my_task_data_a->maxprocesses * sizeof(struct sub_task_data *));
 	for(i=0;i<my_task_data_a->maxprocesses;i++){
 		my_task_data_a->subtask[i] = (struct sub_task_data *) malloc(sizeof(struct sub_task_data ));

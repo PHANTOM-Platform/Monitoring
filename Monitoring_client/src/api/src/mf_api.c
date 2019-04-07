@@ -1597,6 +1597,8 @@ void monitoring_end(const char *mf_server, const char *exec_server, const char *
 	//		mmy_task_data_a->subtask[i]->time_of_last_measured);
 // 		}
 	}
+	
+// NEED before free the memory to confirm first that all threads finished, or we will get segmentation fault on their side !!!
 // 	if(my_app_report!=NULL)
 // 		free_app_report(my_app_report);
 // 	my_app_report=NULL;

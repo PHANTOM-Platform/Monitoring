@@ -1164,6 +1164,12 @@ unsigned int procesa_pid_load(int pid, unsigned int argmaxcores, struct task_dat
 						currentcore=atoi(loadstr);
 						if((maxcores< currentcore+1)&&( currentcore+1<my_task_data->maxprocesses))
 							maxcores= currentcore+1;
+// 						if(currentcore>=my_task_data->maxcores){
+// 							printf(" warning. %i>%i\n",currentcore,my_task_data->maxcores);
+// 							printf(" comout = %s\n",comout);
+// 						}
+						
+						
 					}else if(contador==4){
 						pcpu=atof(loadstr);
 						if(pcpu>100.0)
@@ -1369,7 +1375,7 @@ void init_stats(task_data *my_task_data_a){
 	energy_model param_energy;
 	param_energy.freq_min=400000;
 	my_task_data_a->maxprocesses =30;
-	my_task_data_a->maxcores=30;
+	my_task_data_a->maxcores=130;// excess-fe as 8 (Intel(R) Xeon(R) CPU E5-2609 v2) x 4(cores) x4(threads)=128
 	my_task_data_a->subtask = (struct sub_task_data **) malloc( my_task_data_a->maxprocesses * sizeof(struct sub_task_data *));
 	my_task_data_a->task_def = (struct sub_task_user_def **) malloc( my_task_data_a->maxprocesses * sizeof(struct sub_task_user_def *));
 	for(int i=0;i<my_task_data_a->maxprocesses;i++){

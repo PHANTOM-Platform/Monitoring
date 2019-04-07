@@ -50,7 +50,7 @@ struct curl_slist *headers = NULL;
 int check_URL(const char *URL);
 int check_message(const char *message);
 void init_curl(const char *token);
-CURL *prepare_publish(char *URL, char *message, FILE *send_fp, char *operation, const char *token);
+CURL *prepare_publish(char *URL, char *message, FILE *send_fp, const char *operation, const char *token);
 CURL *prepare_query(char* URL, const char *operation, const char *token);
 // static size_t get_stream_data(void *buffer, size_t size, size_t nmemb, char *stream);
 
@@ -286,7 +286,7 @@ int publish_json(char *URL, char *message, const char *token) {
 		return FAILED;
 	if(check_URL(URL)!=SUCCESS || check_message(message)!=SUCCESS)
 		return FAILED;
-	char operation[]="POST";
+	const char operation[]="POST";
 	CURL *curl = prepare_publish(URL, message, NULL, operation, token);
 	if(curl == NULL)
 		return FAILED;
@@ -323,7 +323,7 @@ int publish_file(char *URL, char *static_string, char *filename, const char *tok
 	char line[2048];
 	char *message = (char *) malloc(max_buffer *sizeof(char));
 	message[0]='\0';
-	char operation[]="POST";
+	const char operation[]="POST";
 	/* int curl with meaningless message */
 	CURL *curl = prepare_publish(URL, message, NULL, operation, token);
 	if(curl == NULL)
@@ -443,14 +443,17 @@ int publish_file(char *URL, char *static_string, char *filename, const char *tok
 * curl -H "Content-Type: application/json" -XPOST ${server}:${port}/v1/phantom_mf/experiments/${appid} -d '{
 * "application": "'"${appid}"'", "task": "'"${task}"'", "host": "'"${regplatformid}"'"}'
 */ 
-int query_message_json(char *URL, char *message,const char *filenamepath, struct url_data *response, char *operation, const char *token) {
+int query_message_json(const char *URL, const char *message,const char *filenamepath, struct url_data *response, const char *operation, const char *token) {
 	struct curl_slist *headers = NULL;
 	struct url_data data;
-	if(reserve_data_struc(&data)==FAILED)
+	if(reserve_data_struc(&data)==FAILED){
+		printf("aa1\n");
 		return FAILED;
+	}
 	struct url_data rescode;
 	if(reserve_data_struc(&rescode)==FAILED){
 		free_data_struc(&data);
+		printf("aa2\n");
 		return FAILED;
 	}
 	response->data=NULL;
@@ -459,14 +462,14 @@ int query_message_json(char *URL, char *message,const char *filenamepath, struct
 		free(data.headercode); data.headercode=NULL;
 		free(rescode.data); rescode.data=NULL;
 		free(rescode.headercode); rescode.headercode=NULL;
+		printf("aa3\n");		
 		return FAILED;
 	}
 	if(filenamepath!= NULL){
-		headers=NULL;
 		// 	curl_slist_free_all(headers);/* free the list again */
 		// 	curl_global_init(CURL_GLOBAL_ALL);kkj
 		if(token !=NULL){
-			if(token[0]!='0'){
+			if(token[0]!='\0'){
 				const char authorization_header[]="Authorization: OAuth ";
 				unsigned int size=strlen(authorization_header) + strlen(token)+1;
 				char *newheader = (char *) malloc(size);
@@ -483,11 +486,11 @@ int query_message_json(char *URL, char *message,const char *filenamepath, struct
 		}
 	// 	headers = curl_slist_append(headers, string("X-Auth-Token: " + token).c_str());
 		headers = curl_slist_append(headers, "Expect: 100-continue");
-		headers = curl_slist_append(headers, "Content-type: multipart/form-data");
+// 		headers = curl_slist_append(headers, "Content-type: multipart/form-data");
 	// 	headers = curl_slist_append(headers, "Accept: application/json");
-	// 	headers = curl_slist_append(headers, "Content-Type: application/json");
+		headers = curl_slist_append(headers, "Content-Type: application/json");
 		headers = curl_slist_append(headers, "charsets: utf-8");
-	}else{
+// 	}else{
 		init_curl(token);//this defined the headers
 	}
 	CURL *curl = NULL;
@@ -525,7 +528,9 @@ int query_message_json(char *URL, char *message,const char *filenamepath, struct
 		free(data.headercode); data.headercode=NULL;
 		free(rescode.data); rescode.data=NULL;
 		free(rescode.headercode); rescode.headercode=NULL;
-		if(headers!=NULL) free(headers);
+// 		if(headers!=NULL) free(headers);
+		curl_slist_free_all(headers);
+				printf("aa12\n");
 		return FAILED;
 	}
 
@@ -552,7 +557,9 @@ int query_message_json(char *URL, char *message,const char *filenamepath, struct
 		free(data.headercode); data.headercode=NULL;
 		free(rescode.data); rescode.data=NULL;
 		free(rescode.headercode); rescode.headercode=NULL;
-		if(headers!=NULL) free(headers);
+// 		if(headers!=NULL) free(headers);
+		curl_slist_free_all(headers);
+				printf("aa13 %s\n%s\n%s\n",URL, message,error_msg);
 		return FAILED;
 	}
 	if (strcmp(rescode.headercode, "401") == 0) {
@@ -562,7 +569,9 @@ int query_message_json(char *URL, char *message,const char *filenamepath, struct
 		free(data.headercode); data.headercode=NULL;
 		free(rescode.data); rescode.data=NULL;
 		free(rescode.headercode); rescode.headercode=NULL;
-		if(headers!=NULL) free(headers);
+// 		if(headers!=NULL) free(headers);
+		curl_slist_free_all(headers);
+				printf("aa14\n");
 		return FAILED;
 	}
 
@@ -572,7 +581,9 @@ int query_message_json(char *URL, char *message,const char *filenamepath, struct
 		free(data.headercode); data.headercode=NULL;
 		free(rescode.data); rescode.data=NULL;
 		free(rescode.headercode); rescode.headercode=NULL;
-		if(headers!=NULL) free(headers);
+// 		if(headers!=NULL) free(headers);
+		curl_slist_free_all(headers);
+				printf("aa15\n");
 		return FAILED;
 	}
 	if(response->data !=NULL) free(response->data);
@@ -582,9 +593,12 @@ int query_message_json(char *URL, char *message,const char *filenamepath, struct
 
 	free(data.headercode); data.headercode=NULL;
 	free(rescode.data); rescode.data=NULL;
-	if(headers!=NULL) free(headers);
-	if(response->data == NULL)
+// 	if(headers!=NULL) free(headers);
+	curl_slist_free_all(headers);
+	if(response->data == NULL){
+				printf("aa17\n");
 		return FAILED;
+	}
 	return SUCCESS;
 }
 
@@ -710,7 +724,7 @@ void close_curl(void) {
 
 
 /** Prepare for using libcurl with message */
-CURL *prepare_publish(char *URL, char *message, FILE *send_fp, char *operation, const char *token) {
+CURL *prepare_publish(char *URL, char *message, FILE *send_fp, const char *operation, const char *token) {
 // struct curl_httppost *formpost = NULL;
 // struct curl_httppost *lastptr = NULL;
 // 		if(send_fp!= NULL){

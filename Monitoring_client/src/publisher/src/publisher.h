@@ -38,7 +38,7 @@ int publish_json(char *URL, char *message, const char *token);
 
 int publish_file(char *URL, char *static_string, char *filename, const char *token);
 
-int query_message_json(char *URL, char *message,const char *filenamepath, struct url_data *response, char *operation, const char *token);
+int query_message_json(const char *URL, const char *message,const char *filenamepath, struct url_data *response, const char *operation, const char *token);
 
 void close_curl(void);
 

@@ -247,7 +247,7 @@ char* update_exec(const char *server, const char *filenamepath, const char * tok
 //	printf(" operation: %s\n", operation);
 //	printf(" token: %s\n", token);
 
-	query_message_json(URL, NULL, filenamepath, &response, operation, token);
+	query_message_json_data(URL, NULL, filenamepath, &response, operation, token);
 
 	if(URL!=NULL) free(URL);
 	URL=NULL;

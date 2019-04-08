@@ -414,6 +414,157 @@ int publish_file(char *URL, char *static_string, char *filename, const char *tok
 }
 
 
+int query_message_json_data(const char *URL, const char *message,const char *filenamepath, struct url_data *response, const char *operation, const char *token) {
+	struct curl_slist *headers = NULL;
+	struct url_data data;
+	if(reserve_data_struc(&data)==FAILED){
+		return FAILED;
+	}
+	struct url_data rescode;
+	if(reserve_data_struc(&rescode)==FAILED){
+		free_data_struc(&data);
+		return FAILED;
+	}
+	response->data=NULL;
+	if(check_URL(URL)!=SUCCESS) {
+		free(data.data); data.data=NULL;
+		free(data.headercode); data.headercode=NULL;
+		free(rescode.data); rescode.data=NULL;
+		free(rescode.headercode); rescode.headercode=NULL;
+		return FAILED;
+	}
+	if(filenamepath!= NULL){
+		// 	curl_slist_free_all(headers);/* free the list again */
+		// 	curl_global_init(CURL_GLOBAL_ALL);kkj
+		if(token !=NULL){
+			if(token[0]!='\0'){
+				const char authorization_header[]="Authorization: OAuth ";
+				unsigned int size=strlen(authorization_header) + strlen(token)+1;
+				char *newheader = (char *) malloc(size);
+				if(newheader==NULL) {
+					printf("Failed to allocate memory.\n");
+					exit(1);
+				}
+				newheader[0]='0';
+				strcpy(newheader,authorization_header);
+				strcat(newheader,token);
+				headers = curl_slist_append(headers, newheader);
+				free(newheader);
+			}
+		}
+	// 	headers = curl_slist_append(headers, string("X-Auth-Token: " + token).c_str());
+		headers = curl_slist_append(headers, "Expect: 100-continue");
+		headers = curl_slist_append(headers, "Content-type: multipart/form-data");
+	// 	headers = curl_slist_append(headers, "Accept: application/json");
+// 		headers = curl_slist_append(headers, "Content-Type: application/json");
+		headers = curl_slist_append(headers, "charsets: utf-8");
+// 	}else{
+		init_curl(token);//this defined the headers
+	}
+	CURL *curl = NULL;
+	struct curl_httppost *formpost = NULL;
+	struct curl_httppost *lastptr = NULL;
+	if(filenamepath!= NULL){
+		curl = curl_easy_init();
+		curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);//not using signals to notify timeouts on requests and seems not to work fine with multi-threading
+		curl_easy_setopt(curl, CURLOPT_URL, URL);
+		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+		if (message!= NULL){
+			curl_easy_setopt(curl, CURLOPT_POSTFIELDS, message);
+			curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long ) strlen(message));
+		}
+		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, operation); /* PUT, POST, ... */
+// 		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+		if(filenamepath!= NULL){
+			curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+			curl_global_init(CURL_GLOBAL_ALL);
+			curl_formadd(&formpost,
+				&lastptr,
+				CURLFORM_COPYNAME, "UploadJSON",
+				CURLFORM_FILE, filenamepath,
+	// 			CURLFORM_CONTENTTYPE, "application/octet-stream",
+				CURLFORM_END);
+		}
+		if(filenamepath!= NULL){
+	// 		curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);kaka
+			curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
+		}
+	}else
+		curl = prepare_publish(URL, message, NULL, operation, token);
+	if(curl == NULL) {
+		free(data.data); data.data=NULL;
+		free(data.headercode); data.headercode=NULL;
+		free(rescode.data); rescode.data=NULL;
+		free(rescode.headercode); rescode.headercode=NULL;
+// 		if(headers!=NULL) free(headers);
+		curl_slist_free_all(headers);
+		return FAILED;
+	}
+
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data); // the functions get_stream_data seems was not correct.
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
+
+	curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, write_data);//header_callback);
+	curl_easy_setopt(curl, CURLOPT_HEADERDATA, &rescode);  // set userdata in callback function
+	CURLcode response_code = curl_easy_perform(curl);
+// 	printf("\n URL is %s\n", URL);
+// 	printf("\n message is %s\n", message);
+// 	printf("\n RESCODE is %s\n", rescode.headercode);
+// 	printf("\n data is %s\n", data.data);
+	free(rescode.data); rescode.data=NULL;
+	//curl_slist_free_all(headers);/* free the list again */
+	if(filenamepath!=NULL)
+		curl_formfree(formpost);
+	curl_easy_cleanup(curl);
+// 	curl_global_cleanup();kkj
+	if(response_code != CURLE_OK) {
+		const char *error_msg = curl_easy_strerror(response_code);
+		log_error("ERROR query_message_json %s", error_msg);
+		free(data.data); data.data=NULL;
+		free(data.headercode); data.headercode=NULL;
+		free(rescode.data); rescode.data=NULL;
+		free(rescode.headercode); rescode.headercode=NULL;
+// 		if(headers!=NULL) free(headers);
+		curl_slist_free_all(headers);
+		return FAILED;
+	}
+	if (strcmp(rescode.headercode, "401") == 0) {
+		log_error("ERROR unauthorized request, %s", data.data);
+		log_error("token is %s", token);
+		free(data.data); data.data=NULL;
+		free(data.headercode); data.headercode=NULL;
+		free(rescode.data); rescode.data=NULL;
+		free(rescode.headercode); rescode.headercode=NULL;
+// 		if(headers!=NULL) free(headers);
+		curl_slist_free_all(headers);
+		return FAILED;
+	}
+
+	if(data.data[0]=='\0') {
+		printf("ERROR!! : query with %s failed.\n", URL);
+		free(data.data); data.data=NULL;
+		free(data.headercode); data.headercode=NULL;
+		free(rescode.data); rescode.data=NULL;
+		free(rescode.headercode); rescode.headercode=NULL;
+// 		if(headers!=NULL) free(headers);
+		curl_slist_free_all(headers);
+		return FAILED;
+	}
+	if(response->data !=NULL) free(response->data);
+	if(response->headercode !=NULL) free(response->headercode);
+	response->data=data.data;
+	response->headercode =rescode.headercode;
+
+	free(data.headercode); data.headercode=NULL;
+	free(rescode.data); rescode.data=NULL;
+// 	if(headers!=NULL) free(headers);
+	curl_slist_free_all(headers);
+	if(response->data == NULL){
+		return FAILED;
+	}
+	return SUCCESS;
+}
+
 //file fp is already opened as read operation, or assing to NULL if not file will be transmitted 
 /**
 * It can not be register experiments and workflows 
@@ -447,13 +598,11 @@ int query_message_json(const char *URL, const char *message,const char *filename
 	struct curl_slist *headers = NULL;
 	struct url_data data;
 	if(reserve_data_struc(&data)==FAILED){
-		printf("aa1\n");
 		return FAILED;
 	}
 	struct url_data rescode;
 	if(reserve_data_struc(&rescode)==FAILED){
 		free_data_struc(&data);
-		printf("aa2\n");
 		return FAILED;
 	}
 	response->data=NULL;
@@ -462,7 +611,6 @@ int query_message_json(const char *URL, const char *message,const char *filename
 		free(data.headercode); data.headercode=NULL;
 		free(rescode.data); rescode.data=NULL;
 		free(rescode.headercode); rescode.headercode=NULL;
-		printf("aa3\n");		
 		return FAILED;
 	}
 	if(filenamepath!= NULL){
@@ -530,7 +678,6 @@ int query_message_json(const char *URL, const char *message,const char *filename
 		free(rescode.headercode); rescode.headercode=NULL;
 // 		if(headers!=NULL) free(headers);
 		curl_slist_free_all(headers);
-				printf("aa12\n");
 		return FAILED;
 	}
 
@@ -559,7 +706,6 @@ int query_message_json(const char *URL, const char *message,const char *filename
 		free(rescode.headercode); rescode.headercode=NULL;
 // 		if(headers!=NULL) free(headers);
 		curl_slist_free_all(headers);
-				printf("aa13 %s\n%s\n%s\n",URL, message,error_msg);
 		return FAILED;
 	}
 	if (strcmp(rescode.headercode, "401") == 0) {
@@ -571,7 +717,6 @@ int query_message_json(const char *URL, const char *message,const char *filename
 		free(rescode.headercode); rescode.headercode=NULL;
 // 		if(headers!=NULL) free(headers);
 		curl_slist_free_all(headers);
-				printf("aa14\n");
 		return FAILED;
 	}
 
@@ -583,7 +728,6 @@ int query_message_json(const char *URL, const char *message,const char *filename
 		free(rescode.headercode); rescode.headercode=NULL;
 // 		if(headers!=NULL) free(headers);
 		curl_slist_free_all(headers);
-				printf("aa15\n");
 		return FAILED;
 	}
 	if(response->data !=NULL) free(response->data);
@@ -596,7 +740,6 @@ int query_message_json(const char *URL, const char *message,const char *filename
 // 	if(headers!=NULL) free(headers);
 	curl_slist_free_all(headers);
 	if(response->data == NULL){
-				printf("aa17\n");
 		return FAILED;
 	}
 	return SUCCESS;

@@ -13,7 +13,7 @@ typedef struct xlnx_stats_t {
 	long long avg_current[5], avg_volt[5]; //value is always positive, but we wish to consider sign to detect overflow
 	long long max_current[5], max_volt[5];
 	long long min_current[5], min_volt[5];
-	float total_watts;
+	float total_watts, acum_total_watts;
 } xlnx_stats;
 
 int xlnx_monitor(char *DataPath, long sampling_interval);

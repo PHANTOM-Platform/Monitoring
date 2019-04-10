@@ -31,8 +31,9 @@
 
 // //entries for the ZC906
 #define xilinx_path "/sys/devices/soc0/amba/e0004000.i2c/i2c-0/i2c-7/mux_device/channel-7/8-0065/hwmon/hwmon0/%s%s%s"
-#define xilinx_path_fake "~/fake_fpga/%s%s%s"
+#define xilinx_path_fake "/home/jmontana/fake_fpga/%s%s%s"
 
+int reported=0;
 #define MAX_CHANNELS 5
 const char channel_labels[MAX_CHANNELS][16] = {//also referrred as Rails
 	"VCCINT","VCCAUX", "VCC1V5_PL", "VADJ_FPGA", "VCC3V3_FPGA"};
@@ -46,12 +47,14 @@ int xlnx_stats_read(struct xlnx_stats_t *stats) {
 	//name
 	sprintf(filename, xilinx_path, "name","","");
 	if ((fp = fopen(filename, "r")) == NULL) {
-		fprintf(stderr, "Warning: Could not open sensored datafile %s.\n", filename);
-		return FAILURE;
+		if(reported==0)
+			fprintf(stderr, "Warning: Could not open sensored datafile %s.\n", filename);
+		reported=1;
 // 		fprintf(stderr, "Trying with the version for testing...\n");
 		sprintf(filename, xilinx_path_fake, "name","","");
 		if ((fp = fopen(filename, "r")) == NULL) {
 // 			fprintf(stderr, "ERROR: Could not open file %s.\n", filename);
+			fprintf(stderr, "Warning: Could not open sensored datafile %s.\n", filename);
 			return FAILURE;
 		}
 	}
@@ -107,6 +110,7 @@ int xlnx_stats_read(struct xlnx_stats_t *stats) {
 		sscanf(line, "%lli", &stats->volt[i]);
 		fclose(fp);
 		stats-> total_watts += stats->current[i] * stats->volt[i];
+		stats-> acum_total_watts += stats->current[i] * stats->volt[i];
 	}
 	return SUCCESS;
 }
@@ -119,8 +123,10 @@ int xlnx_monitor(char *DataPath, long sampling_interval) {
 	_Bool avg_temp_overflow=false;
 	long int counter=1;
 	xlnx_stats result;
+
 	/*initialize the values in result */
 	if(xlnx_stats_read(&result)==FAILURE){
+		printf("FPGA sensored folder not found !!\n");
 		return 0;
 	}
 	result.avg_temp=result.temp;
@@ -143,6 +149,8 @@ int xlnx_monitor(char *DataPath, long sampling_interval) {
 		return 0;
 	}
 	/*in a loop do data sampling and write into the file*/
+	
+	result.acum_total_watts =0;
 	while(running) {
 		usleep(sampling_interval * 1000);
 		if(xlnx_stats_read(&result)==FAILURE){
@@ -155,6 +163,9 @@ int xlnx_monitor(char *DataPath, long sampling_interval) {
 		/*calculate the values for disk stats */
 		fprintf(fp, "\"local_timestamp\":%.1f", timestamp_ms);
 		fprintf(fp, ",\"temperature\":%.2f", (float) result.temp/1000.0);
+		fprintf(fp, ",\"total_milli_watts\":%.2f", (float) result.total_watts);
+		fprintf(fp, ",\"acum_total_milli_watts\":%.2f", (float) result.acum_total_watts);
+
 		for (int i=0;i<MAX_CHANNELS;i++){
 		//channel i (VCCINT,VCCAUX, VCC1V5_PL, VADJ_FPGA, VCC3V3_FPGA : current
 			fprintf(fp, ",\"%s%s\":%lli", channel_labels[i],"_current", result.current[i]);

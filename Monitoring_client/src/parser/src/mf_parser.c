@@ -43,6 +43,10 @@ static int ht_initialized = 0;
 
 static int handle_parser(void*, const char*, const char*, const char*);
 
+
+#define SUCCESS 0
+#define FAILURE 1
+
 /** Parses a given file */
 int mfp_parse(const char* filename) {
 	/* Initialize a hash table */
@@ -54,15 +58,15 @@ int mfp_parse(const char* filename) {
 	int error = ini_parse(filename, handle_parser, ht_config);
 	if (error < 0) {
 		log_error("mfp_parse(const char*) Can't load %s", filename);
-		return 0;
+		return FAILURE;
 	}
-	return 1;
+	return SUCCESS;
 }
 
 /** Sets or overwrites the value for a given section and key */
 static int handle_parser(void* user, const char* section, const char* name, const char* value) {
 	mfp_set_value(section, name, value);
-	return 1;
+	return SUCCESS;
 }
 
 /** Sets or overwrites the value for a given section and key */
@@ -152,13 +156,6 @@ void mfp_parse_clean(void) {
 	apr_pool_destroy(mp);
 	apr_terminate();
 }
-
-
-
-
-
-
-
 
 
 

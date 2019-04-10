@@ -28,7 +28,6 @@
 #define SUCCESS 0
 #define FAILED 1
 
-
 /*******************************************************************************
 * String functions
 ******************************************************************************/
@@ -41,8 +40,9 @@ char myfBuffer[255];
 char* concat_and_free(char **s1, const char *s2){
 	char *result = NULL;
 	unsigned int new_lenght= 1;
-	if(s2 != NULL )
+	if(s2 != NULL){
 		new_lenght+=strlen(s2); //+1 for the null-terminator;
+	}
 	if(*s1 != NULL){
 		new_lenght+= strlen(*s1);//current lenght
 		if(new_lenght> malloc_usable_size(*s1)){
@@ -122,7 +122,7 @@ char* llitoa(const long long int i, char b[]){
 //10/33 is slightly more than log10(2). +1
 #define INT_DECIMAL_STRING_SIZE(int_type) ((CHAR_BIT*sizeof(int_type)-1)*10/33+3)
 
-char *llint_to_string_alloc(long long int x, char b[]) {
+char *llint_to_string_alloc(const long long int x, char b[]) {
 	long long int i = x;
 	unsigned int buf_size = INT_DECIMAL_STRING_SIZE(long long int);// sizeof buf
 	char buf[INT_DECIMAL_STRING_SIZE(long long int)];
@@ -197,7 +197,7 @@ void reverse(char *str, int len) {
 * Converts a given integer x to string str[].  d is the number
 * of digits required in output. If d is more than the number
 * of digits in x, then 0s are added at the beginning.
- @returns the length of the string
+@returns the length of the string
 **/
 int intToStr(int x, char str[], int d) {
 	int i = 0;
@@ -251,7 +251,7 @@ char *ftoa(const float n, const int afterpoint) {
 /** Converts a given integer x to string str[].  d is the number
 * of digits required in output. If d is more than the number
 * of digits in x, then 0s are added at the beginning.
- @return the string */
+@return the string */
 const char* mintToStr(const int x, const int d) {
 	int i = 0;
 	int temp=x;
@@ -325,19 +325,19 @@ char* concat_strings(char **s1, const char *s2, const char *s3, const char *s4){
 * Arithmetic functions
 ******************************************************************************/
 int add(int a, int b, _Bool *overflowFlag) {
-        int c = a + b;
-        *overflowFlag = ((a ^ b) >= 0) & ((a ^ c) < 0);
-        return c;
+		int c = a + b;
+		*overflowFlag = ((a ^ b) >= 0) & ((a ^ c) < 0);
+		return c;
 }
 
 long int ladd( long int a, long int b, _Bool *overflowFlag) {
-        long int c = a + b;
-        *overflowFlag = ((a ^ b) >= 0) & ((a ^ c) < 0);
-        return c;
+		long int c = a + b;
+		*overflowFlag = ((a ^ b) >= 0) & ((a ^ c) < 0);
+		return c;
 }
 
 long long int lladd( long long int a, long long int b, _Bool *overflowFlag) {
-        long long int c = a + b;
-        *overflowFlag = ((a ^ b) >= 0) & ((a ^ c) < 0);
-        return c;
+		long long int c = a + b;
+		*overflowFlag = ((a ^ b) >= 0) & ((a ^ c) < 0);
+		return c;
 }

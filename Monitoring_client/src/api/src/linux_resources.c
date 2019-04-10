@@ -58,18 +58,25 @@ unsigned int flag = 0;
  @return SUCCESS or otherwise FAILURE*/
 int flag_init(char **events, size_t num_events) {
 	int i, ii;
+// 		printf(" num_events %i RESOURCES_EVENTS_NUM %i \n",(int)num_events,RESOURCES_EVENTS_NUM);
 	for (i=0; i < num_events; i++) {
 		for (ii = 0; ii < RESOURCES_EVENTS_NUM; ii++) {
 			/* if events name matches */
+// 			printf(" %i-%i    comp (%s  % s )\n",i,ii,events[i], Linux_resources_metrics[ii]);
 			if(strcmp(events[i], Linux_resources_metrics[ii]) == 0) {
 				/* get the flag updated */
 				unsigned int current_event_flag = 1 << ii;
 				flag = flag | current_event_flag;
+// 				printf(" :::> %i %i \n", flag, current_event_flag);
+				break;
 			}
 		}
 	}
+	
+	
 	if (flag == 0) {
-		fprintf(stderr, "Wrong given metrics.\nPlease given metrics ");
+// 		printf("<<<< flag %i\n",flag);
+		fprintf(stderr, "WWrong given metrics.\nPlease given metrics ");
 		for (ii = 0; ii < RESOURCES_EVENTS_NUM; ii++)
 			fprintf(stderr, "%s ", Linux_resources_metrics[ii]);
 		fprintf(stderr, "\n");

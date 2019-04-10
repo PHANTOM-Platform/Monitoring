@@ -783,7 +783,8 @@ int procesa_network_stat_read(char *comout, size_t *comalloc, struct task_data_t
 // cpu MHz		: 400.008
 void procesa_cpuinfo( char *comout, size_t *comalloc, unsigned int argmaxcores, struct task_data_t *my_task_data ) {
 	const char command[]= "if [ -e /proc/cpuinfo ];then cat /proc/cpuinfo | grep \"MHz\";fi;";//expected to update every 10ms
-	unsigned int i,contador,maxcores=argmaxcores;
+	unsigned int i,contador;
+// 	unsigned int maxcores=argmaxcores;
 	const int size_loadstr=250;
 	char loadstr[size_loadstr];
 	float my_temp_float;

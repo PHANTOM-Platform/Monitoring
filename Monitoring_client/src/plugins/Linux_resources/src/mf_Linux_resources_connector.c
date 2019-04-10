@@ -68,6 +68,23 @@ struct io_stats {
 };
 struct io_stats io_stat_before;
 struct io_stats io_stat_after;
+
+//assumes little endian
+void printBits(size_t const size, void const * const ptr) {
+    unsigned char *b = (unsigned char*) ptr;
+    unsigned char byte;
+    int i, j;
+    for (i=size-1;i>=0;i--) {
+        for (j=7;j>=0;j--) {
+            byte = (b[i] >> j) & 1;
+            printf("%u", byte);
+        }
+    }
+   printf("\n");
+}
+// 		printf(" flagz %i ");
+// 	 printBits(sizeof(flag), &flag);
+
 /*******************************************************************************
 * Functions implementation
 ******************************************************************************/
@@ -76,23 +93,29 @@ struct io_stats io_stat_after;
  @return SUCCESS or otherwise FAILURE*/
 int flag_init(char **events, size_t num_events) {
 	int i, ii;
+// 	printf(" num_events %i RESOURCES_EVENTS_NUM %i \n",(int)num_events,RESOURCES_EVENTS_NUM);
 	for (i=0; i < num_events; i++) {
 		for (ii = 0; ii < RESOURCES_EVENTS_NUM; ii++) {
 			/* if events name matches */
+// 			printf(" %i-%i    comp (%s  % s )\n",i,ii,events[i], Linux_resources_metrics[ii]);
 			if(strcmp(events[i], Linux_resources_metrics[ii]) == 0) {
 				/* get the flag updated */
 				unsigned int current_event_flag = 1 << ii;
 				flag = flag | current_event_flag;
+// 				printf(" :::> %i %i \n", flag, current_event_flag);
+				break;
 			}
 		}
 	}
 	if (flag == 0) {
-		fprintf(stderr, "Wrong given metrics.\nPlease given metrics: ");
+// 		printf("<<<< flag %i\n",flag);
+		fprintf(stderr, "3-Wrong given metrics.\nPlease given metrics: ");
 		for (ii = 0; ii < RESOURCES_EVENTS_NUM; ii++)
 			fprintf(stderr, "%s ", Linux_resources_metrics[ii]);
 		fprintf(stderr, "\n");
 		return FAILURE;
 	}
+	printf("return success");
 	return SUCCESS;
 }
 
@@ -250,9 +273,16 @@ int process_IO_stat_read(int pid, struct io_stats *io_info) {
  * collected metrics on  total_io_stat->read_bytes and total_io_stat->write_bytes
  @return SUCCESS or otherwise FAILURE*/
 int sys_IO_stat_read(struct io_stats *total_io_stat) {
+	/* reset total_io_stat into zeros */
+	total_io_stat->read_bytes = 0;
+	total_io_stat->write_bytes = 0;
+	return FAILURE; //we skip ...
+	
+	
 	DIR *dir;
 	struct dirent *drp;
 	int pid;
+	
 	/* open /proc directory */
 	dir = opendir("/proc");
 	if (dir == NULL) {
@@ -261,9 +291,7 @@ int sys_IO_stat_read(struct io_stats *total_io_stat) {
 	}
 	/* declare data structure which stores the io stattistics of each process */
 	struct io_stats pid_io_stat;
-	/* reset total_io_stat into zeros */
-	total_io_stat->read_bytes = 0;
-	total_io_stat->write_bytes = 0;
+
 	/* get the entries in the /proc directory */
 	drp = readdir(dir);
 	while (drp != NULL) {
@@ -284,6 +312,9 @@ int sys_IO_stat_read(struct io_stats *total_io_stat) {
 	return SUCCESS;
 }
 
+
+
+
 /** @brief Initializes the Linux_resources plugin
 *  Check if input events are valid; add valid events to the data->events
 *  acquire the previous value and before timestamp
@@ -291,7 +322,8 @@ int sys_IO_stat_read(struct io_stats *total_io_stat) {
 */
 int mf_Linux_resources_init(Plugin_metrics *data, char **events, size_t num_events) {
 	/* failed to initialize flag means that all events are invalid */
-	if(flag_init(events, num_events) == 0)
+	printf(" mf_Linux_resources_init  ....\n");
+	if(flag_init(events, num_events) == FAILURE)
 		return FAILURE;
 	/* get the before timestamp in second */
 	struct timespec timestamp;
@@ -301,13 +333,13 @@ int mf_Linux_resources_init(Plugin_metrics *data, char **events, size_t num_even
 	int i = 0;
 	if(flag & HAS_CPU_STAT) {
 		data->events[i] = malloc(MAX_EVENTS_LEN * sizeof(char));
-		strcpy(data->events[i], Linux_resources_metrics[0]);//"cpu_usage_rate"
+		strcpy(data->events[i], "CPU_usage_rate" );// "CPU_usage_rate" Linux_resources_metrics[0]
 		CPU_stat_read(&cpu_stat_before);
 		i++;
 	}
 	if(flag & HAS_RAM_STAT) {
 		data->events[i] = malloc(MAX_EVENTS_LEN * sizeof(char));
-		strcpy(data->events[i], Linux_resources_metrics[1]);//"ram_usage_rate"
+		strcpy(data->events[i],"RAM_usage_rate" );// "RAM_usage_rate" Linux_resources_metrics[1]
 		i++;
 	}
 	if(flag & HAS_SWAP_STAT) {
@@ -330,7 +362,7 @@ int mf_Linux_resources_init(Plugin_metrics *data, char **events, size_t num_even
 		i++;
 	}
 	data->num_events = i;
-	return SUCCESS;
+	return 1; // IMPORTANT it is expected >0 by load_plugin
 }
 
 /** @brief Samples all possible events and stores data into the Plugin_metrics
@@ -397,19 +429,24 @@ int mf_Linux_resources_sample(Plugin_metrics *data) {
 /** @brief Formats the sampling data into a json string
 *  json string contains: plugin name, timestamps, metrics_name and metrics_value
 */
-void mf_Linux_resources_to_json(Plugin_metrics *data, char *json) {
+void mf_Linux_resources_to_json(Plugin_metrics *data, const char *device_id, char *json) {
 	char tmp[128] = {'\0'};
 	int i;
 	/* prepares the json string, including current timestamp, and name of the plugin */
-	sprintf(json, "\"type\":\"Linux_resources\"");
+	sprintf(json, "\"type\":\"Linux_resources\", \"host\":\"%s\"",device_id);
 	sprintf(tmp, ",\"local_timestamp\":\"%.1f\"", after_time * 1.0e3);
+// 	sprintf(json, "%%22type%%22:%%22Linux_resources%%22,%%22host%%22:%%22%s%%22",device_id);
+// 	sprintf(tmp, ",%%22local_timestamp%%22:%%22%.1f%%22", after_time * 1.0e3);
+	
 	strcat(json, tmp);
 	/* filters the sampled data with respect to metrics values */
 	for (i = 0; i < data->num_events; i++) {
 		/* if metrics' value >= 0.0, append the metrics to the json string */
 		if(data->values[i] >= 0.0) {
 			sprintf(tmp, ",\"%s\":%.3f", data->events[i], data->values[i]);
+// 			sprintf(tmp, ",%%22%s%%22:%.3f", data->events[i], data->values[i]);			
 			strcat(json, tmp);
 		}
 	}
+// 	printf("events: %i json is %s\n",data->num_events,json);
 }

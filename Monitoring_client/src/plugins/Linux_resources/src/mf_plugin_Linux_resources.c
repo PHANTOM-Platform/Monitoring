@@ -23,6 +23,9 @@
 #include <plugin_utils.h> /* Plugin_metrics */
 #include "mf_Linux_resources_connector.h"
 
+#define SUCCESS 0
+#define FAILURE 1
+
 /*******************************************************************************
 * Variable Declarations
 ******************************************************************************/
@@ -40,6 +43,7 @@ char* mf_plugin_Linux_resources_hook();
 register the plugin hook to the plugin manager 
 @return 1 on success; 0 otherwise */
 extern int init_mf_plugin_Linux_resources(PluginManager *pm) {
+// 	printf(" ** init_mf_plugin_Linux_resources **\n");
 	/*get the turned on metrics from the configuration file */
 	conf_data =  malloc(sizeof(mfp_data));
 	mfp_get_data_filtered_by_value("mf_plugin_Linux_resources", conf_data, "on");
@@ -58,14 +62,14 @@ extern int init_mf_plugin_Linux_resources(PluginManager *pm) {
 }
 
 /* the hook function, sample the metrics and convert to a json-formatted string */
-char* mf_plugin_Linux_resources_hook() {
+char* mf_plugin_Linux_resources_hook(const char *device_id) {
 	if (is_initialized) {
 		/*sampling */
 		mf_Linux_resources_sample(monitoring_data);
 		/*Prepares a json string, including current timestamp, name of the plugin,
 		* and required metrics. */
 		char *json = calloc(JSON_MAX_LEN, sizeof(char));
-		mf_Linux_resources_to_json(monitoring_data, json);
+		mf_Linux_resources_to_json(monitoring_data, device_id, json);
 		return json;
 	}
 	return NULL;

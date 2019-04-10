@@ -55,7 +55,7 @@ int flag_init(char **events, size_t num_events) {
 		}
 	}
 	if (flag == 0) {
-		fprintf(stderr, "Wrong given metrics.\nPlease given metrics ");
+		fprintf(stderr, "2-Wrong given metrics.\nPlease given metrics ");
 		for (ii = 0; ii < RESOURCES_EVENTS_NUM; ii++)
 			fprintf(stderr, "%s ", dummy_supported_metrics[ii]);
 		fprintf(stderr, "\n");

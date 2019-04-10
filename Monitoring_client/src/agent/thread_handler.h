@@ -4,12 +4,14 @@
 struct thread_args
 {
     int num;
-	char *token;
+	char token[128];
+	char metrics_publish_URL[256];
+	char device_id[256];
 };
 
 /**
  * @brief Starts all threads registered
  */
-int startThreads(void);
+int startThreads(const char *metrics_publish_URL, const char *token, const char *device_id);
 
 #endif /* THREAD_HANDLER_H_ */

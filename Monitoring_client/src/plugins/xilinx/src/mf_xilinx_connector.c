@@ -66,7 +66,7 @@ int flag_init(char **events, size_t num_events) {
 		}
 	}
 	if (flag == 0) {
-		fprintf(stderr, "Wrong given metrics.\nPlease given metrics ");
+		fprintf(stderr, "7-Wrong given metrics.\nPlease given metrics ");
 		for (ii = 0; ii < RESOURCES_EVENTS_NUM; ii++)
 			fprintf(stderr, "%s ", xilinx_supported_metrics[ii]);
 		fprintf(stderr, "\n");

@@ -30,6 +30,7 @@ int main(int argc, char** argv) {
 		printf("Error: No metrics required for monitoring.");
 		exit(0);
 	}
+	const char *device_id="testing_device_id";
 	struct sigaction sigIntHandler;
 	sigIntHandler.sa_handler = my_exit_handler;
 	sigemptyset(&sigIntHandler.sa_mask);
@@ -56,7 +57,7 @@ int main(int argc, char** argv) {
 		/* Prepares a json string, including current timestamp, name of the plugin,
 		* and required metrics. */
 		char *json = calloc(JSON_MAX_LEN, sizeof(char));
-		mf_Linux_resources_to_json(monitoring_data, json);
+		mf_Linux_resources_to_json(monitoring_data, device_id, json);
 		/* Display and free the json string */
 		puts(json);
 		free(json);

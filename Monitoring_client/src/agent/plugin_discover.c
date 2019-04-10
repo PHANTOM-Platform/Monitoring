@@ -59,6 +59,7 @@ void* discover_plugins(const char *dirname, PluginManager *pm) {
 	DIR* dir = opendir(dirname);
 	struct dirent *direntry;
 	if (!dir) {
+// 		printf("Unable to open directory %s!\n", dirname);
 		log_error("Unable to open directory %s!\n", dirname);
 		return NULL;
 	}
@@ -69,12 +70,11 @@ void* discover_plugins(const char *dirname, PluginManager *pm) {
 		char *last_slash = strrchr(direntry->d_name, '/');
 		char *name_start = last_slash ? last_slash + 1 : direntry->d_name;
 		char *last_dot = strrchr(direntry->d_name, '.');
-
+// 		printf(" name %s\n",direntry->d_name);
 		if (!last_dot || strcmp(last_dot, ".so"))
 			continue;
 		char *name = calloc(last_dot - name_start + 1, sizeof(char));
 		strncpy(name, name_start, last_dot - name_start);
-
 		if (!name)
 			continue;
 		/* do not consider plug-ins that are switched off */
@@ -85,7 +85,6 @@ void* discover_plugins(const char *dirname, PluginManager *pm) {
 			continue;
 		}
 		char *fullpath = malloc(200 * sizeof(char));
-
 		strcpy(fullpath, dirname);
 		strcat(fullpath, "/");
 		strcat(fullpath, direntry->d_name);
@@ -104,13 +103,13 @@ void* discover_plugins(const char *dirname, PluginManager *pm) {
 	}
 	printf(" pluginCount is %i\n",pluginCount);
 	closedir(dir);
-	if (plugins_state->handle_list)
+	if (plugins_state->handle_list){
 		return (void*) plugins_state;
-	else {
+	}else {
+// 		printf(" discover_plugins returns NULL\n");
 		free(plugins_state);
 		return NULL;
 	}
-	return 0;
 }
 
 /** Clean-up plug-ins after execution */
@@ -136,6 +135,7 @@ void* load_plugin(char *name, char *fullpath, PluginManager *pm) {
 	void *libhandle = dlopen(slashed_path, RTLD_NOW);
 	if (!libhandle) {
 		log_error("Unable to load library %s\n", dlerror());
+// 		printf("Unable to load library %s\n", dlerror());
 		return NULL;
 	}
 	char *init_func_name = malloc((strlen("init_") + strlen(name)) * sizeof(char) + 1);
@@ -145,12 +145,14 @@ void* load_plugin(char *name, char *fullpath, PluginManager *pm) {
 	free(init_func_name);
 	if (!ptr) {
 		log_error("Unable to load init function %s\n", dlerror());
+// 		printf("Unable to load init function %s\n", dlerror());
 		return NULL;
 	}
 	PluginInitFunc init_func = (PluginInitFunc) (intptr_t) ptr;
 	int rc = init_func(pm);
 	if (rc <= 0) {
 		log_error("Plugin init function failed for %s\n", strerror(rc));
+// 		printf("Plugin init function failed for %s\n", strerror(rc));
 		dlclose(libhandle);
 		return NULL;
 	}

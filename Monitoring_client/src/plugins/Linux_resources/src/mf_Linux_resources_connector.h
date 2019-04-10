@@ -38,6 +38,6 @@ int mf_Linux_resources_sample(Plugin_metrics *data);
  *  json string contains: plugin name, timestamps, metrics_name and metrics_value
  *
  */
-void mf_Linux_resources_to_json(Plugin_metrics *data, char *json);
-
+void mf_Linux_resources_to_json(Plugin_metrics *data, const char *device_id, char *json);
+	
 #endif /* _LINUX_RESOURCES_CONNECTOR_H */

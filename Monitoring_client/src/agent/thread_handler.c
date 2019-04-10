@@ -58,19 +58,23 @@ static int gatherMetric(struct thread_args *params);
 * Functions implementation
 ******************************************************************************/
 /* All threads starts here */
-int startThreads(void) {
+int startThreads(const char *metrics_publish_URL, const char *token, const char *device_id) {
 	int t;
 	running = 1;
 	/* initialize plugin manager, which is a queue of plugin hooks */
 	pm = PluginManager_new();
+// 	printf("pointer 1=%p  2=%p\n", (void *) pm, (void *) pm->hook_queue);
 	const char *dirname = { "/plugins" };
 	char *pluginLocation = malloc(256 * sizeof(char));
-	strcpy(pluginLocation, pwd);
+	strcpy(pluginLocation, "../dist/bin/");//at the Monitoring_client folder !!! 
 	strcat(pluginLocation, dirname);
 
 	/* discover plugins and register them to the plugin manager */ 
 	void* pdstate = discover_plugins(pluginLocation, pm);
-
+	if(pdstate==NULL){
+		printf("discover_plugins == NULL !!!\n");
+		exit(1);
+	}
 	/* get sampling interval for each plugin */
 	init_timings();
 
@@ -81,18 +85,31 @@ int startThreads(void) {
 
 	int num_threads = pluginCount ;// why + 1;
 	int iret[num_threads];
-	int nums[num_threads];
+// 	int nums[num_threads];
 
 	hooks = (PluginHook *)malloc(pluginCount * sizeof(PluginHook));
-	for (t = 0; t < pluginCount; t++)
+// 	printf("pointer 3=%p  \n", (void *) hooks);
+	for (t = 0; t < pluginCount; t++){
 		hooks[t] = PluginManager_get_hook(pm);
+		if(hooks[t]==NULL){
+			printf(" hooks[t] == NULL !!!\n");
+			exit(1);
+		}
+	}
 
+	struct thread_args params[num_threads];
+
+// 	printf(" done malloc hooks %i\n",pluginCount);
 // 	printf(" num_threads is %i\n",num_threads);
 	/* create threads for monitoring and updating configurations */
 	for (t = 0; t < num_threads; t++) {
-		nums[t] = t;
-// 		printf("starting thread %i..........\n", t); 
-		iret[t] = pthread_create(&threads[t], NULL, entryThreads, &nums[t]);
+		printf("starting thread metrics_publish_URL %s token %s device_id %s ..........\n", metrics_publish_URL, token, device_id);
+		params[t].num = t;
+		strcpy(params[t].token, token);
+		strcpy(params[t].metrics_publish_URL, metrics_publish_URL);
+		strcpy(params[t].device_id, device_id);
+		
+		iret[t] = pthread_create(&threads[t], NULL, entryThreads, &params[t]);
 		if (iret[t]) {
 			log_error("pthread_create() failed for %s.\n", strerror(iret[t]));
 			exit(FAILURE);
@@ -125,9 +142,10 @@ static void catcher(int signo) {
 static void* entryThreads(void *arg ) {
 	struct thread_args *typeT= (struct thread_args*) arg;
 	int num = typeT->num;
-	if(num < pluginCount)
+	if(num < pluginCount){
+		printf(" num %i count %i\n",num,pluginCount); fflush(stdout);
 		gatherMetric(arg );
-	else
+	}else
 		checkConf();
 	return NULL;
 }
@@ -148,65 +166,98 @@ static int checkConf(void) {
 
 /* each plugin gathers its metrics at a specific rate and send the json-formatted metrics to mf_server */
 static int gatherMetric(struct thread_args *params) {
-	int i;
+// 	int i;
 	long timings = sleep_tims[params->num].tv_sec * 10e8 + sleep_tims[params->num].tv_nsec;
 	log_info("Gather metrics of plugin %s (#%d) with update interval of %ld ns\n", plugins_name[params->num], params->num, timings);
-	//printf("Gather metrics of plugin %s (#%d) with update interval of %ld ns\n", plugins_name[params->num], params->num, timings);
+	printf("Gather metrics of plugin %s (#%d) with update interval of %ld ns\n", plugins_name[params->num], params->num, timings);
 	
-	char *json_array = calloc(JSON_LEN * bulk_size, sizeof(char));
-	json_array[0] = '[';
+// 	char *json_array = calloc(JSON_LEN * bulk_size, sizeof(char));
+// 	json_array[0] = '[';
 	char msg[JSON_LEN] = {'\0'};
-	char static_json[512] = {'\0'};
+// 	char static_json[512] = {'\0'};
 
-	if(experiment_id == NULL){
-		printf("ERROR experiment_id == NULL\n");
-		log_error("%s","ERROR experiment_id == NULL.\n");
-		running= 0;
-	}else if(experiment_id[0] == '\0'){
-		printf("ERROR experiment_id == ''\n");
-		log_error("%s","ERROR experiment_id == ''.\n");
-		running= 0;
-	}
-	sprintf(static_json, "{\"WorkflowID\":\"%s\",\"ExperimentID\":\"%s\",\"TaskID\":\"%s\",\"host\":\"%s\",", 
-		application_id, experiment_id, task_id, platform_id);
-
+// 	if(experiment_id == NULL){
+// 		printf("ERROR experiment_id == NULL\n");
+// 		log_error("%s","ERROR experiment_id == NULL.\n");
+// 		running= 0;
+// 	}else if(experiment_id[0] == '\0'){
+// 		printf("ERROR experiment_id == ''\n");
+// 		log_error("%s","ERROR experiment_id == ''.\n");
+// 		running= 0;
+// 	}
+// 	sprintf(static_json, "{\"WorkflowID\":\"%s\",\"ExperimentID\":\"%s\",\"TaskID\":\"%s\",\"host\":\"%s\",", 
+// 		application_id, experiment_id, task_id, platform_id);
+	char *new_json =  malloc(512 * sizeof(char));
 	int supported=1;
 	while (running) {
-		for(i=0; i<bulk_size; i++) { 
+// 		for(i=0; i<bulk_size; i++) {
 			memset(msg, '\0', JSON_LEN * sizeof(char));
-// printf("call %i name is: %s\n",params->num, plugins_name[params->num] );
 			if(plugins_name[params->num]==NULL)
 				exit (0);
 			char *json=NULL;
-			if( strcmp(plugins_name[params->num],"mf_plugin_Linux_sys_power")== 0){ 
-				if(supported==1){ 
+			if( strcmp(plugins_name[params->num],"mf_plugin_Linux_sys_power")== 0){
+				if(supported==1){
 					json = hooks[params->num]( &supported);	//malloc of json in hooks[params->num]()
 // 				}else{ printf("suppressed call of not available metrics");
 				}
 			}else{
-				json = hooks[params->num]();	//malloc of json in hooks[params->num]()
+				if(hooks[params->num]==NULL){
+					printf(" hooks[params->num] == NULL !!!\n");
+					exit(1);
+				}
+				json = hooks[params->num](params->device_id);	//malloc of json in hooks[params->num]()
+			}
+			
+			const char operation[]="POST";
+			struct url_data response;
+			response.size=0;
+			response.data=NULL;
+			response.headercode=NULL;
+			strcpy(new_json, "{");
+			strcat(new_json, json);
+			strcat(new_json, "}");
+
+			printf(" URL: %s\n", params->metrics_publish_URL);
+			printf(" operation: %s\n", operation);
+			printf(" token: %s\n", params->token);
+			printf(" json: %s\n", new_json);
+			
+			query_message_json(params->metrics_publish_URL, new_json , NULL, &response, operation, params->token);
+			
+			if(response.headercode!=NULL) free(response.headercode);
+			response.headercode=NULL;
+			if(response.data == NULL) {
+				printf(" response is %s\n",response.data);
+				printf("ERROR: Cannot register status on server %s (N)\n", params->metrics_publish_URL);
+// 				return FAILURE;
+			}else if(response.data[0] == '\0') {
+				printf(" response is %s\n",response.data);
+				printf("ERROR: Cannot register status on  server %s\n", params->metrics_publish_URL);
+// 				return FAILURE;
 			}
 			if(json != NULL) {
-				sprintf(msg, "%s%s},", static_json, json);
-				strcat(json_array, msg);
+// 				sprintf(msg, "%s%s},", static_json, json);
+// 				strcat(json_array, msg);
 				free(json);
 			}
-			if(nanosleep(&sleep_tims[params->num], NULL) != 0) {
+// 			if(nanosleep(&sleep_tims[params->num], NULL) != 0) {
 				/*nano sleep failed,  in case that
 				the call is interrupted by a signal handler or encounters an error */
-				break;
-			};
-		}
-		json_array[strlen(json_array) -1] = ']';
-		json_array[strlen(json_array)] = '\0';
-		debug("JSON sent is :\n%s\n", json_array);
-		printf("JSON sent is :\n%s\n", json_array);
-		publish_json(metrics_publish_URL, json_array, params->token);
-		memset(json_array, '\0', JSON_LEN * bulk_size * sizeof(char));
-		json_array[0] = '[';
+// 				break;
+// 			};
+// 		}
+// 		json_array[strlen(json_array) -1] = ']';
+// 		json_array[strlen(json_array)] = '\0';
+// 		debug("JSON sent is :\n%s\n", json_array);
+		
+// 		publish_json(params->metrics_publish_URL, json_array, params->token);
+// 		memset(json_array, '\0', JSON_LEN * bulk_size * sizeof(char));
+// 		json_array[0] = '[';
+		sleep(1);
 	}
-	if(json_array != NULL)
-		free(json_array);
+	free(new_json);
+// 	if(json_array != NULL)
+// 		free(json_array);
 	return SUCCESS;
 }
 
@@ -216,7 +267,6 @@ static void init_timings(void) {
 	char timing[20] = {'\0'};
 	mfp_get_value("timings", "default", timing);
 	long default_timing = strtol(timing, &ptr, 10);
-
 	for (int i = 0; i < pluginCount; i++) {
 		if (plugins_name[i] == NULL)
 			continue;
@@ -229,7 +279,6 @@ static void init_timings(void) {
 		} else {
 			timings[i] = strtol(value, &ptr, 10);
 			log_info("Timing for plugin %s is %ldns\n", plugins_name[i], timings[i]);
-
 			/* update the sleep_tims for the plugin */
 			if (timings[i] >= 10e8) {
 				sleep_tims[i].tv_sec = timings[i] / 10e8;

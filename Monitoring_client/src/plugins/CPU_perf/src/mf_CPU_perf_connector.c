@@ -239,7 +239,7 @@ int events_are_all_not_valid(char **events, size_t num_events) {
 		}
 	}
 	if (counter == 0) {
-		fprintf(stderr, "Wrong given metrics.\nPlease given metrics MFLIPS, MFLOPS, or MIPS\n");
+		fprintf(stderr, "1-Wrong given metrics.\nPlease given metrics MFLIPS, MFLOPS, or MIPS\n");
 		return FAILURE;
 	}
 	return SUCCESS;

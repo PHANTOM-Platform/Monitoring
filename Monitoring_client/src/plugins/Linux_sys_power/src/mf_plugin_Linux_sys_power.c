@@ -23,6 +23,9 @@
 #include <plugin_utils.h> /* Plugin_metrics */
 #include "mf_Linux_sys_power_connector.h"
 
+#define SUCCESS 0
+#define FAILURE 1
+
 /*******************************************************************************
 * Variable Declarations
 ******************************************************************************/
@@ -42,8 +45,7 @@ char* mf_plugin_Linux_sys_power_hook();
 /* Initialize the plugin; 
 register the plugin hook to the plugin manager 
 @return 1 on success; 0 otherwise */
-extern int
-init_mf_plugin_Linux_sys_power(PluginManager *pm) {
+extern int init_mf_plugin_Linux_sys_power(PluginManager *pm) {
 	/*
 	* get the turned on metrics from the configuration file
 	*/

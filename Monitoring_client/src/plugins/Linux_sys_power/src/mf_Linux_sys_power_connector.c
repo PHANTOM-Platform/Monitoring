@@ -113,7 +113,7 @@ int flag_init(char **events, size_t num_events) {
 		}
 	}
 	if (flag == 0) {
-		fprintf(stderr, "Wrong given metrics.\nPlease given metrics ");
+		fprintf(stderr, "4-Wrong given metrics.\nPlease given metrics ");
 		for (ii = 0; ii < POWER_EVENTS_NUM; ii++) {
 			fprintf(stderr, "%s ", Linux_sys_power_metrics[ii]);
 		}

@@ -50,8 +50,8 @@ struct curl_slist *headers = NULL;
 int check_URL(const char *URL);
 int check_message(const char *message);
 void init_curl(const char *token);
-CURL *prepare_publish(char *URL, char *message, FILE *send_fp, const char *operation, const char *token);
-CURL *prepare_query(char* URL, const char *operation, const char *token);
+CURL *prepare_publish(const char *URL,const char *message, FILE *send_fp, const char *operation, const char *token);
+CURL *prepare_query(const char* URL, const char *operation, const char *token);
 // static size_t get_stream_data(void *buffer, size_t size, size_t nmemb, char *stream);
 
 /** Callback function for writing with libcurl */
@@ -683,7 +683,6 @@ int query_message_json(const char *URL, const char *message,const char *filename
 
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data); // the functions get_stream_data seems was not correct.
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
-
 	curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, write_data);//header_callback);
 	curl_easy_setopt(curl, CURLOPT_HEADERDATA, &rescode);  // set userdata in callback function
 	CURLcode response_code = curl_easy_perform(curl);
@@ -719,7 +718,6 @@ int query_message_json(const char *URL, const char *message,const char *filename
 		curl_slist_free_all(headers);
 		return FAILED;
 	}
-
 	if(data.data[0]=='\0') {
 		printf("ERROR!! : query with %s failed.\n", URL);
 		free(data.data); data.data=NULL;
@@ -867,7 +865,7 @@ void close_curl(void) {
 
 
 /** Prepare for using libcurl with message */
-CURL *prepare_publish(char *URL, char *message, FILE *send_fp, const char *operation, const char *token) {
+CURL *prepare_publish(const char *URL,const char *message, FILE *send_fp, const char *operation, const char *token) {
 // struct curl_httppost *formpost = NULL;
 // struct curl_httppost *lastptr = NULL;
 // 		if(send_fp!= NULL){
@@ -949,7 +947,7 @@ CURL *prepare_publish(char *URL, char *message, FILE *send_fp, const char *opera
 
 /** Prepare for using libcurl without message
 * Leave the token as NULL or empty string if not using tokens*/
-CURL *prepare_query(char* URL, const char *operation, const char *token) {
+CURL *prepare_query(const char* URL, const char *operation, const char *token) {
 	CURL *curl = curl_easy_init();
 	if(curl) {
 		init_curl(token);//this defined the headers

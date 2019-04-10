@@ -219,7 +219,7 @@ int events_are_all_not_valid(char **events, size_t num_events)
 		}
 	}
 	if (counter == 0) {
-		fprintf(stderr, "Wrong given metrics.\nPlease given metrics ");
+		fprintf(stderr, "6-Wrong given metrics.\nPlease given metrics ");
 		for (ii = 0; ii < NVML_EVENTS_NUM; ii++)
 			fprintf(stderr, "%s ", NVML_metrics[ii]);
 		fprintf(stderr, "\n");

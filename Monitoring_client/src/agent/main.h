@@ -34,6 +34,6 @@ extern char *experiment_id;
 extern char *platform_id;
 
 /* URL for publishing metrics */
-extern char *metrics_publish_URL;
+char *metrics_publish_URL;
 
 #endif /* MAIN_H */

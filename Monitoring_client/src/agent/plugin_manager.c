@@ -39,9 +39,7 @@ void PluginManager_register_hook(PluginManager *pm, const char *name, PluginHook
 	PluginHookType *hookType = malloc(sizeof(PluginHookType));
 	hookType->hook = hook;
 	hookType->name = name;
-
-	log_info("register hookType->name %s\n", hookType->name);	
-	
+	log_info("register hookType->name %s\n", hookType->name);
 	EXCESS_concurrent_queue_handle_t hook_queue_handle;
 	hook_queue_handle = ECQ_get_handle(pm->hook_queue);
 	ECQ_enqueue(hook_queue_handle, (void *)hookType);
@@ -52,18 +50,18 @@ void PluginManager_register_hook(PluginManager *pm, const char *name, PluginHook
 PluginHook PluginManager_get_hook(PluginManager *pm) {
 	PluginHook funcPtr = NULL;
 	void *retPtr;
-	
 	EXCESS_concurrent_queue_handle_t hook_queue_handle;
 	hook_queue_handle =ECQ_get_handle(pm->hook_queue);
-
 	if(ECQ_try_dequeue(hook_queue_handle, &retPtr)) {
 		PluginHookType *typePtr;
 		typePtr = (struct PluginHookType_t *) retPtr;
 		funcPtr = *(typePtr->hook);
-		log_info("Using plugin %s\n", typePtr->name);	
-		printf("Using plugin %s\n", typePtr->name);	
+		log_info("Using plugin %s\n", typePtr->name);
+		printf("Using plugin %s\n", typePtr->name);
+	}else{
+		printf(" error PluginManager_get_hook !!!\n");
+		exit(1);
 	}
-
 	ECQ_free_handle(hook_queue_handle);
 	return funcPtr;
 }

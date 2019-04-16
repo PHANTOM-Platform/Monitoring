@@ -14,7 +14,7 @@
 	<meta name="googlebot" content="noindex">
 	<title>PHANTOM MONITORING-SERVER</title>
 	<link rel="stylesheet" type="text/css" href="phantom.css">
-	<script src="monitoringserver.js"></script>
+	<script src="phantom.js"></script><script src="monitoringserver.js"></script>
 </head>
 
 <body id="body" ><!--class="light-mode"-->  <!--there is not login and not token !!! then NOT run => onload="start_page_login()"> -->
@@ -54,6 +54,16 @@
 	</div>
 
 	<div id="foot_phantom"></div>
-	<script> mf_load_header_footer(); </script>
+	<script> mf_load_header_footer();
+		var currentmode= localStorage.getItem('currentmode');
+	if(currentmode!=undefined){
+		var c = document.getElementById("foot_phantom").querySelectorAll("a");
+		for (i in c) {
+			c[i].className = currentmode;
+		}
+		//update it at last
+		document.getElementById("foot_phantom").className = currentmode;
+	}
+	</script>
 </body>
 </html>

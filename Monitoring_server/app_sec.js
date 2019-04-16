@@ -529,6 +529,11 @@ app.get('/monitoringserver.html', function(req, res) {
 	var filePath = 'web-monitoring/monitoringserver.html';
 	retrieve_file(filePath,res);
 });
+app.get('/phantom.js', function(req, res) {
+	var filePath = 'web-monitoring/phantom.js';
+	retrieve_file(filePath,res);
+});
+
 app.get('/monitoringserver.js', function(req, res) {
 	var filePath = 'web-monitoring/monitoringserver.js';
 	retrieve_file(filePath,res);

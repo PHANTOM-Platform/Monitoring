@@ -127,16 +127,21 @@ function mf_load_header_footer(){
 
 
 function update_mf_config_with_token( UploadJSON ) {
-	var url=build_resource_path()+"/register_mf_config";
-// 	var url=build_resource_path()+"/update_device_status";
+	var url=build_monitoring_path()+"/register_mf_config";
+// 	var url=build_monitoring_path()+"/update_device_status";
 	upload_with_token( UploadJSON ,url);
 	return false;
 }
 
 function upload_mf_config_with_token( UploadJSON ) {
-	var url=build_resource_path()+"/register_mf_config";
-// 	var url=build_resource_path()+"/update_device_status";
+	var url=build_monitoring_path()+"/register_mf_config";
+// 	var url=build_monitoring_path()+"/update_device_status";
 	upload_with_token( UploadJSON ,url);
 	return false;
 }
 
+function list_mf_logs(mytype,execid){
+	var url = build_monitoring_path() + "/get_log_list?sorttype="+mytype+"&pretty='true'";
+	list_results(mytype,url,["host"],["_length","_index","_type","_score","sort"]);
+	return false;
+}

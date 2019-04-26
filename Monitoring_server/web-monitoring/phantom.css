@@ -177,3 +177,7 @@ hr.style-phantom-hr {
 	-o-border-radius: 5px;
 	border-radius: 5px;
 }
+
+
+.under-logs { text-decoration:underline; color:#9999ff; font-weight:bold; }
+

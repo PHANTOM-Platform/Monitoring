@@ -115,7 +115,22 @@ function query_count_logs(es_server, my_index, user){
 //****************************************************
 //This function is used to confirm that a project exists or not in the DataBase.
 //We first counted if existence is >0
-function find_logs(es_server, my_index, user){
+function find_logs(es_server, my_index, user, pretty, mysorttype){
+	var filter = [ { "date": { "order": "desc" }}];
+if (mysorttype!=undefined){
+	mysorttype=mysorttype %10;
+	if (mysorttype== "2"){//Code
+		filter = [ {"code":{ "order":"asc"}}, { "date": { "order": "desc" }} ];
+	} else if (mysorttype== "3"){//User
+		filter = [ {"user":{ "order":"asc"}}, { "date": { "order": "desc" }} ];
+	} else if (mysorttype== "4"){//Ip
+		filter = [ {"ip":{ "order":"asc"}}, { "date": { "order": "desc" }} ];
+	} else if (mysorttype== "5"){//Message
+		filter = [ {"message":{ "order":"asc"}}, { "date": { "order": "desc" }} ];
+	}
+}else{
+	mysorttype=6;
+}
 	var my_type = 'logs';
 	return new Promise( (resolve,reject) => {
 		var elasticsearch = require('elasticsearch');
@@ -125,11 +140,15 @@ function find_logs(es_server, my_index, user){
 		});
 		user="";
 		if(user.length==0){
+			var myquery =  {"query":{"match_all": {} }, "sort": filter };
+			if (mysorttype== "1"){//_id
+				myquery =  { "query": { "match_all": {} }, "sort": { "_uid": "desc" }, "size": 1 };
+			}
 			client.search({
 				index: my_index,
 				type: my_type,
 				size: 1000,
-				body:{"query":{"match_all": {} }, "sort": { "date": { "order": "desc" }}}
+				body:myquery
 			}, function(error, response) {
 				if (error) {
 					reject("error: "+error);
@@ -253,14 +272,17 @@ app.get('/get_log_list', function(req, res) {
 	"use strict";
 // 	var currentdate = dateFormat(new Date(), "yyyy-mm-dd'T'HH:MM:ss.l");  need define datetime
 // 	var pretty		= find_param(req.body.pretty, req.query.pretty);
+	var mysorttype	= find_param(req.query.sorttype, req.query.sorttype);//error when req.body undefined ....
 // 	var projectname	= CommonModule.remove_quotation_marks(find_param(req.body.project, req.query.project));
 // 	if (projectname==undefined) projectname="";
 //LogsModule
+	
+	
 	var result_count = query_count_logs(es_servername + ":" + es_port,SERVERDB, res.user);
 	result_count.then((resultResolve) => {
 		if(resultResolve!=0){//new entry (2) we resister new entry
 			//LogsModule
-			var result_id = find_logs(es_servername + ":" + es_port,SERVERDB, res.user,"false");
+			var result_id = find_logs(es_servername + ":" + es_port,SERVERDB, res.user,"false", mysorttype);
 			result_id.then((result_json) => {
 				res.writeHead(200, {"Content-Type": contentType_text_plain});
 				res.end(result_json);

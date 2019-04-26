@@ -120,22 +120,20 @@ function savetoken(mytoken) {
 	var debug_phantom = document.getElementById("debug_phantom");
 	var demoreplaceb = document.getElementById("demoreplaceb");
 	if(typeof(Storage) !== "undefined") {
-		if (sessionStorage.token) {//update with new token
+// 		if (sessionStorage.token) {//update with new token
 			sessionStorage.setItem('token', mytoken);
-		}else {//not defined token before
-			sessionStorage.setItem('token', mytoken);
-		}
+// 		}else{//not defined token before
+// 			sessionStorage.setItem('token', mytoken);
+// 		}
 		request_share_session_storage();
 		if(debug_phantom) debug_phantom.style.display = "none";
 		return true;
-	}else {
+	}else{
 		if(demoreplaceb) demoreplaceb.innerHTML = "Sorry, your browser does not support web storage...";
 		if(debug_phantom) debug_phantom.style.display = "block";
 		return false;
 	}
 }
-
-// var currentbody = "light-mode";
 
 function switchnightmode(){
 	var body = document.getElementById("body");
@@ -143,9 +141,8 @@ function switchnightmode(){
 	var currentClass = body.className;
 	body.className = currentClass == "dark-mode" ? "light-mode" : "dark-mode";
 		if(table_results!=null)
-	table_results.className = body.className ;
+	table_results.className = body.className;
 	localStorage.setItem('currentmode', body.className);
-	
 	var c = document.getElementById("foot_phantom").querySelectorAll("a");
 	for (i in c) {
 		c[i].className = body.className;
@@ -193,11 +190,10 @@ function load_footer(){
 		menuhtml+="<a href=\"http://localhost:8700/executionmanager.html\">Execution Manager</a>&nbsp;&nbsp;";
 		menuhtml+="<a href=\"http://localhost:3033/monitoringserver.html\">Monitoring Server</a>&nbsp;&nbsp;";
 		menuhtml+="<a href=\"http://localhost:3000\">Grafana Visualization Interface</a>&nbsp;&nbsp;";
-		
 	}
-	menuhtml+="<hr/><div class=\"greyfont\">PHANTOM project: 2019<br />";
-	menuhtml+="	Licensed under the Apache License, Version 2.0<br />";
-	menuhtml+="	You may obtain a copy of the License at:<br />";
+	menuhtml+="<hr/><div class=\"greyfont\">PHANTOM project: 2019<br/>";
+	menuhtml+="	Licensed under the Apache License, Version 2.0<br/>";
+	menuhtml+="	You may obtain a copy of the License at:<br/>";
 	menuhtml+="	<a href=\"http://www.apache.org/licenses/LICENSE-2.0\">";
 	menuhtml+="	http://www.apache.org/licenses/LICENSE-2.0</a>";
 	menuhtml+="	</div>";
@@ -214,7 +210,7 @@ function pad(num, size) {
 }
 
 
-function calculate_date( input) {
+function calculate_date(input) {
 	var current = input;
 	current = Math.floor(current /1000000);
 	var tempstr="";
@@ -240,11 +236,7 @@ function calculate_date( input) {
 	exampledate_year+=Math.floor(current / 365);
 	current = Math.floor(current % 365);
 	var leap_year;
-	if (exampledate_year %4==2){
-		leap_year=1;
-	}else{
-		leap_year=0;
-	}
+	leap_year= (exampledate_year %4==2)? 1 : 0;
 	if (leap_year==1) months[1]=29;
 	var exampledate_month=0;
 	while(current> months[exampledate_month]){
@@ -254,7 +246,8 @@ function calculate_date( input) {
 	exampledate_year= 1970+ Math.floor(exampledate_year);
 	var exampledate_day= 1+ current;
 	exampledate_month=1+exampledate_month;
-	tempstr=exampledate_year+"-"+pad(exampledate_month,2)+"-"+pad(exampledate_day,2)+"T"+pad(exampledate_hour,2)+":"+pad(exampledate_min,2)+":"+pad(exampledate_sec,2)+"."+pad(exampledate_msec,2);
+	tempstr=exampledate_year+"-"+pad(exampledate_month,2)+"-"+pad(exampledate_day,2)+"T"
+	+pad(exampledate_hour,2)+":"+pad(exampledate_min,2)+":"+pad(exampledate_sec,2)+"."+pad(exampledate_msec,2);
 	return tempstr;
 }
 
@@ -348,6 +341,165 @@ function jsontohtml(myjson,count,first,level,lastwascoma,filtered_fields){
 	return html;
 }
 
+
+function jsontotable_repo_logs_brief(typeserver, myjson,count,first,level,lastwascoma,mtitle,filtered_fields){
+	var html ="";
+	var i;
+// 	if(first==true){ html ="{"; }
+	var mainc=mtitle;
+	if(first==true){
+		html += "<div><table style='border:1px solid black' id=\"table_results\">\n";// style='width:100%'>";
+		console.log("jsontotable_repo_logs_brief typeserver "+typeserver);
+		if(typeserver==1){//repository
+			html += "<td>#</td><td align=\"center\"><a onclick=\"return list_repo_logs(201,document.getElementById('username').value)\" class=\"under-logs\">_id</a></td>\n";
+			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_repo_logs(202,document.getElementById('username').value)\" class=\"under-logs\">Code</a>&nbsp;</td>\n";
+			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_repo_logs(203,document.getElementById('username').value)\" class=\"under-logs\">User</a>&nbsp;</td>\n";
+			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_repo_logs(204,document.getElementById('username').value)\" class=\"under-logs\">Ip</a>&nbsp;</td>\n";
+			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_repo_logs(205,document.getElementById('username').value)\" class=\"under-logs\">Message</a>&nbsp;</td>\n";
+			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_repo_logs(200,document.getElementById('username').value)\" class=\"under-logs\">Date</a>&nbsp;</td>\n";
+		}else if(typeserver==2){//app-manager
+			html += "<td>#</td><td align=\"center\"><a onclick=\"return list_app_logs(211,document.getElementById('username').value)\" class=\"under-logs\">_id</a></td>\n";
+			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_app_logs(212,document.getElementById('username').value)\" class=\"under-logs\">Code</a></td>\n";
+			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_app_logs(213,document.getElementById('username').value)\" class=\"under-logs\">User</a>&nbsp;</td>\n";
+			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_app_logs(214,document.getElementById('username').value)\" class=\"under-logs\">Ip</a>&nbsp;</td>\n";
+			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_app_logs(215,document.getElementById('username').value)\" class=\"under-logs\">Message</a>&nbsp;</td>\n";
+			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_app_logs(210,document.getElementById('username').value)\" class=\"under-logs\">Date</a>&nbsp;</td>\n";	
+		}else if(typeserver==3){// exec-manager's
+			html += "<td>#</td><td align=\"center\"><a onclick=\"return list_exec_logs(221,document.getElementById('username').value)\" class=\"under-logs\">_id</a></td>\n";
+			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_exec_logs(222,document.getElementById('username').value)\" class=\"under-logs\">Code</a>&nbsp;</td>\n";
+			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_exec_logs(223,document.getElementById('username').value)\" class=\"under-logs\">User</a>&nbsp;</td>\n";
+			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_exec_logs(224,document.getElementById('username').value)\" class=\"under-logs\">Ip</a>&nbsp;</td>\n";
+			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_exec_logs(225,document.getElementById('username').value)\" class=\"under-logs\">Message</a>&nbsp;</td>\n";
+			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_exec_logs(220,document.getElementById('username').value)\" class=\"under-logs\">Date</a>&nbsp;</td>\n";
+		}else if(typeserver==4){//monitoring server 
+			html += "<td>#</td><td align=\"center\"><a onclick=\"return list_mf_logs(231,document.getElementById('username').value)\" class=\"under-logs\">_id</a></td>\n";
+			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_mf_logs(232,document.getElementById('username').value)\" class=\"under-logs\">Code</a>&nbsp;</td>\n";
+			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_mf_logs(233,document.getElementById('username').value)\" class=\"under-logs\">User</a>&nbsp;</td>\n";
+			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_mf_logs(234,document.getElementById('username').value)\" class=\"under-logs\">Ip</a>&nbsp;</td>\n";
+			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_mf_logs(235,document.getElementById('username').value)\" class=\"under-logs\">Message</a>&nbsp;</td>\n";
+			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_mf_logs(230,document.getElementById('username').value)\" class=\"under-logs\">Date</a>&nbsp;</td>\n";
+		}else if(typeserver==5){// resource-manager's logs
+			html += "<td>#</td><td align=\"center\"><a onclick=\"return list_resource_logs(241,document.getElementById('username').value)\" class=\"under-logs\">_id</a></td>\n";
+			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_resource_logs(242,document.getElementById('username').value)\" class=\"under-logs\">Code</a>&nbsp;</td>\n";
+			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_resource_logs(243,document.getElementById('username').value)\" class=\"under-logs\">User</a>&nbsp;</td>\n";
+			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_resource_logs(244,document.getElementById('username').value)\" class=\"under-logs\">Ip</a>&nbsp;</td>\n";
+			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_resource_logs(245,document.getElementById('username').value)\" class=\"under-logs\">Message</a>&nbsp;</td>\n";
+			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_resource_logs(240,document.getElementById('username').value)\" class=\"under-logs\">Date</a>&nbsp;</td>\n";
+		}
+		count++;
+	}
+	first=false;
+	var countseries=0;
+	myjson.forEach(function(val) {
+// 		if (count != 0 && lastwascoma==false) {
+// 			html += (countseries==0) ? ",<br>" : "<br>},{<br>";
+// 		};//this is not the first element
+		lastwascoma=true;
+		var keys = Object.keys(val);
+		keys.forEach(function(key) {
+			if (getType(val[key]) == "string" || getType(val[key]) == "other" ){
+				var tobefiltered=false;
+				for (i=0;i< filtered_fields.length;i++){
+					if (key.endsWith(filtered_fields[i], key.length)== true) {
+						tobefiltered=true;
+					}
+				}
+				if (tobefiltered== false) {//it is stored the length of the strings, not need to show
+// 					if (count != 0 && lastwascoma==false) html += ',<br>';
+// 					for (i = 0; i < level; i++) {
+// 						if (count != 0) html += '&emsp;';
+// 					}
+					if(mtitle==true){
+						if(count>0){
+							html += "</tr>\n<tr>";
+// 							html += "</table></div></td><br>\n";
+// 							html += "<div><table style='border:1px solid black'>\n";// style='width:100%'>";
+						}
+						html += "<td>"+count+"</td><th> " + val['_id'] +" </th>\n";
+						//source
+						if(val['_source'] !=undefined){
+							if(val['_source']['code']==undefined){
+								html += "<td>";
+							}else if((val['_source']['code']>="200")&&(val['_source']['code']<"300")){//green 2xx-correct,3xx-redirections
+								html += "<td bgcolor=\"#00ff00\"> <font color=\"black\">" + val['_source']['code'] +"</font>";
+							}else if((val['_source']['code']>="400") && (val['_source']['code']<"600")) {//red 4xx-client-error 5xx-server-error
+								html += "<td bgcolor=\"#ff3e29\"> <font color=\"black\">" + val['_source']['code'] +"</font>";
+							}else if((val['_source']['code']>="100")&&(val['_source']['code']<"200")){ //yellow-information
+								html += "<td bgcolor=\"#f3ff3a\"> <font color=\"black\">" + val['_source']['code'] +"</font>";
+								
+	// 						}else if(val['_source']['code']=="cancelled"){//red
+	// 							html += "<td bgcolor=\"#ff3e29\"> " + val['_source']['code'];
+	// 						}else if(val['_source']['code']=="started"){//green
+	// 							html += "<td bgcolor=\"#00FF00/*\*/">" + val['_source']['code'];
+	// 						}else{
+	// // 						html += "<td> " + val['_source']['code'];
+							}
+							html += "</td>\n" + (val['_source']['user']==undefined)? "<td></td>\n" : 
+								"<td> " + val['_source']['user'] +"</td>\n";
+							html += (val['_source']['ip']==undefined)? "<td></td>\n" : 
+								"<td> " + val['_source']['ip'] +"</td>\n";
+							html += (val['_source']['message']==undefined)? "<td></td>\n" :
+								"<td> " + val['_source']['message'] +"</td>\n";
+							html += (val['_source']['date']==undefined)? "<td></td>\n" :
+								"<td> " + val['_source']['date'] +"</td>\n";
+						}else{
+							html += "<td></td>\n";
+							html += "<td></td>\n";
+							html += "<td></td>\n";
+							html += "<td></td>\n";
+							html += "<td></td>\n";
+						}
+						mtitle=false;
+						lastwascoma=false;
+					}
+// 					if((key=="rejection_reason")){
+// 						if(val['req_status']=="rejected"){
+// 							html += "<td><strong>\"" + key +"\"</strong>: \"" + val[key] +"\"</td>\n";
+// 							count++;
+// 							lastwascoma=false;
+// 						}
+// 					}else if((key!="req_status")&&(key!="energy")&&(key!="execution_id")&&(key!="app")&&(key!="device")){
+// 						html += "<td><strong>\"" + key +"\"</strong>: \"" + val[key] +"\"</td>\n";
+// 						count++;
+// 						lastwascoma=false;
+				}
+			}else if (getType(val[key]) == "array" || getType(val[key]) == "object" ) {
+// 				if(key!= "component_stats"){
+// // 					if (count != 0) html += ',<br>';
+// // 					for (i = 0; i < level; i++) {
+// // 						if (count != 0) html += '&emsp;';
+// // 					}
+// 					if(mtitle==true){
+// 						if(count>0){
+// 							html += "</table></div></td><br>\n";
+// 							html += "<div><table style='border:1px solid black'>\n";// style='width:100%'>";
+// 						}
+// 						html += "<tr><th><strong>\"" + key + "\"</strong>: </th>\n";
+// 						mtitle=false;
+// 					}else{
+// 						html += "<tr><td><strong>\"" + key + "\"</strong>:</td>\n";
+// 					}
+// 					count++;
+// 					lastwascoma=false;
+// 					html += "<td><div><table style='width:100%; border:0px solid black'>\n";// style='width:100%'>";
+					html += jsontotable_repo_logs_brief(typeserver, ([ val[key] ]), count, first, level+1 ,lastwascoma,mtitle,filtered_fields);
+					count++;
+// 					html += "</table></div></td>\n";
+// 				}
+// // 			}else if (getType(val[key]) == "object" ) {
+// // 				html += jsontotable( ([ val[key] ]), count, false, level+1,lastwascoma,mtitle,filtered_fields);
+			};
+		});
+// 		mtitle=true;
+		countseries++;
+	});
+// 	if(first==true){ html += "<br>}"; }
+// 	if(mainc==true)
+// 		html += "</table></div>\n";
+	return html;
+}//jsontotable_repo_logs_brief
+
+
 function upload_with_token( UploadJSON, url ) {
 	var demoreplaceb = document.getElementById("demoreplaceb");
 	var debug_phantom = document.getElementById("debug_phantom");
@@ -370,7 +522,7 @@ function upload_with_token( UploadJSON, url ) {
 		formData.append("UploadJSON", UploadJSON.files[0]);
 //formData.append("UploadFile", UploadFile.data);
 		xhr.send(formData);//may fault code appear here
-	}else {
+	}else{
 		if(demoreplaceb) demoreplaceb.innerHTML = "Sorry, try login again, missing token...";
 		if(debug_phantom) debug_phantom.style.display = "block";
 	}
@@ -382,7 +534,7 @@ function list_results_with_token( mytype ,url,fields_toshow, filtered_fields) {
 	var debug_phantom = document.getElementById("debug_phantom");
 	if((sessionStorage.token) && (sessionStorage.token.length>0)) {//reject null, undefined and empty string
 		list_results(mytype,url,fields_toshow,filtered_fields);
-	}else {
+	}else{
 		if(demoreplaceb) demoreplaceb.innerHTML = "Sorry, try login again, missing token...";
 		if(debug_phantom) debug_phantom.style.display = "block";
 	}
@@ -401,11 +553,7 @@ function jsontotable(myjson,count,first,level,lastwascoma,mtitle,filtered_fields
 	var countseries=0;
 	myjson.forEach(function(val) {
 // 		if (count != 1 && lastwascoma==false) {
-// 			if(countseries==0) {
-// 				html += ",<br>";
-// 			}else{
-// 				html += "<br>},{<br>";
-// 			}
+// 			html += (countseries==0) ? ",<br>" : "<br>},{<br>";
 // 		};//this is not the first element
 		lastwascoma=true;
 		var keys = Object.keys(val);
@@ -428,10 +576,10 @@ function jsontotable(myjson,count,first,level,lastwascoma,mtitle,filtered_fields
 							html += "<div><table style='border:1px solid black'>\n";// style='width:100%'>";
 						}
 						html += "<tr><th><strong>\""+ key +"\"</strong>: \"" + val[key] +"\"</th></tr>\n";
-						mtitle=false;
 					}else{
 						html += "<tr><td><strong>\"" + key +"\"</strong>: \"" + val[key] +"\"</td></tr>\n";
 					}
+					mtitle=false;
 					count++;
 					lastwascoma=false;
 				}
@@ -446,11 +594,10 @@ function jsontotable(myjson,count,first,level,lastwascoma,mtitle,filtered_fields
 							html += "<div><table style='border:1px solid black'>\n";// style='width:100%'>";
 						}
 						html += "<tr><th><strong>\"" + key + "\"</strong>: </th>\n";
-						
-						mtitle=false;
 					}else{
-						html += "<tr><td><strong>\"" + key + "\"</strong>: </td>\n";
+						html += "<tr><td><strong>\"" + key + "\"</strong>:</td>\n";
 					}
+					mtitle=false;
 					count++;
 					lastwascoma=false;
 					html += "<td><div><table style='width:100%; border:0px solid black'>\n";// style='width:100%'>";
@@ -470,7 +617,7 @@ function jsontotable(myjson,count,first,level,lastwascoma,mtitle,filtered_fields
 }//jsontotable
 
 
-function list_results(mytype,url,fields_toshow,filtered_fields){
+function list_results(mytype, url,fields_toshow,filtered_fields){
 	var demoreplaceb = document.getElementById("demoreplaceb");
 	var debug_phantom = document.getElementById("debug_phantom");
 	var xhr = new XMLHttpRequest();
@@ -496,30 +643,31 @@ function list_results(mytype,url,fields_toshow,filtered_fields){
 			if(myjson!=undefined) {
 				if (mytype== 1) {
 					html += jsontotable(myjson,1,true,1,false,true,filtered_fields);
-				}else if (mytype == 20){//repository
-					html += jsontotable_repo_logs_brief(myjson,1,true,1,false,true,filtered_fields);
+				}else if ( (mytype >= 200) && (mytype < 207 )){//repository
+					html += jsontotable_repo_logs_brief(1,myjson,0,true,1,false,true,filtered_fields);
 					html += "</table></div>\n";
-				}else if (mytype == 21){//app manager
-					html += jsontotable_repo_logs_brief(myjson,1,true,1,false,true,filtered_fields);
+				}else if ( (mytype >= 210) && (mytype < 217 )){//app manager
+					html += jsontotable_repo_logs_brief(2,myjson,0,true,1,false,true,filtered_fields);
 					html += "</table></div>\n";
-				}else if (mytype == 22){//exec,manager
-					html += jsontotable_repo_logs_brief(myjson,1,true,1,false,true,filtered_fields);
+				}else if ( (mytype >= 220) && (mytype < 227 )){
+					// exec-manager's logs, 8XX for sorting
+					html += jsontotable_repo_logs_brief(3,myjson,0,true,1,false,true,filtered_fields);
 					html += "</table></div>\n";
-				}else if (mytype == 23){//monitoring server
-					html += jsontotable_repo_logs_brief(myjson,1,true,1,false,true,filtered_fields);
-					html += "</table></div>\n";
-
-				}else if (mytype == 24){//resource manager -logs
-					html += jsontotable_repo_logs_brief(myjson,1,true,1,false,true,filtered_fields);
+				}else if ( (mytype >= 230) && (mytype < 237 )){//monitoring server
+					html += jsontotable_repo_logs_brief(4,myjson,0,true,1,false,true,filtered_fields);
 					html += "</table></div>\n";
 
-				}else if (mytype == 25){//resource manager -logs
+				}else if ( (mytype >= 240) && (mytype < 247 )){// resource-manager's logs
+					html += jsontotable_repo_logs_brief(5,myjson,0,true,1,false,true,filtered_fields);
+					html += "</table></div>\n";
+
+				}else if ( (mytype >= 250) && (mytype < 257 )){//resource manager -logs
 					html += jsontotable_rm_brief(myjson,1,true,1,false,true,filtered_fields);
 					html += "</table></div>\n";
 					
-				}else if (mytype == 5){
+				}else if ((mytype == 5) || ((mytype > 800) && (mytype < 812 ))){ //8XX for sorting 
 					html += jsontotable_exec_brief(myjson,1,true,1,false,true,filtered_fields);
-				}else if (mytype == 6){
+				}else if ((mytype == 6) || ((mytype > 900) && (mytype < 907 ))){//9XX for sorting
 					html += jsontotable_app_brief(myjson,1,true,1,false,true,filtered_fields);
 				}else if (mytype == 4){
 					html += jsontotable_only_device_names(myjson,1,true,1,false,true,fields_toshow);
@@ -545,7 +693,7 @@ function download_file(content, fileName, contentType) {
 	var file = new Blob([content], {type: contentType});
 // 	if (navigator.msSaveOrOpenBlob) {
 // 		navigator.msSaveOrOpenBlob(file, filename);
-// 	} else {
+// 	}else{
 		var a = document.createElement("a");
 		document.body.appendChild(a);
 		var url = URL.createObjectURL(file);
@@ -580,7 +728,7 @@ function submitform(url, operation, outputfile) {
 					if(outputfile.length>0)
 						download_file(xhr.responseText, outputfile , 'text/plain');
 					r = "Server response:<br/><br/>"+xhr.responseText+"<br/>";
-				} else {
+				}else{
 					r = "Error " + xhr.status + " occurred requesting for Metatada.<br/>";
 				}
 				if(demoreplaceb) document.getElementById("demoreplaceb").innerHTML = "<pre>"+r+"</pre>";
@@ -589,11 +737,9 @@ function submitform(url, operation, outputfile) {
 			}
 		});
 		xhr.send(null);//may fault code appear here
-	}else {
+	}else{
 		if(demoreplaceb) demoreplaceb.innerHTML = "Sorry, try login again, missing token...";
 		if(debug_phantom) debug_phantom.style.display = "block";
 	}
 	return false;
 }
-
-

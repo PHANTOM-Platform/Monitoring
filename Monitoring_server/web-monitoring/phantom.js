@@ -204,9 +204,9 @@ function load_footer(){
 
 
 function pad(num, size) {
-    var s = num+"";
-    while (s.length < size) s = "0" + s;
-    return s;
+	var s = num+"";
+	while (s.length < size) s = "0" + s;
+	return s;
 }
 
 
@@ -349,43 +349,36 @@ function jsontotable_repo_logs_brief(typeserver, myjson,count,first,level,lastwa
 	var mainc=mtitle;
 	if(first==true){
 		html += "<div><table style='border:1px solid black' id=\"table_results\">\n";// style='width:100%'>";
-		console.log("jsontotable_repo_logs_brief typeserver "+typeserver);
+		var typevalue=0;
+		var myfunction="";
 		if(typeserver==1){//repository
-			html += "<td>#</td><td align=\"center\"><a onclick=\"return list_repo_logs(201,document.getElementById('username').value)\" class=\"under-logs\">_id</a></td>\n";
-			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_repo_logs(202,document.getElementById('username').value)\" class=\"under-logs\">Code</a>&nbsp;</td>\n";
-			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_repo_logs(203,document.getElementById('username').value)\" class=\"under-logs\">User</a>&nbsp;</td>\n";
-			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_repo_logs(204,document.getElementById('username').value)\" class=\"under-logs\">Ip</a>&nbsp;</td>\n";
-			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_repo_logs(205,document.getElementById('username').value)\" class=\"under-logs\">Message</a>&nbsp;</td>\n";
-			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_repo_logs(200,document.getElementById('username').value)\" class=\"under-logs\">Date</a>&nbsp;</td>\n";
+			typevalue=0;
+			myfunction="list_repo_logs";
 		}else if(typeserver==2){//app-manager
-			html += "<td>#</td><td align=\"center\"><a onclick=\"return list_app_logs(211,document.getElementById('username').value)\" class=\"under-logs\">_id</a></td>\n";
-			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_app_logs(212,document.getElementById('username').value)\" class=\"under-logs\">Code</a></td>\n";
-			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_app_logs(213,document.getElementById('username').value)\" class=\"under-logs\">User</a>&nbsp;</td>\n";
-			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_app_logs(214,document.getElementById('username').value)\" class=\"under-logs\">Ip</a>&nbsp;</td>\n";
-			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_app_logs(215,document.getElementById('username').value)\" class=\"under-logs\">Message</a>&nbsp;</td>\n";
-			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_app_logs(210,document.getElementById('username').value)\" class=\"under-logs\">Date</a>&nbsp;</td>\n";	
+			typevalue=10;
+			myfunction="list_app_logs";
 		}else if(typeserver==3){// exec-manager's
-			html += "<td>#</td><td align=\"center\"><a onclick=\"return list_exec_logs(221,document.getElementById('username').value)\" class=\"under-logs\">_id</a></td>\n";
-			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_exec_logs(222,document.getElementById('username').value)\" class=\"under-logs\">Code</a>&nbsp;</td>\n";
-			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_exec_logs(223,document.getElementById('username').value)\" class=\"under-logs\">User</a>&nbsp;</td>\n";
-			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_exec_logs(224,document.getElementById('username').value)\" class=\"under-logs\">Ip</a>&nbsp;</td>\n";
-			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_exec_logs(225,document.getElementById('username').value)\" class=\"under-logs\">Message</a>&nbsp;</td>\n";
-			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_exec_logs(220,document.getElementById('username').value)\" class=\"under-logs\">Date</a>&nbsp;</td>\n";
+			typevalue=20;
+			myfunction="list_exec_logs";
 		}else if(typeserver==4){//monitoring server 
-			html += "<td>#</td><td align=\"center\"><a onclick=\"return list_mf_logs(231,document.getElementById('username').value)\" class=\"under-logs\">_id</a></td>\n";
-			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_mf_logs(232,document.getElementById('username').value)\" class=\"under-logs\">Code</a>&nbsp;</td>\n";
-			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_mf_logs(233,document.getElementById('username').value)\" class=\"under-logs\">User</a>&nbsp;</td>\n";
-			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_mf_logs(234,document.getElementById('username').value)\" class=\"under-logs\">Ip</a>&nbsp;</td>\n";
-			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_mf_logs(235,document.getElementById('username').value)\" class=\"under-logs\">Message</a>&nbsp;</td>\n";
-			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_mf_logs(230,document.getElementById('username').value)\" class=\"under-logs\">Date</a>&nbsp;</td>\n";
+			typevalue=30;
+			myfunction="list_mf_logs";
 		}else if(typeserver==5){// resource-manager's logs
-			html += "<td>#</td><td align=\"center\"><a onclick=\"return list_resource_logs(241,document.getElementById('username').value)\" class=\"under-logs\">_id</a></td>\n";
-			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_resource_logs(242,document.getElementById('username').value)\" class=\"under-logs\">Code</a>&nbsp;</td>\n";
-			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_resource_logs(243,document.getElementById('username').value)\" class=\"under-logs\">User</a>&nbsp;</td>\n";
-			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_resource_logs(244,document.getElementById('username').value)\" class=\"under-logs\">Ip</a>&nbsp;</td>\n";
-			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_resource_logs(245,document.getElementById('username').value)\" class=\"under-logs\">Message</a>&nbsp;</td>\n";
-			html += "<td align=\"center\">&nbsp;<a onclick=\"return list_resource_logs(240,document.getElementById('username').value)\" class=\"under-logs\">Date</a>&nbsp;</td>\n";
+			typevalue=40;
+			myfunction="list_resource_logs";
 		}
+		var myvalue=201+typevalue;
+		html += "<td>#</td><td align=\"center\"><a onclick=\"return "+myfunction+"("+myvalue+",document.getElementById('username').value)\" class=\"under-logs\">_id</a></td>\n";
+		var myvalue=202+typevalue;
+		html += "<td align=\"center\">&nbsp;<a onclick=\"return "+myfunction+"("+myvalue+",document.getElementById('username').value)\" class=\"under-logs\">Code</a>&nbsp;</td>\n";
+		var myvalue=203+typevalue;
+		html += "<td align=\"center\">&nbsp;<a onclick=\"return "+myfunction+"("+myvalue+",document.getElementById('username').value)\" class=\"under-logs\">User</a>&nbsp;</td>\n";
+		var myvalue=204+typevalue;
+		html += "<td align=\"center\">&nbsp;<a onclick=\"return "+myfunction+"("+myvalue+",document.getElementById('username').value)\" class=\"under-logs\">Ip</a>&nbsp;</td>\n";
+		var myvalue=205+typevalue;
+		html += "<td align=\"center\">&nbsp;<a onclick=\"return "+myfunction+"("+myvalue+",document.getElementById('username').value)\" class=\"under-logs\">Message</a>&nbsp;</td>\n";
+		var myvalue=200+typevalue;
+		html += "<td align=\"center\">&nbsp;<a onclick=\"return "+myfunction+"("+myvalue+",document.getElementById('username').value)\" class=\"under-logs\">Date</a>&nbsp;</td>\n";
 		count++;
 	}
 	first=false;
@@ -415,7 +408,7 @@ function jsontotable_repo_logs_brief(typeserver, myjson,count,first,level,lastwa
 // 							html += "</table></div></td><br>\n";
 // 							html += "<div><table style='border:1px solid black'>\n";// style='width:100%'>";
 						}
-						html += "<td>"+count+"</td><th> " + val['_id'] +" </th>\n";
+						html += "<td>"+count+"</td><th>" + val['_id'] +"</th>\n";
 						//source
 						if(val['_source'] !=undefined){
 							if(val['_source']['code']==undefined){
@@ -426,7 +419,6 @@ function jsontotable_repo_logs_brief(typeserver, myjson,count,first,level,lastwa
 								html += "<td bgcolor=\"#ff3e29\"> <font color=\"black\">" + val['_source']['code'] +"</font>";
 							}else if((val['_source']['code']>="100")&&(val['_source']['code']<"200")){ //yellow-information
 								html += "<td bgcolor=\"#f3ff3a\"> <font color=\"black\">" + val['_source']['code'] +"</font>";
-								
 	// 						}else if(val['_source']['code']=="cancelled"){//red
 	// 							html += "<td bgcolor=\"#ff3e29\"> " + val['_source']['code'];
 	// 						}else if(val['_source']['code']=="started"){//green
@@ -434,14 +426,11 @@ function jsontotable_repo_logs_brief(typeserver, myjson,count,first,level,lastwa
 	// 						}else{
 	// // 						html += "<td> " + val['_source']['code'];
 							}
-							html += "</td>\n" + (val['_source']['user']==undefined)? "<td></td>\n" : 
-								"<td> " + val['_source']['user'] +"</td>\n";
-							html += (val['_source']['ip']==undefined)? "<td></td>\n" : 
-								"<td> " + val['_source']['ip'] +"</td>\n";
-							html += (val['_source']['message']==undefined)? "<td></td>\n" :
-								"<td> " + val['_source']['message'] +"</td>\n";
-							html += (val['_source']['date']==undefined)? "<td></td>\n" :
-								"<td> " + val['_source']['date'] +"</td>\n";
+							html += "</td>\n<td>"; html += (val['_source']['user']==undefined)? "" : val['_source']['user'];
+							html += "</td>\n<td>"; html += (val['_source']['ip']==undefined)? "" : val['_source']['ip'];
+							html += "</td>\n<td>"; html += (val['_source']['message']==undefined)? "" : val['_source']['message'];
+							html += "</td>\n<td>"; html += (val['_source']['date']==undefined)? "" : val['_source']['date'];
+							html += "</td>\n";
 						}else{
 							html += "<td></td>\n";
 							html += "<td></td>\n";
@@ -474,7 +463,7 @@ function jsontotable_repo_logs_brief(typeserver, myjson,count,first,level,lastwa
 // 							html += "</table></div></td><br>\n";
 // 							html += "<div><table style='border:1px solid black'>\n";// style='width:100%'>";
 // 						}
-// 						html += "<tr><th><strong>\"" + key + "\"</strong>: </th>\n";
+// 						html += "<tr><th><strong>\"" + key + "\"</strong>:</th>\n";
 // 						mtitle=false;
 // 					}else{
 // 						html += "<tr><td><strong>\"" + key + "\"</strong>:</td>\n";
@@ -585,15 +574,13 @@ function jsontotable(myjson,count,first,level,lastwascoma,mtitle,filtered_fields
 				}
 			}else if (getType(val[key]) == "array" || getType(val[key]) == "object" ) {
 // 					if (count != 1) html += ',<br>';
-// 					for (i = 0; i < level; i++) {
-// 						if (count != 1) html += '&emsp;';
-// 					}
+// 					if (count != 1) for (i = 0; i < level; i++) html += '&emsp;';
 					if(mtitle==true){
 						if(count>1){
 							html += "</table></div></td><br>\n";
 							html += "<div><table style='border:1px solid black'>\n";// style='width:100%'>";
 						}
-						html += "<tr><th><strong>\"" + key + "\"</strong>: </th>\n";
+						html += "<tr><th><strong>\"" + key + "\"</strong>:</th>\n";
 					}else{
 						html += "<tr><td><strong>\"" + key + "\"</strong>:</td>\n";
 					}
@@ -610,7 +597,7 @@ function jsontotable(myjson,count,first,level,lastwascoma,mtitle,filtered_fields
 		mtitle=true;
 		countseries++;
 	});
-// 	if(first==true){ html += "<br>}"; }
+// 	if(first==true) html += "<br>}";
 	if(mainc==true)
 		html += "</table></div>\n";
 	return html;
@@ -649,19 +636,17 @@ function list_results(mytype, url,fields_toshow,filtered_fields){
 				}else if ( (mytype >= 210) && (mytype < 217 )){//app manager
 					html += jsontotable_repo_logs_brief(2,myjson,0,true,1,false,true,filtered_fields);
 					html += "</table></div>\n";
-				}else if ( (mytype >= 220) && (mytype < 227 )){
-					// exec-manager's logs, 8XX for sorting
+				}else if ( (mytype >= 220) && (mytype < 227 )){ // exec-manager's logs, 8XX for sorting
 					html += jsontotable_repo_logs_brief(3,myjson,0,true,1,false,true,filtered_fields);
 					html += "</table></div>\n";
 				}else if ( (mytype >= 230) && (mytype < 237 )){//monitoring server
 					html += jsontotable_repo_logs_brief(4,myjson,0,true,1,false,true,filtered_fields);
 					html += "</table></div>\n";
-
 				}else if ( (mytype >= 240) && (mytype < 247 )){// resource-manager's logs
 					html += jsontotable_repo_logs_brief(5,myjson,0,true,1,false,true,filtered_fields);
 					html += "</table></div>\n";
 
-				}else if ( (mytype >= 250) && (mytype < 257 )){//resource manager -logs
+				}else if ( (mytype >= 250) && (mytype < 257 )){//resource manager 
 					html += jsontotable_rm_brief(myjson,1,true,1,false,true,filtered_fields);
 					html += "</table></div>\n";
 					

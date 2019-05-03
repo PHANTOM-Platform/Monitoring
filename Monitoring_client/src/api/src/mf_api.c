@@ -708,7 +708,7 @@ int mf_user_metric(char *metric_name, char *value) {
 	clock_gettime(CLOCK_REALTIME, &timestamp);
 	/*convert to milliseconds */
 	double timestamp_ms = timestamp.tv_sec * 1000.0 + (double)(timestamp.tv_nsec / 1.0e6);
-	fprintf(fp, "\"local_timestamp\":\"%.1f\", \"%s\":%s\n", timestamp_ms, metric_name, value);
+	fprintf(fp, "\"local_timestamp\":\"%.1f\", \"%s\":\"%s\"\n", timestamp_ms, metric_name, value);
 	/*close the file*/
 	fclose(fp);
 	return 1;

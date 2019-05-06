@@ -66,7 +66,7 @@ This project requires the following dependencies to be installed:
 |   for 32 bits system|                                                   | 340.29    |
 | bison             | http://ftp.gnu.org/gnu/bison/                     | 3.0.2       |
 | flex              | http://prdownloads.sourceforge.net/flex/          | 2.6.0     |
-| sensors           | https://fossies.org/linux/misc/                   | 3.4.0     |
+| sensors           | https://fossies.org/linux/misc/                   | 3.5.0     |
 | m4                | https://ftp.gnu.org/gnu/m4                        | 1.4.17    |
 | libiio            | https://github.com/analogdevicesinc/libiio.git    | 1.0       |
 | hwloc             | https://www.open-mpi.org/software/hwloc/v1.11/downloads/      | 1.11.2        |

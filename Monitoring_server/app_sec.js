@@ -11,7 +11,6 @@ var elastic = new elasticsearch.Client({
 	log: 'error'
 });
 
-
 //********************* SUPPORT JS file, for DB functionalities *****
 // 	const MetadataModule 	= require('./support-metadata');
 	const UsersModule 		= require('./support-usersaccounts');
@@ -21,15 +20,14 @@ var elastic = new elasticsearch.Client({
 	var bodyParser	= require('body-parser');
 	var cors		= require('cors');
 	var auth		= require('./token-auth');
-var middleware	= require('./token-middleware');
-	const colours 			= require('./colours');
-const ips = ['::ffff:127.0.0.1','127.0.0.1',"::1"];
+	var middleware	= require('./token-middleware');
+	const colours 	= require('./colours');
+	const ips = ['::ffff:127.0.0.1','127.0.0.1',"::1"];
 
 var es_servername = "localhost";
 var es_port = "9400";
 var SERVERDB = "mf";
 const contentType_text_plain = 'text/plain';
-
 
 var dateFormat = require('dateformat');
 
@@ -154,9 +152,9 @@ if (mysorttype!=undefined){
 		});
 		user="";
 		if(user.length==0){
-			var myquery =  {"query":{"match_all": {} }, "sort": filter };
+			var myquery = {"query":{"match_all": {} }, "sort": filter };
 			if (mysorttype== "1"){//_id
-				myquery =  { "query": { "match_all": {} }, "sort": { "_uid": "desc" }, "size": 1 };
+				myquery = { "query": { "match_all": {} }, "sort": { "_uid": "desc" }, "size": 1 };
 			}
 			client.search({
 				index: my_index,
@@ -262,7 +260,7 @@ app.get('/verify_es_connection', function(req, res) {
 
 app.post('/new_log', function(req, res) {
 	"use strict";
-// 	var currentdate = dateFormat(new Date(), "yyyy-mm-dd'T'HH:MM:ss.l");
+	var currentdate = dateFormat(new Date(), "yyyy-mm-dd'T'HH:MM:ss.l");
 // 	var pretty		= find_param(req.body.pretty, req.query.pretty);
 	var log_code	= find_param(req.body.code, req.query.code);
 	var log_user	= find_param(req.body.user, req.query.user);
@@ -270,9 +268,9 @@ app.post('/new_log', function(req, res) {
 	var log_message	= find_param(req.body.message, req.query.message);
 	if(log_code==undefined) log_code="";
 	if(log_user==undefined) log_user="";
-	if(log_ip==undefined) log_ip="";
+	if(log_ip==undefined) log_ip=req.connection.remoteAddress;
 	if(log_message==undefined) log_message="";
-	var resultlog = register_log(es_servername + ":" + es_port, SERVERDB, log_code, log_ip, log_message, currentdate, log_user);
+	var resultlog = LogsModule.register_log(es_servername + ":" + es_port, SERVERDB, log_code, log_ip, log_message, currentdate, log_user);
 	resultlog.then((resolve_result) => {
 		res.writeHead(200, {"Content-Type": contentType_text_plain});
 		res.end("registered log\n", 'utf-8');
@@ -290,7 +288,7 @@ app.post('/new_log', function(req, res) {
 // app.post('/signup',ipfilter(ips, {mode: 'allow'}), function(req, res) {
 app.post('/signup', function(req, res) {
 	"use strict";
-	var currentdate = dateFormat(new Date(), "yyyy-mm-dd'T'HH:MM:ss.l"); 
+	var currentdate = dateFormat(new Date(), "yyyy-mm-dd'T'HH:MM:ss.l");
 	if( (req.body==undefined) && (req.query==undefined)){
 		res.writeHead(400, {"Content-Type": contentType_text_plain});
 		res.end("\n400: Missing parameters.\n");
@@ -497,7 +495,7 @@ app.get('/login', function(req, res) {
 
 app.get('/get_log_list', function(req, res) {
 	"use strict";
-// 	var currentdate = dateFormat(new Date(), "yyyy-mm-dd'T'HH:MM:ss.l");  need define datetime
+// 	var currentdate = dateFormat(new Date(), "yyyy-mm-dd'T'HH:MM:ss.l"); need define datetime
 // 	var pretty		= find_param(req.body.pretty, req.query.pretty);
 	var mysorttype	= find_param(req.body.sorttype, req.query.sorttype);
 // 	var projectname	= CommonModule.remove_quotation_marks(find_param(req.body.project, req.query.project));

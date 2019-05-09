@@ -119,13 +119,12 @@ size_t write_data(void *ptr, size_t size, size_t nitems, struct url_data *data) 
 
 // size_t header_callback(void *ptr, size_t size, size_t nitems, struct url_data *data) {
 // 	if(strncmp((char *)ptr, "X-Auth-Token:", 13) == 0) { // get Token
-// //         strtok((char *)ptr, " ");
-// //         data = (strtok(NULL, " \n"));   // token will be stored in data
-//     }
-//     else if(strncmp((char *)ptr, "HTTP/1.1", 8) == 0) { // get http response code
-// //         strtok((char *)ptr, " ");
-// //         data = (strtok(NULL, " \n"));   // http response code		
-//     }
+// // 		strtok((char *)ptr, " ");
+// // 		data = (strtok(NULL, " \n")); // token will be stored in data
+// 	}else if(strncmp((char *)ptr, "HTTP/1.1", 8) == 0) { // get http response code
+// // 		strtok((char *)ptr, " ");
+// // 		data = (strtok(NULL, " \n")); // http response code
+// 	}
 // 	return size * nitems;
 // }
 
@@ -173,7 +172,7 @@ int reserve_data_struc(struct url_data *data){
 
 /** send query to the given URL, read back the response string
 * @return 1 on success; otherwise return 0
-* if the token is NULL or empty string, will procedd as not token provided or required*/
+* if the token is NULL or empty string, will proced as not token provided or required*/
 int new_query_json(char *URL, struct url_data *response, const char *operation, const char *token) {
 	struct url_data data;
 	struct url_data rescode;
@@ -294,7 +293,7 @@ int publish_json(char *URL, char *message, const char *token) {
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_non_data);//
 	#endif
 	curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, write_data);//header_callback);
-	curl_easy_setopt(curl, CURLOPT_HEADERDATA, &rescode);  // set userdata in callback function
+	curl_easy_setopt(curl, CURLOPT_HEADERDATA, &rescode); // set userdata in callback function
 	CURLcode response_code = curl_easy_perform(curl);
 // 	printf("\n RESCODE is %s\n", rescode.data);
 	free(rescode.data); rescode.data=NULL;
@@ -344,7 +343,7 @@ int publish_file(char *URL, char *static_string, char *filename, const char *tok
 			case 0:
 				if(adding_string_len> max_buffer){
 					max_buffer=adding_string_len;
-					message = (char *) realloc(message,max_buffer  * sizeof(char));
+					message = (char *) realloc(message,max_buffer * sizeof(char));
 					if(message==NULL){
 						printf("Error allocating memory at publish_file\n");fflush(stdout);
 						exit(0);
@@ -503,9 +502,8 @@ int query_message_json_data(const char *URL, const char *message,const char *fil
 
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data); // the functions get_stream_data seems was not correct.
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
-
 	curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, write_data);//header_callback);
-	curl_easy_setopt(curl, CURLOPT_HEADERDATA, &rescode);  // set userdata in callback function
+	curl_easy_setopt(curl, CURLOPT_HEADERDATA, &rescode); // set userdata in callback function
 	CURLcode response_code = curl_easy_perform(curl);
 // 	printf("\n URL is %s\n", URL);
 // 	printf("\n message is %s\n", message);
@@ -572,8 +570,8 @@ int query_message_json_data(const char *URL, const char *message,const char *fil
 * return 1 on success; otherwise return 0 
 * 
 * Example of inputs for register WORKFLOWS:
-*  URL: localhost:3033/v1/phantom_mf/workflows/demo
-*  msg: {"application":"demo", "author": "Guy", "optimization": "Time",
+* URL: localhost:3033/v1/phantom_mf/workflows/demo
+* msg: {"application":"demo", "author": "Guy", "optimization": "Time",
 *       "tasks":[{"device":"demo_desktop", "exec":"hello_world", "cores_nr": "1"}]}
 *
 * Manually can be done from command line like: 
@@ -585,10 +583,10 @@ int query_message_json_data(const char *URL, const char *message,const char *fil
 * return 1 on success; otherwise return 0 
 * 
 * Example of inputs:
-*  URL: localhost:3033/v1/phantom_mf/experiments/demo
-*  msg: {"application":"demo", "task": "hello_world", "host": "demo_desktop"}
+* URL: localhost:3033/v1/phantom_mf/experiments/demo
+* msg: {"application":"demo", "task": "hello_world", "host": "demo_desktop"}
 * example of return output on experiment_id
-*  AWQijfEZZH5jRvHSyXlY
+* AWQijfEZZH5jRvHSyXlY
 * 
 * Manually can be done from command line like:
 * curl -H "Content-Type: application/json" -XPOST ${server}:${port}/v1/phantom_mf/experiments/${appid} -d '{
@@ -684,7 +682,7 @@ int query_message_json(const char *URL, const char *message,const char *filename
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data); // the functions get_stream_data seems was not correct.
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
 	curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, write_data);//header_callback);
-	curl_easy_setopt(curl, CURLOPT_HEADERDATA, &rescode);  // set userdata in callback function
+	curl_easy_setopt(curl, CURLOPT_HEADERDATA, &rescode); // set userdata in callback function
 	CURLcode response_code = curl_easy_perform(curl);
 // 	printf("\n URL is %s\n", URL);
 // 	printf("\n message is %s\n", message);
@@ -759,7 +757,7 @@ char* query_mf_config(char *server, char *platform_id, char *token) {
 	URL=concat_and_free(&URL, platform_id);
 	URL=concat_and_free(&URL, "\"");
 
-// 	printf("******* new_create_new_experiment ******\n"); 
+// 	printf("******* new_create_new_experiment ******\n");
 	char operation[]="GET";
 	if(query_message_json(URL, msg, NULL, &response, operation, token)==FAILED){
 		printf("ERROR: searching for DEFAULT mf_config for device %s\n", platform_id);
@@ -859,7 +857,7 @@ void init_curl(const char *token) {
 }
 // DESCRIPTION: This function releases resources acquired by curl_global_init.
 void close_curl(void) {
-// 	printf(" *****************  CLOSE CURL ***************\n");
+// 	printf(" ***************** CLOSE CURL ***************\n");
 	curl_global_cleanup( );
 }
 
@@ -881,34 +879,34 @@ CURL *prepare_publish(const char *URL,const char *message, FILE *send_fp, const 
 // curl_mime_name(field, "UploadJSON");
 // curl_mime_filedata(field, "/home/jmontana/phantom_mf/Monitoring_client/my-json-parser/exec_stats.json");
 // 
-// //     /* Fill in the filename field */ 
-// //     field = curl_mime_addpart(form);
-// //     curl_mime_name(field, "filename");
-// //     curl_mime_data(field, "postit2.c", CURL_ZERO_TERMINATED);
-//  
-//     /* Fill in the submit field too, even if this is rarely needed */ 
-// //     field = curl_mime_addpart(form);
-// //     curl_mime_name(field, "submit");
-// //     curl_mime_data(field, "send", CURL_ZERO_TERMINATED);
+// // 		/* Fill in the filename field */ 
+// // 		field = curl_mime_addpart(form);
+// // 		curl_mime_name(field, "filename");
+// // 		curl_mime_data(field, "postit2.c", CURL_ZERO_TERMINATED);
+// 	
+// // 		/* Fill in the submit field too, even if this is rarely needed */ 
+// // 		field = curl_mime_addpart(form);
+// // 		curl_mime_name(field, "submit");
+// // 		curl_mime_data(field, "send", CURL_ZERO_TERMINATED);
 
 // curl_easy_setopt(curl, CURLOPT_MIMEPOST, form);
 
-	//  ******************************************	
+	// ******************************************	
 
 // curl_formadd(&formpost,
-//              &lastptr,
-//              CURLFORM_COPYNAME, "UploadJSON",
-//              CURLFORM_FILE, "/home/jmontana/phantom_mf/Monitoring_client/my-json-parser/exec_stats.json",
-//              CURLFORM_END);
-//other files should be next
+// 			&lastptr,
+// 			CURLFORM_COPYNAME, "UploadJSON",
+// 			CURLFORM_FILE, "/home/jmontana/phantom_mf/Monitoring_client/my-json-parser/exec_stats.json",
+// 			CURLFORM_END);
+// other files should be next
 // curl_formadd(&formpost,
-//              &lastptr,
-//              CURLFORM_COPYNAME, "UploadJSON",
-//              CURLFORM_COPYCONTENTS, "exec_stats.json",
-//              CURLFORM_END);
+// 			&lastptr,
+// 			CURLFORM_COPYNAME, "UploadJSON",
+// 			CURLFORM_COPYCONTENTS, "exec_stats.json",
+// 			CURLFORM_END);
 
 
-//  ******************************************
+// ******************************************
 // 		/* to get the file size */
 // 		printf("set the file for the curl !!\n");
 // 		if(fstat(fileno(send_fp), &file_info) != 0)
@@ -958,7 +956,7 @@ CURL *prepare_query(const char* URL, const char *operation, const char *token) {
 		#ifdef DEBUG
 		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 		#endif
-		//  curl_slist_free_all(headers);
+		// curl_slist_free_all(headers);
 	}
 	return curl;
 }

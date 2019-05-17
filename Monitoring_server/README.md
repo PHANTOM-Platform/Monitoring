@@ -171,7 +171,7 @@ GET  /v1/phantom_rm/configs/:platform_id
 PUT  /v1/phantom_rm/configs/:platform_id -d '{...}'
 ```
 
-Please refer to the [apimanual][Reference Manual of the RESTful API] to get more details.
+Please refer to the [Reference Manual of the RESTful API][apimanual] to get more details.
 The Manual contains a description of each of the implemented methods, with examples of use, and type of possible responses. 
 
 

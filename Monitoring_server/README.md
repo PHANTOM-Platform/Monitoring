@@ -77,6 +77,7 @@ This setup provides the configuration to the elastic-search by placing in the ap
 
 Please take a look on the next suggested reference books, if you face difficulties on the setup of ElasticSearch-Database server: 
 
+
 * [Elasticsearch in Action][Elasticsearch in Action]
 * [Elasticsearch Essentials][Elasticsearch Essentials]
 * [Elasticsearch Server][Elasticsearch Server]
@@ -116,7 +117,7 @@ bash stop-monitoring-server.sh
 ```
 
 
-## RESTful Queries
+## RESTful API Queries
 It follows a list of some RESTful queries to demonstrate its usage:
 
 ```bash
@@ -170,7 +171,8 @@ GET  /v1/phantom_rm/configs/:platform_id
 PUT  /v1/phantom_rm/configs/:platform_id -d '{...}'
 ```
 
-Please refer to the [PHANTOM Monitoring API Web page][api] to get more details.
+Please refer to the [apimanual][Reference Manual of the RESTful API] to get more details.
+The Manual contains a description of each of the implemented methods, with examples of use, and type of possible responses. 
 
 
 ## Acknowledgment
@@ -210,3 +212,4 @@ Copyright (C) 2014-2018 University of Stuttgart
 [excess]: http://www.excess-project.eu
 [phantom]: http://www.phantom-project.org
 [api]: https://phantom-monitoring-framework.github.io
+[apimanual]: https://phantom-platform.github.io/Monitoring/docs/

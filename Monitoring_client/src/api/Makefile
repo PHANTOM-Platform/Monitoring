@@ -75,7 +75,7 @@ all: clean libmf.so libmf.a
 ${SRC}/%.o: ${SRC}/%.c
 	$(info $$NVML is [${NVML}])
 	$(info xxxx is [$(CC) -c $< -o $@ $(COPT_SO)])
-	$(CC) -c $< -o $@ $(COPT_SO)
+	$(CC)  -c $< -o $@ $(COPT_SO)
 
 libmf.so: ${filelist}
 	$(CC) -shared -o $@ $^ $(CFLAGS) $(LFLAGS)

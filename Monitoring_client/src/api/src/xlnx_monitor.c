@@ -26,8 +26,13 @@
 #define SUCCESS 0
 #define FAILURE 1
 
+#ifndef false
 #define false ( 1 == 0 )
+#endif // #ifndef
+
+#ifndef true
 #define true ( ! false )
+#endif // #ifndef
 
 // //entries for the ZC906
 #define xilinx_path "/sys/devices/soc0/amba/e0004000.i2c/i2c-0/i2c-7/mux_device/channel-7/8-0065/hwmon/hwmon0/%s%s%s"
@@ -81,7 +86,7 @@ int xlnx_stats_read(struct xlnx_stats_t *stats) {
 	for (int i=0;i<MAX_CHANNELS;i++){
 		num[0]=48+i+1;
 		//channel i (VCCINT,VCCAUX, VCC1V5_PL, VADJ_FPGA, VCC3V3_FPGA : current
-		sprintf(filename, xilinx_path, "curr",num,"_input"); 
+		sprintf(filename, xilinx_path, "curr",num,"_input");
 		if ((fp = fopen(filename, "r")) == NULL) {
 // 			fprintf(stderr, "Warning: Could not open sensored datafile %s.\n", filename);
 	// 		fprintf(stderr, "Trying with the version for testing...\n");
@@ -149,7 +154,7 @@ int xlnx_monitor(char *DataPath, long sampling_interval) {
 		return 0;
 	}
 	/*in a loop do data sampling and write into the file*/
-	
+
 	result.acum_total_watts =0;
 	while(running) {
 		usleep(sampling_interval * 1000);

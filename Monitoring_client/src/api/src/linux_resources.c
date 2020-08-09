@@ -57,7 +57,7 @@ unsigned int flag = 0;
  /** @brief updates the global variable flag in function of events and num_events
  @return SUCCESS or otherwise FAILURE*/
 int flag_init(char **events, size_t num_events) {
-	int i, ii;
+	unsigned int i, ii;
 // 		printf(" num_events %i RESOURCES_EVENTS_NUM %i \n",(int)num_events,RESOURCES_EVENTS_NUM);
 	for (i=0; i < num_events; i++) {
 		for (ii = 0; ii < RESOURCES_EVENTS_NUM; ii++) {
@@ -72,8 +72,8 @@ int flag_init(char **events, size_t num_events) {
 			}
 		}
 	}
-	
-	
+
+
 	if (flag == 0) {
 // 		printf("<<<< flag %i\n",flag);
 		fprintf(stderr, "WWrong given metrics.\nPlease given metrics ");
@@ -361,7 +361,7 @@ int linux_resources_sample(const int pid, struct resources_stats_t *stat_after )
 			|| (stat_after->total_cpu_time <= stat_after->before_total_cpu_time)) {
 			stat_after->CPU_usage_rate = 0.0;
 		} else {
-			stat_after->CPU_usage_rate = (stat_after->accum_pid_runtime - stat_after->before_accum_pid_runtime) * 100.0 / 
+			stat_after->CPU_usage_rate = (stat_after->accum_pid_runtime - stat_after->before_accum_pid_runtime) * 100.0 /
 				(stat_after->total_cpu_time - stat_after->before_total_cpu_time);
 		}
 		i++;
@@ -402,7 +402,7 @@ int linux_resources_sample(const int pid, struct resources_stats_t *stat_after )
 struct resources_stats_t *stats=NULL;
 
 
-char *save_stats_resources(struct resources_stats_t *stat, int pretty, int tabs){
+char *save_stats_resources(int pretty, int tabs){
 	int i;
 	char tempstr[2048]={'\0'};
 	char *msg=NULL;
@@ -483,7 +483,7 @@ char *save_stats_resources(struct resources_stats_t *stat, int pretty, int tabs)
 		 sprintf(tempstr, ",\"avg\":\"%lli\"", stats->accum_send_bytes );concat_and_free(&msg, tempstr);
 	}
 	sprintf(tempstr, ",\"sum\":\"%lli\"},", stats->accum_send_bytes);concat_and_free(&msg, tempstr);
-	
+
 	if (pretty==1) concat_and_free(&msg, "\n");
 	if(pretty==1) for(i=0;i<tabs;i++) concat_and_free(&msg, "\t");
 	sprintf(tempstr, "\"%s\":{", "stats_rcv_bytes");concat_and_free(&msg, tempstr);
@@ -495,15 +495,15 @@ char *save_stats_resources(struct resources_stats_t *stat, int pretty, int tabs)
 	}else{
 		 sprintf(tempstr, ",\"avg\":\"%lli\"", stats->accum_rcv_bytes );concat_and_free(&msg, tempstr);
 	}
-	sprintf(tempstr, ",\"sum\":\"%lli\"}", stats->accum_rcv_bytes);concat_and_free(&msg, tempstr);	
-	
-	
+	sprintf(tempstr, ",\"sum\":\"%lli\"}", stats->accum_rcv_bytes);concat_and_free(&msg, tempstr);
+
+
 //		nets_info->rcv_bytes += temp_rcv_bytes;
 //		nets_info->send_bytes += temp_send_bytes;
-	
-	
-	
-	
+
+
+
+
 	if(pretty==0) concat_and_free(&msg, "\n");
 	return msg;
 }
@@ -589,7 +589,7 @@ char *save_stats_resources_comp(struct sub_task_data *subtask, int pretty, int t
 		sprintf(tempstr, ",\"avg\":\"%lli\"", subtask->accum_send_bytes);concat_and_free(&msg, tempstr);
 	}
 	sprintf(tempstr, ",\"sum\":\"%lli\"},", subtask->accum_send_bytes);concat_and_free(&msg, tempstr);
-	
+
 	if (pretty==1) concat_and_free(&msg, "\n");
 	if(pretty==1) for(i=0;i<tabs;i++) concat_and_free(&msg, "\t");
 	sprintf(tempstr, "\"%s\":{", "stats_rcv_bytes");concat_and_free(&msg, tempstr);
@@ -601,9 +601,9 @@ char *save_stats_resources_comp(struct sub_task_data *subtask, int pretty, int t
 	}else{
 		sprintf(tempstr, ",\"avg\":\"%lli\"", subtask->accum_rcv_bytes);concat_and_free(&msg, tempstr);
 	}
-	sprintf(tempstr, ",\"sum\":\"%lli\"}", subtask->accum_rcv_bytes);concat_and_free(&msg, tempstr);	
-	
-	
+	sprintf(tempstr, ",\"sum\":\"%lli\"}", subtask->accum_rcv_bytes);concat_and_free(&msg, tempstr);
+
+
 //		nets_info->rcv_bytes += temp_rcv_bytes;
 //		nets_info->send_bytes += temp_send_bytes;
 	if(pretty==0) concat_and_free(&msg, "\n");
@@ -674,7 +674,7 @@ struct resources_stats_t *linux_resources(const int pid, char *DataPath, long sa
 	stats->accum_CPU_usage_rate = stats->CPU_usage_rate;
 	stats->accum_RAM_usage_rate = stats->RAM_usage_rate;
 	stats->accum_swap_usage_rate = stats->swap_usage_rate;
-	
+
 	stats->min_write_bytes = stats->accum_write_bytes;
 	stats->max_write_bytes = stats->accum_write_bytes;
 
@@ -738,7 +738,7 @@ struct resources_stats_t *linux_resources(const int pid, char *DataPath, long sa
 		return NULL;
 	}
 	fprintf(fp, "\"local_timestamp\":\"%.1f\",", timestamp_ms);
-	char *msgb=save_stats_resources(stats,0,2);
+	char *msgb=save_stats_resources(0,2);
 // 	concat_and_free(&msg, msgb);
 	fprintf(fp,"%s",msgb); free(msgb);
 // 	printf_stats_resources(fp, stats,0,2);
@@ -791,7 +791,7 @@ unsigned int find_str(int start, const char source[], const char cad1[]){
 
 //removes the string "cadenaBuscar" from the string "source"
 //returns true if the string "cadenaBuscar" was found and removed
-int remove_str(int start, char source[], const char cadenaBuscar[]){ 
+int remove_str(int start, char source[], const char cadenaBuscar[]){
 	int longsource=strlen(source);
 	int longcad=strlen(cadenaBuscar);
 	if (longsource>=longcad){
@@ -840,7 +840,7 @@ unsigned int getline_str(char *input, char *output, unsigned const int start){
 int find_llint_from_label(char *loadstr, const char *label, long long int *to_update){
 	char result[200];
 	if(remove_str(0, loadstr, label)==true){
-		int i=0;
+		unsigned int i=0;
 		while( (i<strlen(loadstr)) && ( ((loadstr[i]>47)&&(loadstr[i]<58)) || (loadstr[i]==' ') ) ){
 			result[i]=loadstr[i];
 			i++;
@@ -852,6 +852,20 @@ int find_llint_from_label(char *loadstr, const char *label, long long int *to_up
 	return false;
 }
 
+int find_lluint_from_label(char *loadstr, const char *label, unsigned long long int *to_update){
+	char result[200];
+	if(remove_str(0, loadstr, label)==true){
+		unsigned int i=0;
+		while( (i<strlen(loadstr)) && ( ((loadstr[i]>47)&&(loadstr[i]<58)) || (loadstr[i]==' ') ) ){
+			result[i]=loadstr[i];
+			i++;
+		}
+		result[i]='\0';
+		*to_update=(unsigned long long int) atoll(result);
+		return true;
+	}
+	return false;
+}
 
 // void print_memorysize(long long int value ){
 const char * str_memorysize(long long int value, char *szBuffer) {
@@ -869,7 +883,7 @@ const char * str_memorysize(long long int value, char *szBuffer) {
 
 
 
-unsigned int print_stats(int searchprocess, task_data *my_task_data){
+unsigned int print_stats(unsigned int searchprocess, task_data *my_task_data){
 	printf(" %sPID",LIGHT_BLUE);
 	printf("\t%sTID",LIGHT_GREEN);
 	printf("\t%sCORE",RED);
@@ -914,7 +928,7 @@ unsigned int print_stats(int searchprocess, task_data *my_task_data){
 }
 
 
-unsigned int save_stats(FILE *fp, int searchprocess, task_data *my_task_data){
+unsigned int save_stats(FILE *fp, unsigned int searchprocess, task_data *my_task_data){
 	unsigned int i;
 	struct timespec timestamp;
 	double timestamp_ms;
@@ -922,14 +936,14 @@ unsigned int save_stats(FILE *fp, int searchprocess, task_data *my_task_data){
 	for(i=0;i<my_task_data->totaltid;i++){
 		if (searchprocess == my_task_data->subtask[i]->pstid){
 			if(my_task_data->subtask[i]->totaltime==0){
-				int encontrado=my_task_data->total_user_def;
+				unsigned int encontrado=my_task_data->total_user_def;
 			// 	encuentra el k para el que los tid coinciden,
-				
-				
+
+
 // 			printf("totaltid %i total def %i \n", my_task_data->totaltid , my_task_data->total_user_def  );
 // 			printf("buscando en savestats pstid %i, valores en lista \n", my_task_data->subtask[i]->pstid );
-			
-				for(int k=0;k<my_task_data->total_user_def;k++){
+
+				for(unsigned int k=0;k<my_task_data->total_user_def;k++){
 // 					printf("      pstid %i\n", my_task_data->task_def[k]->pstid );
 					if(my_task_data->task_def[k]->pstid==my_task_data->subtask[i]->pstid){
 						encontrado=k;
@@ -944,7 +958,7 @@ unsigned int save_stats(FILE *fp, int searchprocess, task_data *my_task_data){
 				}else{
 					fprintf(fp,", \"component\":\"name_not_found\"");
 				}
-		
+
 // 				if(my_task_data->my_app_report!=NULL){
 // 					if(my_task_data->my_app_report->my_thread_report!=NULL){
 // 					if(my_task_data->my_app_report->my_thread_report[i]!=NULL){ <-- segmentation fault
@@ -955,10 +969,10 @@ unsigned int save_stats(FILE *fp, int searchprocess, task_data *my_task_data){
 // 				}else{
 // 				fprintf(fp,", \"component_b\":\"%i NULL pointer\"", i);
 // 				}
-		
+
 				fprintf(fp,", \"pstid\":\"%i\"", my_task_data->subtask[i]->pstid);
 				fprintf(fp,", \"time_of_last_measured\":\"%lli\"", my_task_data->subtask[i]->time_of_last_measured);
-			
+
 				fprintf(fp,", \"cpu_load\":\"%.2f\"", my_task_data->subtask[i]->pcpu);
 				fprintf(fp,", \"mem_load\":\"%.2f\"", my_task_data->subtask[i]->pmem);
 				fprintf(fp,", \"rchar\":%s",str_memorysize( my_task_data->subtask[i]->rchar,szBuffer));
@@ -1005,7 +1019,7 @@ unsigned int save_stats(FILE *fp, int searchprocess, task_data *my_task_data){
 }
 
 
-size_t execute_command(const char *command, char *comout, size_t *comalloc){
+size_t execute_command(const char *command, char **comout, size_t *comalloc){
 	// Setup our pipe for reading and execute our command.
 	FILE *fd;
 	size_t comlen = 0;
@@ -1017,36 +1031,36 @@ size_t execute_command(const char *command, char *comout, size_t *comalloc){
 		while ((chread = fread(buffer, 1, sizeof(buffer), fd)) != 0) {
 			if (comlen + chread +1>= *comalloc) {
 				*comalloc = *comalloc + *comalloc;
-				comout = (char *) realloc(comout, *comalloc * sizeof(char));
+				*comout = (char *) realloc(*comout, *comalloc * sizeof(char));
 			}
-			memmove(comout + comlen, buffer, chread);// destination source numbytes
+			memmove(*comout + comlen, buffer, chread);// destination source numbytes
 			comlen += chread;
 		}
 		pclose(fd);
 	}
-	comout[comlen]='\0';
+	*comout[comlen]='\0';
 	return comlen;
 }
 
 
 
-//it seems that /proc/stat updates every 10ms, duringh which period a task could run on different core, then there is a chance for an ocasional error on the statistics 
+//it seems that /proc/stat updates every 10ms, duringh which period a task could run on different core, then there is a chance for an ocasional error on the statistics
 //This function fix the statistics to reasonable values, such ocasinally modifing the core ids of some tasks
-//ejemplo: 2 cores y tareas 60 45 40 25 25, 
+//ejemplo: 2 cores y tareas 60 45 40 25 25,
 //asignamos la tarea 60 al [0], y la 45 al [1]
 //si asignamos el 40 al [0] se pueden asignar las 2 utlimas tareas al [1]
 //si asignamos el 40 al [1] entonces no se pueden asignar las ultimas tareas.
 //algortimo: repartir de mayor a menor caraga entre el core que tienen asignado si esta completamente sin asignar tarea
 //           en otro caso buscamos el core con mas carga donde pueda alojarse
-void fix_Desynchronized_data(unsigned int maxcores, struct task_data_t *my_task_data){
-	int found=false;
-	int i,j,c=0;
+void fix_Desynchronized_data( struct task_data_t *my_task_data){
+	unsigned int found=false;
+	unsigned int i,j,c=0;
 	unsigned int lista[my_task_data->maxprocesses];
 	float sorted_list_pcpu[my_task_data->maxprocesses];
-	int total_sorted=0;
-	for(i=0;i<my_task_data->maxcores;i++) 
+	unsigned int total_sorted=0;
+	for(i=0;i<my_task_data->maxcores;i++)
 		my_task_data->cores[i].total_load_core =0.0;
-	for(j=0;j<my_task_data->totaltid;j++){	
+	for(j=0;j<my_task_data->totaltid;j++){
 		if (my_task_data->subtask[j]->currentcore< my_task_data->maxcores )
 		my_task_data->cores[my_task_data->subtask[j]->currentcore].total_load_core = my_task_data->cores[my_task_data->subtask[j]->currentcore].total_load_core + my_task_data->subtask[j]->pcpu;
 	}
@@ -1068,7 +1082,7 @@ void fix_Desynchronized_data(unsigned int maxcores, struct task_data_t *my_task_
 			j++;
 		//vamos en la posicion j, si no es el ultimo desplazamos los demas
 		if(total_sorted>0){
-			int k=total_sorted;
+			unsigned int k=total_sorted;
 			while((k>=j)&&(k>0)){
 				lista[k]=lista[k-1];
 				sorted_list_pcpu[k]= sorted_list_pcpu[k-1];
@@ -1080,9 +1094,9 @@ void fix_Desynchronized_data(unsigned int maxcores, struct task_data_t *my_task_
 		total_sorted++;
 	}
 	for(j=0;j<my_task_data->totaltid;j++){
-		int wishedcore=my_task_data->subtask[lista[j]]->currentcore;
+		unsigned int wishedcore=my_task_data->subtask[lista[j]]->currentcore;
 		if (wishedcore< my_task_data->maxcores ){
-		
+
 		if(my_task_data->cores[wishedcore].total_load_core==0.0){
 			my_task_data->cores[wishedcore].total_load_core= my_task_data->subtask[lista[j]]->pcpu;
 		}else{
@@ -1107,7 +1121,7 @@ void fix_Desynchronized_data(unsigned int maxcores, struct task_data_t *my_task_
 	//	printf(" core %i load %f ", my_task_data->subtask[j]->currentcore, my_task_data->subtask[j]->pcpu);
 	// printf("\n");
 	//printf("sorted list\n");
-	//for(j=0;j<my_task_data->totaltid;j++) 
+	//for(j=0;j<my_task_data->totaltid;j++)
 	//	printf("j%i core %i load %f ",lista[j], my_task_data->subtask[lista[j]]->currentcore, my_task_data->subtask[lista[j]].pcpu);
 	// printf("\n");
 	//for(c=0;c<my_task_data->maxcores;c++)
@@ -1141,19 +1155,19 @@ unsigned int procesa_pid_load(int pid, unsigned int argmaxcores, struct task_dat
 		my_task_data->subtask[i]->updated=false;
 	my_task_data->totalpmem=0;
 	long long int actual_time=mycurrenttime();
-	int j, found;
-	int pspid, pstid, currentcore;
+	unsigned int j, found;
+	unsigned int pspid, pstid, currentcore;
 	float pcpu, pmem;
 // 	if(pid[0]!='\0') {
 		// Execute a process listing
 		sprintf(command, "ps --no-headers -p %u -L -o pid,tid,psr,pcpu,pmem,size", pid); //stime,time
-		size_t comlen = execute_command( command, comout, &comalloc);
+		size_t comlen = execute_command( command, &comout, &comalloc);
 		//update all the loads to 0 of all tasks registerd in my_task_data
 		//first need to find if the pspid and pstid were already registered in my_task_data, its position will be stored in "index"
 		//if not find register, then create a new entry and define the current time as start time
-		
+
 // 		printf("comout is \n%s\n",comout);
-		
+
 		if(comlen!=0){
 			i=0;
 			contador=0;
@@ -1175,12 +1189,12 @@ unsigned int procesa_pid_load(int pid, unsigned int argmaxcores, struct task_dat
 // 							printf(" warning. %i>%i\n",currentcore,my_task_data->maxcores);
 // 							printf(" comout = %s\n",comout);
 // 						}
-						
-						
+
+
 					}else if(contador==4){
 						pcpu=atof(loadstr);
 						if(pcpu>100.0)
-							 pcpu=100.0;//evaluated cases shows few glitches when start running a program. 
+							 pcpu=100.0;//evaluated cases shows few glitches when start running a program.
 					}else if(contador==5){
 						pmem=atof(loadstr);
 						my_task_data->totalpmem+= pmem;
@@ -1197,7 +1211,7 @@ unsigned int procesa_pid_load(int pid, unsigned int argmaxcores, struct task_dat
 						}
 					}
 					if((found==false)&&(my_task_data->totaltid<my_task_data->maxprocesses+1)){
-						
+
 // 						if(pcpu>0.0){//if(pspid==pstid){
 							j=my_task_data->totaltid;
 							my_task_data->subtask[j]->time_of_last_measured=0;
@@ -1207,8 +1221,8 @@ unsigned int procesa_pid_load(int pid, unsigned int argmaxcores, struct task_dat
 
 							my_task_data->subtask[j]->min_send_bytes=0;
 							my_task_data->subtask[j]->send_bytes=0;
-							my_task_data->subtask[j]->max_send_bytes =0;	
-								
+							my_task_data->subtask[j]->max_send_bytes =0;
+
 							my_task_data->subtask[j]->accum_read_bytes =0;
 							my_task_data->subtask[j]->accum_write_bytes =0;
 							my_task_data->subtask[j]->before_accum_read_bytes = my_task_data->subtask[j]->accum_read_bytes;
@@ -1236,7 +1250,7 @@ unsigned int procesa_pid_load(int pid, unsigned int argmaxcores, struct task_dat
 							my_task_data->subtask[j]->accum_CPU_usage_rate = 0;
 							my_task_data->subtask[j]->accum_RAM_usage_rate = 0;
 							my_task_data->subtask[j]->accum_swap_usage_rate = 0;
-							
+
 							my_task_data->subtask[j]->min_write_bytes = 0;
 							my_task_data->subtask[j]->max_write_bytes = 0;
 
@@ -1256,15 +1270,15 @@ unsigned int procesa_pid_load(int pid, unsigned int argmaxcores, struct task_dat
 						my_task_data->subtask[j]->updated=true;
 						my_task_data->subtask[j]->pspid=pspid;
 						my_task_data->subtask[j]->pstid=pstid;
-						
+
 // 						my_task_data->task_def[j]->pstid=pstid;
-						
+
 						my_task_data->subtask[j]->currentcore=currentcore;
 						my_task_data->subtask[j]->totaltime=0;
 						my_task_data->subtask[j]->pcpu=pcpu;
 						my_task_data->subtask[j]->pmem=pmem;
 // 						printf(" paco task [%i-%i] j=%i pcpu = %.3f\n",pspid, pstid,j,my_task_data->subtask[j]->pcpu);
-						
+
 					}
 					contador=0;
 					i++;
@@ -1293,7 +1307,7 @@ unsigned int procesa_pid_load(int pid, unsigned int argmaxcores, struct task_dat
 	if(my_task_data->totaltid>my_task_data->maxtotaltid)
 		my_task_data->maxtotaltid=my_task_data->totaltid;
 	//----------------------------------------------------------------------------------
-	fix_Desynchronized_data( maxcores, my_task_data);//updates currentcore and total_load_core
+	fix_Desynchronized_data( my_task_data);//updates currentcore and total_load_core
 
 	for(i=0;i<my_task_data->maxcores;i++) {
 		my_task_data->total_load_cpu+=my_task_data->cores[i].total_load_core;
@@ -1324,7 +1338,7 @@ void procesa_task_io(task_data *my_task_data ) {
 	char command[120];
 	size_t comalloc = 8256;
 	char *comout = (char *) malloc(comalloc * sizeof(char));
-	int subtask=0;
+	unsigned int subtask=0;
 	char loadstr[250];
 // 	printf(" ptid %i\n",subtask< my_task_data->totaltid);
 	for(subtask=0;subtask< my_task_data->totaltid;subtask++){
@@ -1337,21 +1351,21 @@ void procesa_task_io(task_data *my_task_data ) {
 		my_task_data->subtask[subtask]->cancelled_write_bytes=0;
 // 		if(my_task_data->subtask[subtask]->updated==true){
 // 			if(my_task_data->subtask[subtask]->pstid==my_task_data->subtask[subtask]->pspid){
-				int i=0; 
+				int i=0;
 				sprintf(command, "if [ -e "IO_STAT_FILE" ]; then cat "IO_STAT_FILE"; fi;",my_task_data->subtask[subtask]->pstid,my_task_data->subtask[subtask]->pstid);
-				execute_command(command,comout, &comalloc);
+				execute_command(command, &comout, &comalloc);
 // 				printf("pstid %i: comout is %s\n",my_task_data->subtask[subtask]->pstid,comout);
 				if(comout[0]!='\0'){
 					while(comout[i]!='\0'){//we need to consume line by line
 						i=getline_str(comout, loadstr, i);
 // 						printf("loadstr is:%s\n",loadstr);
-						find_llint_from_label(loadstr, "rchar: ", &my_task_data->subtask[subtask]->rchar);
-						find_llint_from_label(loadstr, "wchar: ", &my_task_data->subtask[subtask]->wchar);
-						find_llint_from_label(loadstr, "syscr: ", &my_task_data->subtask[subtask]->syscr);
-						find_llint_from_label(loadstr, "syscw: ", &my_task_data->subtask[subtask]->syscw);
-						find_llint_from_label(loadstr, "read_bytes: ", &my_task_data->subtask[subtask]->read_bytes);
-						find_llint_from_label(loadstr, "write_bytes: ", &my_task_data->subtask[subtask]->write_bytes);
-						find_llint_from_label(loadstr, "cancelled_write_bytes: ", &my_task_data->subtask[subtask]->cancelled_write_bytes);
+						find_lluint_from_label(loadstr, "rchar: ", &my_task_data->subtask[subtask]->rchar);
+						find_lluint_from_label(loadstr, "wchar: ", &my_task_data->subtask[subtask]->wchar);
+						find_lluint_from_label(loadstr, "syscr: ", &my_task_data->subtask[subtask]->syscr);
+						find_lluint_from_label(loadstr, "syscw: ", &my_task_data->subtask[subtask]->syscw);
+						find_lluint_from_label(loadstr, "read_bytes: ", &my_task_data->subtask[subtask]->read_bytes);
+						find_lluint_from_label(loadstr, "write_bytes: ", &my_task_data->subtask[subtask]->write_bytes);
+						find_lluint_from_label(loadstr, "cancelled_write_bytes: ", &my_task_data->subtask[subtask]->cancelled_write_bytes);
 					} //end while
 // 					printf(" %i: %lli %lli ==== ", my_task_data->subtask[subtask]->pstid, my_task_data->subtask[subtask]->rchar, my_task_data->subtask[subtask]->wchar);
 				}
@@ -1361,7 +1375,7 @@ void procesa_task_io(task_data *my_task_data ) {
 	free(comout);
 }
 
-void free_mem_report(struct task_data_t *my_task_data_a){
+// void free_mem_report(struct task_data_t *my_task_data_a){
 //not needed because we will free in other place
 //	if(my_task_data_a==NULL) return;
 //	for(int i=0;i<my_task_data_a->maxprocesses;i++){
@@ -1376,7 +1390,7 @@ void free_mem_report(struct task_data_t *my_task_data_a){
 //		free(my_task_data_a->subtask);
 //	if(my_task_data_a->task_def!=NULL);
 //		free(my_task_data_a->task_def);
-}
+// }
 
 void init_stats(task_data *my_task_data_a){
 	energy_model param_energy;
@@ -1385,13 +1399,13 @@ void init_stats(task_data *my_task_data_a){
 	my_task_data_a->maxcores=130;// excess-fe as 8 (Intel(R) Xeon(R) CPU E5-2609 v2) x 4(cores) x4(threads)=128
 	my_task_data_a->subtask = (struct sub_task_data **) malloc( my_task_data_a->maxprocesses * sizeof(struct sub_task_data *));
 	my_task_data_a->task_def = (struct sub_task_user_def **) malloc( my_task_data_a->maxprocesses * sizeof(struct sub_task_user_def *));
-	for(int i=0;i<my_task_data_a->maxprocesses;i++){
+	for(unsigned int i=0;i<my_task_data_a->maxprocesses;i++){
 		my_task_data_a->subtask[i] = (struct sub_task_data *) malloc(sizeof(struct sub_task_data));
 		my_task_data_a->task_def[i] = (struct sub_task_user_def *) malloc(sizeof(struct sub_task_user_def));
 	}
 	my_task_data_a->cores = (struct cores_data *) malloc( my_task_data_a->maxcores * sizeof(struct cores_data));
 
-	for (int i=0; i<my_task_data_a->maxcores; i++) {
+	for (unsigned int i=0; i<my_task_data_a->maxcores; i++) {
 		my_task_data_a->cores[i].total_joules_core=0;
 		my_task_data_a->cores[i].total_load_core=0;
 		my_task_data_a->cores[i].time_of_last_measured=0;
@@ -1401,7 +1415,7 @@ void init_stats(task_data *my_task_data_a){
 	my_task_data_a->maxtotaltid=1;
 	my_task_data_a->first_start=0;
 	my_task_data_a->last_end=0;
-	for(int i=0;i<my_task_data_a->maxprocesses;i++)
+	for(unsigned int i=0;i<my_task_data_a->maxprocesses;i++)
 		my_task_data_a->subtask[i]->totaltime=0; // collected metrics
 }
 
@@ -1438,7 +1452,7 @@ void stats_sample(const unsigned int pids, task_data *my_task_data) {
 // 	Hitachi Deskstar 7K4000 4TB 7200 rpm 8.7W
 // 	WD Black WD4001FAEX 4TB 7200 rpm 9.3 W
 // 	Seagate Barracuda XT 3TB 7200 rpm 9.5W
-	
+
 	param_energy.E_NET_SND_PER_MB=0.14256387;
 	param_energy.E_NET_RCV_PER_MB=0.24133936;
 

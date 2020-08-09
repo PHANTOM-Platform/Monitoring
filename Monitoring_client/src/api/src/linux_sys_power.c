@@ -39,7 +39,7 @@
 
 int valid_cpu_freq_stat;
 
-// size_t execute_command(const char *command, char *comout, size_t *comalloc){
+// size_t execute_command(const char *command, char **comout, size_t *comalloc){
 //	// Setup our pipe for reading and execute our command.
 //	FILE *fd;
 //	size_t comlen = 0;
@@ -51,14 +51,14 @@ int valid_cpu_freq_stat;
 //		while ((chread = fread(buffer, 1, sizeof(buffer), fd)) != 0) {
 //			if (comlen + chread +1>= *comalloc) {
 //				*comalloc = *comalloc + *comalloc;
-//				comout = (char *) realloc(comout, *comalloc * sizeof(char));
+//				*comout = (char *) realloc(*comout, *comalloc * sizeof(char));
 //			}
-//			memmove(comout + comlen, buffer, chread);// destination source numbytes
+//			memmove(*comout + comlen, buffer, chread);// destination source numbytes
 //			comlen += chread;
 //		}
 //		pclose(fd);
 //	}
-//	comout[comlen]='\0';
+//	*comout[comlen]='\0';
 //	/* We can now work with the output as we please. Just print out to confirm output is as expected */
 //	//fwrite(comout, 1, comlen, stdout);
 //	return comlen;
@@ -67,7 +67,7 @@ int valid_cpu_freq_stat;
 
 int int_pow(const int number, const unsigned int power){
 	unsigned int result =1;
-	for(int i=0;i<power;i++)
+	for(unsigned int i=0;i<power;i++)
 		result *= number;
 	return result;
 }
@@ -105,7 +105,7 @@ int int_digits(const int value){
 	return i;
 }
 
-void int_to_string(char *output, const int value, const int digits){
+void int_to_string(char *output, const int value, const unsigned int digits){
 	unsigned int i;
 	unsigned int contador=digits-1;
 	for(i=0;i<digits;i++){
@@ -123,7 +123,7 @@ void int_to_string(char *output, const int value, const int digits){
 void add_int_to_str(char *str_2_add, const int position, const int number, const int digits){
 	char minumero[20];
 	int_to_string(minumero, number, digits);
-	for(int i=0;i<=digits;i++) str_2_add[position+i]=minumero[i];//included the end of string char '\0'	
+	for(int i=0;i<=digits;i++) str_2_add[position+i]=minumero[i];//included the end of string char '\0'
 }
 
 /*
@@ -142,7 +142,7 @@ void add_int_to_str(char *str_2_add, const int position, const int number, const
 
 /*
 * copy from position "start" of the string "input" into the string "output"
-* until find end of string or end of line 
+* until find end of string or end of line
 */
 // unsigned int getline_str(char *input, char *output, unsigned const int start){
 //	unsigned int j=0;
@@ -156,7 +156,7 @@ void add_int_to_str(char *str_2_add, const int position, const int number, const
 
 //search for the string cad1 in the string source, starting from position "start"
 //if found: return ths position where starts the cad1 in the string source
-//if not found: returns a not valid value, which is the lenght of source +1 
+//if not found: returns a not valid value, which is the lenght of source +1
 // unsigned int find_str(int start, char source[], const char cad1[]){
 //	int longsource=lengthstring(source);
 //	int longcad=lengthstring(cad1);
@@ -165,7 +165,7 @@ void add_int_to_str(char *str_2_add, const int position, const int number, const
 //	int i=start;
 //	int iguales;
 //	do{
-//		iguales=true;	
+//		iguales=true;
 //		for (int j=0;j<longcad;j++)
 //			if (source[i+j]!=cad1[j])
 //				iguales=false;
@@ -185,7 +185,7 @@ void add_int_to_str(char *str_2_add, const int position, const int number, const
 //	if (longsource>=longcad){
 //		int i=find_str(start,source, cadenaBuscar);
 //		if (i+longcad<=longsource) { // Encontramos la cadena 1 y empieza en i1
-//			for (int j=i;j<=longsource;j++) 
+//			for (int j=i;j<=longsource;j++)
 //				source[j]=source[j+longcad];
 //			return(true);
 //		//}else{
@@ -217,7 +217,7 @@ int get_first_int(const int start,int *end, char *loadstr, int *dato){
 			*dato=*dato*10+loadstr[pos]-48;
 			pos++;
 		}
-	}	
+	}
 	if ((loadstr[pos]=='\n') || (loadstr[pos]=='\0')) pos++;
 	*end=pos;
 	return found;
@@ -228,7 +228,7 @@ int get_first_int(const int start,int *end, char *loadstr, int *dato){
 int find_int_from_label(char *loadstr, const char *label, int *to_update){
 	char result[200];
 	if(remove_str(0,loadstr, label)==true){
-		int i=0;
+		unsigned int i=0;
 		while( (i<lengthstring(loadstr)) && ( ((loadstr[i]>47)&&(loadstr[i]<58)) || (loadstr[i]==' ') )){
 			result[i]=loadstr[i];
 			i++;
@@ -243,7 +243,7 @@ int find_int_from_label(char *loadstr, const char *label, int *to_update){
 int find_float_from_label(char *loadstr, const char *label, float *to_update){
 	char result[200];
 	if(remove_str(0,loadstr, label)==true){
-		int i=0;
+		unsigned int i=0;
 		while( (i<lengthstring(loadstr)) && ( ((loadstr[i]>47)&&(loadstr[i]<58)) || (loadstr[i]==' ') || (loadstr[i]=='.') )){
 			result[i]=loadstr[i];
 			i++;
@@ -258,7 +258,7 @@ int find_float_from_label(char *loadstr, const char *label, float *to_update){
 int find_lint_from_label(char *loadstr, const char *label, long int *to_update){
 	char result[200];
 	if(remove_str(0,loadstr, label)==true){
-		int i=0;
+		unsigned int i=0;
 		while( (i<lengthstring(loadstr)) && ( ((loadstr[i]>47)&&(loadstr[i]<58)) || (loadstr[i]==' ') )){
 			result[i]=loadstr[i];
 			i++;
@@ -269,12 +269,12 @@ int find_lint_from_label(char *loadstr, const char *label, long int *to_update){
 	}
 	return false;
 }
- 
+
 
 
 int longitud(const char cadena1[]){
 	int i=0;
-	while (cadena1[i]!='\0') 
+	while (cadena1[i]!='\0')
 		i++;
 	return(i);
 }
@@ -283,18 +283,18 @@ int longitud(const char cadena1[]){
 int buscacadena (int ini,char *LINEA,const char *cad1){
 	int iguales,j;
 	int i=ini;
-	if (longitud(LINEA)<longitud(cad1)) 
+	if (longitud(LINEA)<longitud(cad1))
 		return(longitud(LINEA));
 	do {
 		iguales=true;
 		for (j=0;j<longitud(cad1);j++) {
-			if (LINEA[i+j]!=cad1[j]) 
+			if (LINEA[i+j]!=cad1[j])
 				iguales=false;
 		}
 		i++;
 	}
 	while ((iguales==false) && (i<=(longitud(LINEA)-longitud(cad1))));
-	if (iguales==false) 
+	if (iguales==false)
 		return(longitud(LINEA)+1);
 	i--;// Habiamos sumado uno de mas
 	return (i);
@@ -331,10 +331,10 @@ int textoentre(const char cad1[],const char cad2[], int ini, char *LINEA, char t
 	return 0;
 }
 
- 
 
 
- 
+
+
 // /* read the process runtime from /proc/[pid]/stat */
 // int read_pid_time(int pid, resources_stats *info) {
 //	FILE *fp;
@@ -364,7 +364,7 @@ int textoentre(const char cad1[],const char cad2[], int ini, char *LINEA, char t
 //	if(line!=NULL) free(line);
 //	return 1;
 // }
-// 
+//
 // /* read the process read_bytes, write_bytes, and cancelled_writes from /proc/[pid]/io */
 // int read_pid_io(int pid, resources_stats *info) {
 //	FILE *fp;
@@ -447,7 +447,7 @@ int create_perf_stat_counter(int pid) {
 	const int mgroup_fd = -1;
 	const unsigned int mflags=0;
 	return syscall(__NR_perf_event_open, &attr, pid, mcpu, mgroup_fd, mflags);
-	
+
 // #ifdef USERSPACE_ONLY
 //	attr.exclude_kernel = 1;
 //	attr.exclude_hv = 1;
@@ -557,7 +557,7 @@ int cpu_freq_stat(resources_stats *info, energy_model param_energy) {
 	char *cpu_freq_file = NULL;
 	unsigned long long freqs;
 	const char filenametest[]="/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq";
-	float energy_total = 0.0; 
+	float energy_total = 0.0;
 //	unsigned long long tmp;
 //	unsigned long long freqs_states[16];
 //	long int temp_freq;
@@ -617,7 +617,7 @@ int cpu_freq_stat(resources_stats *info, energy_model param_energy) {
 //	printf("  param_energy.MIN_CPU_POWER %.3f\n",param_energy.MIN_CPU_POWER);
 //	printf("  param_energy.MAX_CPU_POWER %.3f\n",param_energy.MAX_CPU_POWER);
 //	printf("  freq_max %llu freq_min %llu\n",param_energy.freq_max, param_energy.freq_min);
-	
+
 //	printf("CPU energy_total  =%.6f Joules\n",energy_total);
 	if(cpu_freq_file!= NULL) free(cpu_freq_file);
 	closedir(dir);
@@ -640,7 +640,7 @@ unsigned long long read_perf_counter(int fd) {
 
 /** read from /proc filesystem all statistics;
 * get the cpu energy consumption based on cpu freq statistics;
-* read from perf counter the hardware cache misses 
+* read from perf counter the hardware cache misses
 * returns a set of bits indicating if error on the different functions
 * returns 0 if completed successfully all the functions
 */
@@ -674,16 +674,16 @@ int read_and_check(int fd, int pid, resources_stats *info, energy_model param_en
 //	int value_to_return=0;
 //	if(read_pid_time(pid, info) <= 0)
 //		value_to_return+=1;
-// 
+//
 //	if(read_pid_io(pid, info) <=0)
 //		value_to_return+=2;
-// 
+//
 //	if(read_sys_time(info) <= 0)
 //		value_to_return+=4;
-//	
+//
 //	if(cpu_freq_stat(info) <= 0)
 //		value_to_return+=8;
-// 
+//
 //	info->pid_l2_cache_misses = read_perf_counter(fd);
 //	if(info->pid_l2_cache_misses <= 0)
 //		value_to_return+=16;
@@ -708,10 +708,10 @@ int calculate_and_update(resources_stats *before, resources_stats *after, resour
 	return 1;
 }
 
-unsigned int numcores(char *comout, size_t *comalloc) {
+unsigned int numcores(char **comout, size_t *comalloc) {
 	const char command[]= "grep -c ^processor /proc/cpuinfo;";
 	execute_command(command, comout, comalloc);
-	return atoi(comout);
+	return atoi(*comout);
 }
 
 
@@ -721,11 +721,11 @@ unsigned int numcores(char *comout, size_t *comalloc) {
  * collected metrics on nets_info->rcv_bytes and nets_info->send_bytes
  @return SUCCESS or otherwise FAILURE*/
 // int procesa_network_stat_read(int pid,  struct task_data_t *my_task_data) {
-int procesa_network_stat_read(char *comout, size_t *comalloc, struct task_data_t *my_task_data) {
+int procesa_network_stat_read( struct task_data_t *my_task_data) {
 	FILE *fp;
 	unsigned int temp;
 	unsigned long long temp_rcv_bytes, temp_send_bytes;
-	int subtask=0;
+	unsigned int subtask=0;
 	for(subtask=0;subtask< my_task_data->totaltid;subtask++){
 		if(my_task_data->subtask[subtask]->updated==true){
 			if(my_task_data->subtask[subtask]->pstid==my_task_data->subtask[subtask]->pspid){
@@ -781,7 +781,7 @@ int procesa_network_stat_read(char *comout, size_t *comalloc, struct task_data_t
 // cpu MHz		: 400.027
 // cpu MHz		: 400.020
 // cpu MHz		: 400.008
-void procesa_cpuinfo( char *comout, size_t *comalloc, unsigned int argmaxcores, struct task_data_t *my_task_data ) {
+void procesa_cpuinfo( char **comout, size_t *comalloc, struct task_data_t *my_task_data ) {
 	const char command[]= "if [ -e /proc/cpuinfo ];then cat /proc/cpuinfo | grep \"MHz\";fi;";//expected to update every 10ms
 	unsigned int i,contador;
 // 	unsigned int maxcores=argmaxcores;
@@ -796,14 +796,14 @@ void procesa_cpuinfo( char *comout, size_t *comalloc, unsigned int argmaxcores, 
 	if(comlen!=0){
 		i=0;
 		contador=0;
-		while((comout[i]!='\0')&&(i<comlen)){
+		while((*comout[i]!='\0')&&(i<comlen)){
 			if(contador>= my_task_data->maxcores){
 				printf(" counter of freqs exceds maxcores %i\n",my_task_data->maxcores);
 				return;
 			}
-			while (comout[i]==' ')
+			while (*comout[i]==' ')
 				i++;
-			int end_string=getline_str(comout, loadstr, i);// i<end_string ->> (comout[i]!='\n')
+			int end_string=getline_str(*comout, loadstr, i);// i<end_string ->> (*comout[i]!='\n')
 			i=end_string;
 			find_float_from_label( loadstr, "cpu MHz		:", &my_temp_float);
 			my_task_data->cores[contador].core_freq=(long int)(my_temp_float*1000);//in KHz
@@ -813,10 +813,10 @@ void procesa_cpuinfo( char *comout, size_t *comalloc, unsigned int argmaxcores, 
 }
 
 int power_monitor(int pid, char *DataPath, long sampling_interval, long long int start_app_time, struct app_report_t *my_app_report, struct task_data_t *my_task_data_a) {
-	int i;
+	unsigned int i;
 	size_t comalloc = 8256;
 	char *comout = (char *) malloc(comalloc * sizeof(char));
-	unsigned int maxcores= numcores(comout, &comalloc);
+	unsigned int maxcores= numcores(&comout, &comalloc);
 	my_task_data_a->maxprocesses =30;
 	my_task_data_a->maxcores=130;// excess-fe as 8 (Intel(R) Xeon(R) CPU E5-2609 v2) x 4(cores) x4(threads)=128
 	my_task_data_a->subtask = (struct sub_task_data **) malloc( my_task_data_a->maxprocesses * sizeof(struct sub_task_data *));
@@ -899,7 +899,7 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 	double timestamp_ms;
 
 	resources_stats before;//, delta;, after
-	
+
 	before.min_write_bytes = 0;
 	before.max_write_bytes = 0;
 	before.min_read_bytes = 0;
@@ -912,12 +912,12 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 	before.before_accum_write_bytes = 0;
 	before.accum_cancelled_writes = 0;
 	before.before_accum_cancelled_writes = 0;
-	
-	
-	
-	 
-	
-	
+
+
+
+
+
+
 	int fd_perf = create_perf_stat_counter(pid);
 	if(fd_perf <= 0){
 		printf("WARNING: create_perf_stat_counter is not supported.\n");
@@ -928,19 +928,19 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 // 	int returned_value =
 	read_and_check(fd_perf, pid, &before, param_energy);
 // 	if(returned_value != SUCCESS){
-// 		printf("ERROR: 3: %s\n", FileName); 
+// 		printf("ERROR: 3: %s\n", FileName);
 // 		if(FileName !=NULL) free(FileName);
 // 		return FAILURE;
 // 	}
-	int my_totaltid=0;
+	unsigned int my_totaltid=0;
 	if(my_totaltid!=my_task_data_a->totaltid){
 	for(i=my_totaltid;i<my_task_data_a->totaltid;i++){
 		my_task_data_a->subtask[i]->time_of_last_measured=0;
 		my_task_data_a->subtask[i]->start_comp=0;
 	}
-	my_totaltid=my_task_data_a->totaltid;	
+	my_totaltid=my_task_data_a->totaltid;
 	}
-	
+
 	/*in a loop do data sampling and write into the file*/
 	while(running) {
 		if(my_totaltid!=my_task_data_a->totaltid){
@@ -948,15 +948,15 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 			my_task_data_a->subtask[i]->time_of_last_measured=0;
 			my_task_data_a->subtask[i]->start_comp=0;
 		}
-		my_totaltid=my_task_data_a->totaltid;	
+		my_totaltid=my_task_data_a->totaltid;
 		}
-		
-		
-		procesa_cpuinfo( comout, &comalloc, maxcores, my_task_data_a);
+
+
+		procesa_cpuinfo( &comout, &comalloc, my_task_data_a);
 
 		maxcores=	procesa_pid_load(pid, maxcores, my_task_data_a, param_energy);
 		procesa_task_io(my_task_data_a);
-		procesa_network_stat_read(comout, &comalloc, my_task_data_a);
+		procesa_network_stat_read( my_task_data_a);
 
 //		procesa_system_mem(comout, &comalloc, &mysystem);//global of the system
 //		mysystem.cpu_system_load= procesa_system_load(comout, &comalloc, array_valores);
@@ -1033,23 +1033,23 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 //			my_task_data_a->subtask[i]->pmem
 			my_app_report->cancelled_writes += my_task_data_a->subtask[i]->cancelled_write_bytes;
 			my_app_report->pid_net_power += (param_energy.E_NET_RCV_PER_MB*my_task_data_a->subtask[i]->rcv_bytes + param_energy.E_NET_SND_PER_MB* my_task_data_a->subtask[i]->send_bytes)* 1.0e-6;
-			
+
 			if(my_task_data_a->subtask[i]->time_of_last_measured==0){
 				my_task_data_a->subtask[i]->time_of_last_measured=actual_time;
 				my_task_data_a->subtask[i]->start_comp=actual_time;
 			}
 				float total_time = ((1.0e-9)* (actual_time - my_task_data_a->subtask[i]->time_of_last_measured));
-				
+
 //			if (i==1)
 //			printf(" BBBBa  \"cpu_energy [%i]\":\"%.2f\" [ %.6f * %.6f * %.6f= %.6f ] %.2f \n", i, my_task_data_a->subtask[i]->total_cpu_energy,
 //				   (1.0e-9)*(my_task_data_a->subtask[i]->time_of_last_measured   -  my_task_data_a->subtask[i]->start_comp),
-//				   0.01*my_task_data_a->subtask[i]->pcpu, 
+//				   0.01*my_task_data_a->subtask[i]->pcpu,
 //					param_energy.MIN_CPU_POWER,
-//	
+//
 //		  			   (1.0e-9)*(my_task_data_a->subtask[i]->time_of_last_measured -  my_task_data_a->subtask[i]->start_comp)*
 //				   0.01*my_task_data_a->subtask[i]->pcpu*
 //					param_energy.MIN_CPU_POWER,
-//		  
+//
 //					total_time
 //					);
 			my_task_data_a->subtask[i]->total_cpu_energy+=0.01* my_task_data_a->subtask[i]->pcpu*param_energy.MIN_CPU_POWER*total_time;//kk
@@ -1069,13 +1069,13 @@ int power_monitor(int pid, char *DataPath, long sampling_interval, long long int
 // 		+ my_app_report->total_hd_energy
 // 		+ my_app_report->pid_net_power;
 		fprintf(fp, "\"local_timestamp\":\"%.1f\",",timestamp_ms);
-		
-		
-		
+
+
+
 // 		fprintf(fp, " \"start_comp\":\"%lli\",",i,my_task_data_a->subtask[i]->start_comp);
 // 		fprintf(fp, "\"actual_time\":\"%lli\",",actual_time);
 // 		fprintf(fp, "\"time_of_last_measured\":\"%lli\",",my_task_data_a->subtask[i]->time_of_last_measured);
-		
+
 		fprintf(fp, "\"cpu_power\":\"%5.3f\",",my_app_report->total_cpu_energy);
 // 		fprintf(fp, "\"io_power\":\"%5.3f\",",my_app_report->total_hd_energy); //last_end and first start are in ns
 		fprintf(fp, "\"mem_power\":\"%5.3f\",",my_app_report->pid_mem_power);

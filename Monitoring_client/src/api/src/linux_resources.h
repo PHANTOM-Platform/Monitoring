@@ -35,7 +35,7 @@ typedef struct resources_stats_t {
 	unsigned long long rcv_bytes, max_rcv_bytes, min_rcv_bytes , accum_rcv_bytes;
 	unsigned long long send_bytes, max_send_bytes, min_send_bytes, accum_send_bytes ;
 	float throughput,  max_throughput, min_throughput;
-	
+
 //from linux_sys_power
 	unsigned long long sys_itv, accum_sys_itv, before_accum_sys_itv;
 	float sys_runtime, accum_sys_runtime, before_accum_sys_runtime ;//counts in seconds amount of time
@@ -68,7 +68,7 @@ struct sub_task_data { // filled by stats_sample, procesa_pid_load, ...
 	unsigned long long int time_of_last_measured;
 	int updated;
 	long long int finishtime,totaltime,starttime;
-	long long int rchar, wchar, syscr, syscw, read_bytes, write_bytes,cancelled_write_bytes;
+	unsigned long long int rchar, wchar, syscr, syscw, read_bytes, write_bytes,cancelled_write_bytes;
 
 	unsigned long counter;
 	unsigned long MemTotal;
@@ -144,7 +144,7 @@ typedef struct energy_model_t {
 }energy_model;
 
 // FUNCTIONS
-char *save_stats_resources( struct resources_stats_t *stat, int pretty, int tabs);
+char *save_stats_resources( int pretty, int tabs);
 
 char *save_stats_resources_comp( struct  sub_task_data *subtask, int pretty, int tabs);
 
@@ -153,14 +153,14 @@ char *save_stats_resources_comp( struct  sub_task_data *subtask, int pretty, int
 struct resources_stats_t *linux_resources(int pid, char *DataPath, long sampling_interval);
 
 // FUNCTIONS // ************** for monitoring the threads
-unsigned int print_stats(int searchprocess, task_data *my_task_data);
+unsigned int print_stats(unsigned int searchprocess, task_data *my_task_data);
 
 void stats_sample(const unsigned int pids, task_data *my_task_data);
 
 void free_mem_report(struct task_data_t *my_task_data_a);
 
 void init_stats(task_data *my_task_data_a);
-unsigned int save_stats(FILE *fp, int searchprocess, task_data *my_task_data);
+unsigned int save_stats(FILE *fp, unsigned int searchprocess, task_data *my_task_data);
 int CPU_stat_process_read(int pid, struct resources_stats_t *stats_now);
 int io_stats_read(int pid, struct resources_stats_t *stats_now);
 int CPU_stat_read(struct resources_stats_t *stats_now, const float ticksPerSecond);
@@ -169,7 +169,7 @@ unsigned int procesa_pid_load(int pid, unsigned int argmaxcores, struct task_dat
 // unsigned int procesa_pid_load_power(int pid, unsigned int argmaxcores, struct task_data_t *my_task_data, energy_model param_energy);
 void procesa_task_io(task_data *my_task_data );
 
-size_t execute_command(const char *command, char *comout, size_t *comalloc);
+size_t execute_command(const char *command, char **comout, size_t *comalloc);
 unsigned int process_str(char *input, char *output, unsigned const int start, const unsigned int max_output_size);
 unsigned int getline_str(char *input, char *output, unsigned const int start);
 unsigned int find_str(int start, const char source[], const char cad1[]);

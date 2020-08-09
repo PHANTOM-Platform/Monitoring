@@ -66,7 +66,7 @@ typedef struct task_data_t {
 	unsigned long int microsleep;
 	struct app_report_t *my_app_report;
 	int pid;
-	int maxprocesses, maxcores;
+	unsigned int maxprocesses, maxcores;
 	unsigned int maxtotaltid;
 	unsigned int totaltid;//counts the total of subtasks
 	struct sub_task_data **subtask;  //for the subtasks running
@@ -95,7 +95,7 @@ typedef struct metric_query_t {
 struct app_report_t *reserve_app_report(const unsigned int num_of_threads,const char *currentid);
 int free_app_report(struct app_report_t *my_app_report);
 // int reserve_memory_user_def_metrics(struct Thread_report_t *my_thread_report, const unsigned int total_metrics);
-int register_user_metric(struct Thread_report_t *my_thread_report,const char *time,const char *label,const int value,const int num_metric);
+int register_user_metric(struct Thread_report_t *my_thread_report,const char *time,const char *label,const int value);
 
 metric_query *new_metric(const char* label);
 
@@ -118,8 +118,8 @@ void register_end_component(
 char *currentid, struct Thread_report_t single_thread_report);
 
 void monitoring_end(const char *server, const char *exec_server, const char *appid,const char *execid, const char *execfile, const char *regplatformid, const char *token, struct app_report_t *my_app_report);
-	
-int register_workflow(const char *server, const char *regplatformid, const char *appid, const char *execfile,const char *token);
+
+int register_workflow(const char *server, const char *appid,  const char *token);
 
 //for monitoring the threads
 int mf_start_tid(const unsigned int pid, const long unsigned int microsleep);
@@ -128,7 +128,7 @@ void add_tid_to_report(char *component_name, int tid);
 int mf_user_metric(char *metric_name, char *value);
 
 /**
-* Get the pid, and setup the DataPath for data storage 
+* Get the pid, and setup the DataPath for data storage
 * For each metric, create a thread, open a file for data storage, and start sampling the metrics periodically.
 * Return the path of data files
 */

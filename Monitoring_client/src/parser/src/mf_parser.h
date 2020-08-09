@@ -91,7 +91,7 @@ void mfp_parse_clean();
 #define FAILED 1
 
 
-	
+
 struct json_object{//level 3, not count, keep labels and values
 	char *label_o;
 	char *value_o;
@@ -104,7 +104,7 @@ struct json_mf_config_field{//level 2, count and keep only labels
 };
 
 struct json_mf_config{//level 1, just only count
-	int count_f;
+	unsigned int count_f;
 	struct json_mf_config_field **field;
 };
 

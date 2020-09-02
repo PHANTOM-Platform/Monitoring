@@ -24,7 +24,7 @@
     }
   ],
   "dependencies": {
-	"node-rsa":"1.0.8",
+    "node-rsa":"1.0.8",
     "@hapi/boom": "^9.1.0",
     "@hapi/cryptiles": "^5.0.0",
     "@hapi/hoek": "^9.0.4",
@@ -49,6 +49,7 @@
     "moment": "^2.24.0",
     "morgan": "^1.9.1",
     "serve-favicon": "^2.5.0",
-    "socks": "^2.3.3"
+    "socks": "^2.3.3",
+    "bl": ">=4.0.3"
   }
 }

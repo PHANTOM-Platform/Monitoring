@@ -191,10 +191,7 @@ Please [create](https://github.com/hpcfapix/phantom_monitoring_server/issues) an
 
 **Cheptsov, Alexey, HLRS**
 + [github/alexey-cheptsov](https://github.com/alexey-cheptsov)
-
-**Fangli Pi, HLRS**
-+ [github/hpcfapix](https://github.com/hpcfapix)
-
+ 
 
 ## Release History
 | Date        | Version | Comment          |
@@ -208,8 +205,9 @@ Copyright (C) 2014-2018 University of Stuttgart
 [Apache License v2](LICENSE).
  
 [client]: https://github.com/PHANTOM-Platform/Monitoring/tree/master/Monitoring_client
-[server]: https://github.com/PHANTOM-Platform/Monitoring/tree/master/Monitoring_server
-[excess]: http://www.excess-project.eu
+[server]: https://github.com/PHANTOM-Platform/Monitoring/tree/master/Monitoring_server 
 [phantom]: http://www.phantom-project.org
 [api]: https://phantom-monitoring-framework.github.io
 [apimanual]: https://phantom-platform.github.io/Monitoring/docs/
+
+<b>For the updated version 2023 contact with jmmontanana at gmail.com</b>

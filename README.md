@@ -1,10 +1,11 @@
 # Monitoring
 This entry is for PHANTOM Monitoring and Resource Management Framework
 
+Contact author jmmontanana at gmail.com for the current udpated version (2023).
+
 Further details (requisites, installation instructions and example of use) of the components of the Monitoring available at each component folder:
 
 [PHANTOM monitoring server][server] 
-
 
 [PHANTOM monitoring client][client] 
 

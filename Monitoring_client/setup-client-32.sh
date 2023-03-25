@@ -252,19 +252,6 @@
 	make install
 	find ./ -name "libiio.so*" -exec mv {} ${INSTALL_PATH_LIBIIO}/lib/ \;
 # ============================================================================ #
-# DOWNLOAD AND INSTALL EXCESS QUEUE LIBS                                                                                        #
-# https://github.com/excess-project/data-structures-library.git
-# ============================================================================ #
-	cd $INSTALL_PATH_EXCESS_QUEUE;
-	#rm -rf data-structures-library;
-	if [ ! -f data-structures-library.tgz ]; then
-		git clone https://github.com/excess-project/data-structures-library.git
-	else
-		tar -xzf data-structures-library.tgz;
-	fi;
-	cd data-structures-library;
-	git checkout $EXCESS_QUEUE_VERSION
-# ============================================================================ #
 # CLEANING UP                                                                  #
 # ============================================================================ #
 	cd $ROOT

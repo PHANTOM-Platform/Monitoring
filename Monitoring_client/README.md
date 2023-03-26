@@ -71,8 +71,7 @@ This project requires the following dependencies to be installed:
 | sensors           | https://fossies.org/linux/misc/                   | 3.5.0     |
 | m4                | https://ftp.gnu.org/gnu/m4                        | 1.4.17    |
 | libiio            | https://github.com/analogdevicesinc/libiio.git    | 1.0       |
-| hwloc             | https://www.open-mpi.org/software/hwloc/v1.11/downloads/      | 1.11.2        |
-| EXCESS queue      | https://github.com/excess-project/data-structures-library.git | release/0.1.0 |
+| hwloc             | https://www.open-mpi.org/software/hwloc/v1.11/downloads/      | 1.11.2        | 
 
 Notice: The version of the packages are the same for 32 and 64 bits systems, except for the version of Nvidia GDK.
 

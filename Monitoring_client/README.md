@@ -1,5 +1,7 @@
 # PHANTOM monitoring client
 
+<b>For an updated version (2023) please contact with jmmontanana at gmail.com</b>
+
 > PHANTOM monitoring client is one part of the PHANTOM monitoring framework, which supports metrics collection based on hardware availabilities and platform configuration. The target platform of the monitoring client includes CPUs, GPUs, ACME power measurement kit and FPGA-based platform.
 
 
@@ -168,9 +170,6 @@ Please [create](https://github.com/excess-project/monitoring-agent/website/issue
 
 **Cheptsov, Alexey, HLRS**
 + [github/alexey-cheptsov](https://github.com/alexey-cheptsov)
-
-**Fangli Pi, HLRS**
-+ [github/hpcfapix](https://github.com/hpcfapix)
  
 
 
@@ -187,7 +186,6 @@ Copyright (C) 2014,2015 University of Stuttgart
 [Apache License v2](LICENSE).
  
 [client]: https://github.com/PHANTOM-Platform/Monitoring/tree/master/Monitoring_client
-[server]: https://github.com/PHANTOM-Platform/Monitoring/tree/master/Monitoring_server
-[excess]: http://www.excess-project.eu
+[server]: https://github.com/PHANTOM-Platform/Monitoring/tree/master/Monitoring_server 
 [phantom]: http://www.phantom-project.org
 [api]: https://phantom-monitoring-framework.github.io

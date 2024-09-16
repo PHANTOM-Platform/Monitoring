@@ -37,7 +37,7 @@
     "dateformat": "^3.0.3",
     "debug": "^3.2.6",
     "elasticsearch": "^16.7.1",
-    "express": "^4.17.1",
+    "express": "^4.21.0",
     "express-fileupload": "^1.1.9",
     "express-ws": "^4.0.0",
     "fs": "0.0.2",
